@@ -3,7 +3,7 @@
 // sw.js - Cache dinâmico com Salvo-Conduto para APIs
 // ==========================================
 
-const CACHE_NAME = 'condo-up-v10';
+const CACHE_NAME = 'condo-up-v11';
 
 self.addEventListener('install', event => {
     self.skipWaiting(); // Força a instalação imediata da nova versão
