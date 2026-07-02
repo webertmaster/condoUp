@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Condo Up</title> <script src="js/auth.js"></script>
+    <title>Condo Up</title> 
+    <script src="js/auth.js"></script>
 
     <link rel="manifest" href="manifest.json?v=2">
     <meta name="theme-color" content="#1e293b">
@@ -27,36 +28,30 @@
     </div>
 
     <div class="menu">
-        <!-- CATEGORIA 1 -->
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Dia a Dia</div>
         <button onclick="trocarTela('dashboard')" id="menu-dashboard" style="background: rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; color: #fff;"><i class="fa-solid fa-house"></i> Início</button>
         <button onclick="trocarTela('passagem')" id="menu-passagem"><i class="fa-solid fa-clipboard-check"></i> Plantão</button>
         <button onclick="trocarTela('ponto')" id="menu-ponto"><i class="fa-solid fa-user-clock"></i> Ponto</button>
 
-        <!-- CATEGORIA 2 -->
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Portaria Rápida</div>
         <button onclick="trocarTela('encomendas')" id="menu-encomendas"><i class="fa-solid fa-box-open"></i> Encomendas</button>
         <button onclick="trocarTela('delivery')" id="menu-delivery"><i class="fa-solid fa-motorcycle"></i> Delivery Rápido</button>
         <button onclick="trocarTela('ocorrencias')" id="menu-ocorrencias"><i class="fa-solid fa-triangle-exclamation"></i> Ocorrências</button>
 
-        <!-- CATEGORIA 3 -->
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Cadastros</div>
         <button onclick="trocarTela('moradores')" id="menu-moradores"><i class="fa-solid fa-users"></i> Moradores</button>
         <button onclick="trocarTela('veiculos')" id="menu-veiculos"><i class="fa-solid fa-car"></i> Veículos</button>
         <button onclick="trocarTela('reservas')" id="menu-reservas"><i class="fa-solid fa-calendar-check"></i> Reservas</button>
 
-        <!-- CATEGORIA 4 -->
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Administração</div>
         <button onclick="trocarTela('comunicados')" id="menu-comunicados"><i class="fa-solid fa-bullhorn"></i> Comunicados</button>
         <button onclick="trocarTela('relatorios')" id="menu-relatorios" style="color: #38bdf8;"><i class="fa-solid fa-chart-line"></i> Relatórios</button>
         <button onclick="trocarTela('equipe')" id="menu-equipe"><i class="fa-solid fa-id-badge"></i> Equipe</button>
 
-        <!-- CATEGORIA 5 -->
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Minha Conta</div>
         <button onclick="trocarTela('perfil')" id="menu-perfil"><i class="fa-solid fa-user-gear"></i> Meu Perfil</button>
         <button onclick="trocarTela('ajuda')" id="menu-ajuda"><i class="fa-solid fa-headset"></i> Ajuda / Suporte</button>
         
-        <!-- SAÍDA -->
         <div style="margin: 20px 15px 10px 15px; border-top: 1px dashed rgba(255,255,255,0.1);"></div>
         <button onclick="deslogarSistema()" id="menu-sair" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</button>
     </div>
@@ -135,134 +130,134 @@
     </div>
 
     <div id="equipe" class="tela">
-    <div class="box">
-        <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-            <i class="fa-solid fa-users-gear" style="color: #3b82f6; font-size: 24px;"></i> Gestão de Equipe
-        </h2>
-        
-        <input id="funcNome" placeholder="Nome Completo do Funcionário">
-
-        <input id="funcCpf" placeholder="CPF (000.000.000-00)" oninput="mascararCpf(this)" maxlength="14" style="margin-bottom: 10px;">
-
-<div style="margin-bottom: 15px;">
-    <label style="font-size: 13px; color: #64748b; font-weight: bold;"><i class="fa-solid fa-pen-nib"></i> Assinatura Digital do Funcionário</label>
-    <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; margin-top: 5px; position: relative;">
-        <canvas id="quadroAssinatura" height="120" style="width: 100%; cursor: crosshair; touch-action: none;"></canvas>
-    </div>
-    <button class="btn" type="button" onclick="limparAssinatura()" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 5px 10px; font-size: 12px; margin-top: 5px; width: auto;">
-        <i class="fa-solid fa-eraser"></i> Limpar Quadro
-    </button>
-</div>
-        
-        <select id="funcCargo">
-            <option value="" disabled selected>Selecione o Cargo</option>
-            <option>Porteiro Diurno</option>
-            <option>Porteiro Noturno</option>
-            <option>Zelador</option>
-            <option>Auxiliar de Limpeza</option>
-            <option>Síndico</option>
-            <option>Sub síndico</option>
-            <option>Gerente</option>
-            <option>Administrador(a)</option>
-        </select>
-        
-        <button class="btn" id="btnSalvarEquipe" onclick="addFuncionario()" style="background: #3b82f6;">Cadastrar Funcionário</button>
-    </div>
-    <div id="listaEquipe" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;"></div>
-</div>
-
-   <div id="passagem" class="tela">
-    <div class="box">
-        <h2><i class="fa-solid fa-clock-rotate-left"></i> Livro de Plantão (Passagem)</h2>
-        
-        <div style="background: rgba(59, 130, 246, 0.03); padding: 25px; border-radius: 16px; margin-top: 20px; border: 1px solid #e2e8f0;">
-            <p style="font-size: 13px; font-weight: 700; margin-bottom: 20px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
-                <i class="fa-solid fa-list-check" style="margin-right: 8px;"></i> Check-list de Verificação de Infraestrutura:
-            </p>
+        <div class="box">
+            <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-users-gear" style="color: #3b82f6; font-size: 24px;"></i> Gestão de Equipe
+            </h2>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkPortoes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-door-open" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Portões e Cancelas OK</span>
-                </label>
+            <input id="funcNome" placeholder="Nome Completo do Funcionário">
 
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkElevadores" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-elevator" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Elevadores OK</span>
-                </label>
+            <input id="funcCpf" placeholder="CPF (000.000.000-00)" oninput="mascararCpf(this)" maxlength="14" style="margin-bottom: 10px;">
 
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkLuzes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-lightbulb" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Lâmpadas/Luzes OK</span>
-                </label>
-
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkCameras" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-video" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Monitoramento/Câmeras OK</span>
-                </label>
-
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkBombas" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-faucet" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Bombas d'Água OK</span>
-                </label>
-
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                    <input type="checkbox" id="chkEnergia" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                    <i class="fa-solid fa-bolt" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>   
-                    <span style="font-size: 14px; font-weight: 500; color: #334155;">Elétrica/Energia OK</span>
-                </label>
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 13px; color: #64748b; font-weight: bold;"><i class="fa-solid fa-pen-nib"></i> Assinatura Digital do Funcionário</label>
+                <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; margin-top: 5px; position: relative;">
+                    <canvas id="quadroAssinatura" height="120" style="width: 100%; cursor: crosshair; touch-action: none;"></canvas>
+                </div>
+                <button class="btn" type="button" onclick="limparAssinatura()" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 5px 10px; font-size: 12px; margin-top: 5px; width: auto;">
+                    <i class="fa-solid fa-eraser"></i> Limpar Quadro
+                </button>
             </div>
-        </div>
-
-        <select id="passagemNome" style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px; background: #f8fafc; color: #334155; width: 100%; cursor: pointer;">
-            <option value="" disabled selected>👤 Selecione o seu Nome (Porteiro que está saindo)</option>
-        </select>
-        
-        <textarea id="passagemObs" placeholder="Relatório de turno: Descreva pendências, recados ou ocorrências para o próximo porteiro..." style="margin-top: 15px;"></textarea>
-        
-        <button class="btn" style="background: #10b981; margin-top: 25px; height: 55px; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="salvarPassagem()">
-            <i class="fa-solid fa-arrow-right-arrow-left"></i> Finalizar e Passar Serviço
-        </button>
-    </div>
-
-    <div class="box" style="background: rgba(59, 130, 246, 0.02); border-color: #e2e8f0;">
-        <h2 style="color: #1e293b;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Histórico de Plantões</h2>
-        
-        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center;">
-            <select id="filtroPorteiroPassagem" style="flex: 1; min-width: 180px; margin: 0; padding: 11px 14px; border-radius: 8px;">
-                <option value="">Todos os Porteiros</option>
+            
+            <select id="funcCargo">
+                <option value="" disabled selected>Selecione o Cargo</option>
+                <option>Porteiro Diurno</option>
+                <option>Porteiro Noturno</option>
+                <option>Zelador</option>
+                <option>Auxiliar de Limpeza</option>
+                <option>Síndico</option>
+                <option>Sub síndico</option>
+                <option>Gerente</option>
+                <option>Administrador(a)</option>
             </select>
             
-            <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-                <input type="date" id="filtroDataInicio" title="Data Inicial" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
+            <button class="btn" id="btnSalvarEquipe" onclick="addFuncionario()" style="background: #3b82f6;">Cadastrar Funcionário</button>
+        </div>
+        <div id="listaEquipe" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;"></div>
+    </div>
+
+    <div id="passagem" class="tela">
+        <div class="box">
+            <h2><i class="fa-solid fa-clock-rotate-left"></i> Livro de Plantão (Passagem)</h2>
+            
+            <div style="background: rgba(59, 130, 246, 0.03); padding: 25px; border-radius: 16px; margin-top: 20px; border: 1px solid #e2e8f0;">
+                <p style="font-size: 13px; font-weight: 700; margin-bottom: 20px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fa-solid fa-list-check" style="margin-right: 8px;"></i> Check-list de Verificação de Infraestrutura:
+                </p>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkPortoes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-door-open" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Portões e Cancelas OK</span>
+                    </label>
+
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkElevadores" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-elevator" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Elevadores OK</span>
+                    </label>
+
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkLuzes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-lightbulb" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Lâmpadas/Luzes OK</span>
+                    </label>
+
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkCameras" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-video" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Monitoramento/Câmeras OK</span>
+                    </label>
+
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkBombas" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-faucet" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Bombas d'Água OK</span>
+                    </label>
+
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
+                        <input type="checkbox" id="chkEnergia" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
+                        <i class="fa-solid fa-bolt" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>   
+                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Elétrica/Energia OK</span>
+                    </label>
+                </div>
             </div>
 
-            <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-                <input type="date" id="filtroDataFim" title="Data Final" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
-            </div>
+            <select id="passagemNome" style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px; background: #f8fafc; color: #334155; width: 100%; cursor: pointer;">
+                <option value="" disabled selected>👤 Selecione o seu Nome (Porteiro que está saindo)</option>
+            </select>
             
-            <div style="display: flex; gap: 8px; margin-top: 0;">
-                <button class="btn" style="margin: 0; padding: 11px 20px; background: #3b82f6; font-size: 14px;" onclick="mostrarPassagens()">
-                    <i class="fa-solid fa-filter"></i> Filtrar
-                </button>
-                <button class="btn btn-limpar" style="margin: 0; padding: 11px 16px; font-size: 14px;" onclick="limparFiltrosPlantao()">Limpar</button>
+            <textarea id="passagemObs" placeholder="Relatório de turno: Descreva pendências, recados ou ocorrências para o próximo porteiro..." style="margin-top: 15px;"></textarea>
+            
+            <button class="btn" style="background: #10b981; margin-top: 25px; height: 55px; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="salvarPassagem()">
+                <i class="fa-solid fa-arrow-right-arrow-left"></i> Finalizar e Passar Serviço
+            </button>
+        </div>
+
+        <div class="box" style="background: rgba(59, 130, 246, 0.02); border-color: #e2e8f0;">
+            <h2 style="color: #1e293b;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Histórico de Plantões</h2>
+            
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center;">
+                <select id="filtroPorteiroPassagem" style="flex: 1; min-width: 180px; margin: 0; padding: 11px 14px; border-radius: 8px;">
+                    <option value="">Todos os Porteiros</option>
+                </select>
                 
-                <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioPassagem()">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </button>
+                <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
+                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
+                    <input type="date" id="filtroDataInicio" title="Data Inicial" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
+                </div>
+
+                <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
+                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
+                    <input type="date" id="filtroDataFim" title="Data Final" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
+                </div>
+                
+                <div style="display: flex; gap: 8px; margin-top: 0;">
+                    <button class="btn" style="margin: 0; padding: 11px 20px; background: #3b82f6; font-size: 14px;" onclick="mostrarPassagens()">
+                        <i class="fa-solid fa-filter"></i> Filtrar
+                    </button>
+                    <button class="btn btn-limpar" style="margin: 0; padding: 11px 16px; font-size: 14px;" onclick="limparFiltrosPlantao()">Limpar</button>
+                    
+                    <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioPassagem()">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </button>
+                </div>
             </div>
         </div>
+        
+        <div id="listaPassagens" class="timeline"></div>
     </div>
-    
-    <div id="listaPassagens" class="timeline"></div>
-</div>
 
     <div id="ponto" class="tela">
         <div class="box" style="text-align: center; max-width: 600px; margin: 0 auto 25px auto;">
@@ -293,21 +288,21 @@
             <h2><i class="fa-solid fa-chart-pie" style="color: #8b5cf6; margin-right: 8px;"></i>Folha de Ponto Individual</h2>
             <div class="filtro-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
     
-    <div style="display: flex; flex: 1; min-width: 150px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 45px;">
-        <i class="fa-regular fa-calendar" style="color: #94a3b8; font-size: 16px; margin-right: 8px;"></i>
-        <input type="month" id="filtroMesPonto" title="Selecione o Mês da Folha" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; cursor: pointer;">
-    </div>
-    
-    <select id="filtroFuncionarioPonto" style="flex: 2; min-width: 200px; height: 45px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; cursor: pointer; margin: 0;">
-        <option value="" disabled selected>Selecione o Funcionário</option>
-    </select>
-    
-    <button class="btn btn-limpar" style="margin:0; flex: none; height: 45px; padding: 0 15px;" onclick="filtrarPorSeletores()">Filtrar na Tela</button>
-    
-    <button class="btn" title="Extrair Folha PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 45px; height: 45px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 8px; flex: none; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarFolhaPontoIndividual(event)">
-        <i class="fa-solid fa-file-pdf"></i>
-    </button>
-</div>
+                <div style="display: flex; flex: 1; min-width: 150px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 45px;">
+                    <i class="fa-regular fa-calendar" style="color: #94a3b8; font-size: 16px; margin-right: 8px;"></i>
+                    <input type="month" id="filtroMesPonto" title="Selecione o Mês da Folha" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; cursor: pointer;">
+                </div>
+                
+                <select id="filtroFuncionarioPonto" style="flex: 2; min-width: 200px; height: 45px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; cursor: pointer; margin: 0;">
+                    <option value="" disabled selected>Selecione o Funcionário</option>
+                </select>
+                
+                <button class="btn btn-limpar" style="margin:0; flex: none; height: 45px; padding: 0 15px;" onclick="filtrarPorSeletores()">Filtrar na Tela</button>
+                
+                <button class="btn" title="Extrair Folha PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 45px; height: 45px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 8px; flex: none; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarFolhaPontoIndividual(event)">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </button>
+            </div>
         </div>
         <div id="listaPontos" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;"></div>
     </div>
@@ -414,9 +409,9 @@
             <input type="time" id="horaReserva">
             
             <select id="aptoReserva" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 12px;">
-    <option value="">🏢 Selecione o Apto / Bloco</option>
-</select>
-<input id="responsavel" placeholder="Aguardando escolha do Apto..." readonly style="background: #f8fafc; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px;">
+                <option value="">🏢 Selecione o Apto / Bloco</option>
+            </select>
+            <input id="responsavel" placeholder="Aguardando escolha do Apto..." readonly style="background: #f8fafc; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px;">
             
             <div class="input-group" style="margin-top: 15px; grid-column: 1 / -1;">
                 <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 500; font-size: 14px;">
@@ -497,11 +492,11 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-    <select id="ocoApto" style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-        <option value="">🏢 Selecione o Apto / Local</option>
-    </select>
-    <input id="ocoMorador" placeholder="Aguardando escolha..." readonly style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;">
-</div>
+                <select id="ocoApto" style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                    <option value="">🏢 Selecione o Apto / Local</option>
+                </select>
+                <input id="ocoMorador" placeholder="Aguardando escolha..." readonly style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;">
+            </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
                 <select id="ocoPorteiro" style="margin: 0;">
@@ -540,23 +535,24 @@
 
         <div class="box">
             <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b;">
-    <span class="icone-premium-caixa" style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(16,185,129,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
-        <i class="fa-solid fa-box-open"></i>
-    </span> 
-    Nova Encomenda
-</h2>
+                <span class="icone-premium-caixa" style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(16,185,129,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
+                    <i class="fa-solid fa-box-open"></i>
+                </span> 
+                Nova Encomenda
+            </h2>
 
-<style>
-    .icone-premium-caixa:hover {
-        transform: scale(1.15) translateY(-5px); /* Pula levemente para cima */
-        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4) !important;
-        background: linear-gradient(135deg, #059669, #065f46) !important;
-    }
-</style>
+            <style>
+                .icone-premium-caixa:hover {
+                    transform: scale(1.15) translateY(-5px);
+                    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4) !important;
+                    background: linear-gradient(135deg, #059669, #065f46) !important;
+                }
+            </style>
+
             <input id="encMorador" placeholder="Morador (Obrigatório)">
             <select id="encApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-    <option value="">🏢 Selecione o Apartamento...</option>
-</select>
+                <option value="">🏢 Selecione o Apartamento...</option>
+            </select>
             <input id="encTransportadora" placeholder="Transportadora">
             <input id="encCodigo" placeholder="Código/Rastreio">
             <input id="encVolumes" placeholder="Volumes">
@@ -582,38 +578,42 @@
 
         <div class="box" style="background: rgba(59, 130, 246, 0.05);">
             <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b;">
-    <span class="icone-premium-lupa" style="background: linear-gradient(135deg, #60a5fa, #1d4ed8); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(37,99,235,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
-        <i class="fa-solid fa-magnifying-glass"></i>
-    </span> 
-    Histórico de Encomendas
-</h2>
+                <span class="icone-premium-lupa" style="background: linear-gradient(135deg, #60a5fa, #1d4ed8); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(37,99,235,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </span> 
+                Histórico de Encomendas
+            </h2>
 
-<style>
-    .icone-premium-lupa:hover {
-        transform: scale(1.15) rotate(5deg); /* Aumenta um pouco e dá um leve giro */
-        box-shadow: 0 6px 12px rgba(37, 99, 235, 0.5) !important; /* Aumenta a sombra */
-        background: linear-gradient(135deg, #3b82f6, #1e40af) !important; /* Escurece o gradiente */
-    }
-</style>
+            <style>
+                .icone-premium-lupa:hover {
+                    transform: scale(1.15) rotate(5deg);
+                    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.5) !important;
+                    background: linear-gradient(135deg, #3b82f6, #1e40af) !important;
+                }
+            </style>
+
             <div class="filtro-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 
-    <div style="display: flex; flex: 2; min-width: 180px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-        <img src="https://cdn-icons-png.flaticon.com/512/2809/2809800.png" style="width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(59,130,246,0.3));">
-        <input type="text" id="pesquisaEncomenda" placeholder="Buscar morador ou rastreio..." onkeyup="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; margin: 0;">
-    </div>
-    
-    <div style="display: flex; flex: 1; min-width: 140px; max-width: 200px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-        <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-        <input type="date" id="filtroDataEncomenda" onchange="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer; margin: 0;">
-    </div>
-    
-    <button class="btn btn-limpar" style="margin:0; flex: none; height: 44px; padding: 0 15px;" onclick="document.getElementById('pesquisaEncomenda').value=''; document.getElementById('filtroDataEncomenda').value=''; limparFiltroEncomendas()">Limpar</button>
-    
-    <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioEncomendas()">
-        <i class="fa-solid fa-file-pdf"></i>
-    </button>
-</div>
-<div id="listaEncomendas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; align-items: start;"></div>
+                <div style="display: flex; flex: 2; min-width: 180px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2809/2809800.png" style="width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(59,130,246,0.3));">
+                    <input type="text" id="pesquisaEncomenda" placeholder="Buscar morador ou rastreio..." onkeyup="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; margin: 0;">
+                </div>
+                
+                <div style="display: flex; flex: 1; min-width: 140px; max-width: 200px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
+                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
+                    <input type="date" id="filtroDataEncomenda" onchange="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer; margin: 0;">
+                </div>
+                
+                <button class="btn btn-limpar" style="margin:0; flex: none; height: 44px; padding: 0 15px;" onclick="document.getElementById('pesquisaEncomenda').value=''; document.getElementById('filtroDataEncomenda').value=''; limparFiltroEncomendas()">Limpar</button>
+                
+                <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioEncomendas()">
+                    <i class="fa-solid fa-file-pdf"></i>
+                </button>
+            </div>
+            
+            <div id="listaEncomendas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; align-items: start;"></div>
+        </div> 
+    </div> 
 
     <div id="delivery" class="tela">
         <div class="header-tela">
@@ -628,15 +628,15 @@
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div>
-    <label>Apto / Bloco</label>
-    <select id="delApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-        <option value="">Selecione o Apto...</option>
-    </select>
-</div>
-<div>
-    <label>Morador Responsável</label>
-    <input type="text" id="delMorador" placeholder="Nome do Morador..." style="background: #ffffff; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
-</div>
+                        <label>Apto / Bloco</label>
+                        <select id="delApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                            <option value="">Selecione o Apto...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Morador Responsável</label>
+                        <input type="text" id="delMorador" placeholder="Nome do Morador..." style="background: #ffffff; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
                     <div>
                         <label>Aplicativo</label>
                         <input type="text" id="delPlataforma" placeholder="Ex: iFood, Rappi...">
@@ -692,8 +692,8 @@
     <div id="comunicados" class="tela">
         <div class="box">
             <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-    <i class="fa-solid fa-envelope-open-text" style="color: #3b82f6; font-size: 24px;"></i> Central de Comunicados
-</h2>
+                <i class="fa-solid fa-envelope-open-text" style="color: #3b82f6; font-size: 24px;"></i> Central de Comunicados
+            </h2>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <select id="tipoComunicado" style="flex: 2; min-width: 200px;">
                     <option>📢 Geral</option>
@@ -793,40 +793,23 @@
             </div>
 
             <div class="card" style="padding: 20px; border-top: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); text-align: left;">
-    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-        <i class="fa-solid fa-user-clock" style="font-size: 24px; color: #f59e0b;"></i>
-        <h3 style="margin: 0; color: #0f172a;">Folha de Ponto (PDF)</h3>
-    </div>
-    
-    <label style="font-size: 12px; color: #64748b;">Mês de Referência:</label>
-    <input type="month" id="relatorioMesPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; cursor: pointer;">
-    
-    <label style="font-size: 12px; color: #64748b;">Funcionário:</label>
-    <select id="relatorioFuncPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; cursor: pointer;">
-        <option value="" disabled selected>Escolha o funcionário...</option>
-    </select>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <i class="fa-solid fa-user-clock" style="font-size: 24px; color: #f59e0b;"></i>
+                    <h3 style="margin: 0; color: #0f172a;">Folha de Ponto (PDF)</h3>
+                </div>
+                
+                <label style="font-size: 12px; color: #64748b;">Mês de Referência:</label>
+                <input type="month" id="relatorioMesPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; cursor: pointer;">
+                
+                <label style="font-size: 12px; color: #64748b;">Funcionário:</label>
+                <select id="relatorioFuncPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; cursor: pointer;">
+                    <option value="" disabled selected>Escolha o funcionário...</option>
+                </select>
 
-    <button class="btn" style="background: #f59e0b; color: white; width: 100%; margin: 0; border: none;" onclick="gerarPdfPontoViaRelatorio()">
-        <i class="fa-solid fa-cloud-arrow-down"></i> Extrair Documento CLT
-    </button>
-</div>
-
-<script>
-    function gerarPdfPontoViaRelatorio() {
-        const nome = document.getElementById('relatorioFuncPonto').value;
-        const mes = document.getElementById('relatorioMesPonto').value;
-        if(typeof gerarFolhaPontoIndividual === 'function') {
-            gerarFolhaPontoIndividual(nome, mes);
-        }
-    }
-    
-    // Clona os funcionários para o select do relatório sempre que abrir a aba
-    document.querySelector('button[onclick="trocarTela(\'relatorios\')"]').addEventListener('click', () => {
-        const origem = document.getElementById('filtroFuncionarioPonto');
-        const destino = document.getElementById('relatorioFuncPonto');
-        if(origem && destino) destino.innerHTML = origem.innerHTML;
-    });
-</script>
+                <button class="btn" style="background: #f59e0b; color: white; width: 100%; margin: 0; border: none;" onclick="gerarPdfPontoViaRelatorio()">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> Extrair Documento CLT
+                </button>
+            </div>
 
             <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <i class="fa-solid fa-motorcycle" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
@@ -932,7 +915,8 @@
             </div>
         </div>
     </div>
-    </div> <div id="modalMorador" class="modal-overlay">
+
+</div> <div id="modalMorador" class="modal-overlay">
     <div class="modal-content">
         <button class="fechar-modal" onclick="fecharModalMorador()"><i class="fa-solid fa-xmark"></i></button>
         <div id="conteudoModalMorador"></div>
@@ -971,6 +955,23 @@
     const auth = firebase.auth();
 </script>
 
+<script>
+  function gerarPdfPontoViaRelatorio() {
+      const nome = document.getElementById('relatorioFuncPonto').value;
+      const mes = document.getElementById('relatorioMesPonto').value;
+      if(typeof gerarFolhaPontoIndividual === 'function') {
+          gerarFolhaPontoIndividual(nome, mes);
+      }
+  }
+  
+  // Clona os funcionários para o select do relatório sempre que abrir a aba
+  document.querySelector('button[onclick="trocarTela(\'relatorios\')"]')?.addEventListener('click', () => {
+      const origem = document.getElementById('filtroFuncionarioPonto');
+      const destino = document.getElementById('relatorioFuncPonto');
+      if(origem && destino) destino.innerHTML = origem.innerHTML;
+  });
+</script>
+
 <script src="js/app.js?v=8"></script>
 <script src="js/equipe.js?v=8"></script>
 <script src="js/plantao.js?v=8"></script>
@@ -979,13 +980,14 @@
 <script src="js/veiculos.js"></script>
 <script src="js/reservas.js?v=8"></script>
 <script src="js/ocorrencias.js?v=8"></script>
-<script src="js/encomendas.js?v=10"></script>
+<script src="js/encomendas.js?v=11"></script>
 <script src="js/comunicados.js?v=8"></script>
 <script src="js/relatorios.js?v=8"></script>
 <script src="js/limpeza.js?v=8"></script>
 <script src="js/delivery.js?v=8"></script>
 <script src="js/perfil.js?v=8"></script>
-<script src="js/ajuda.js?v=8"></script> <script>
+<script src="js/ajuda.js?v=8"></script> 
+<script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js')
