@@ -1,10 +1,10 @@
 // ==========================================
-// ZERO LABS - CONNECTA PRO
+// EVO UPI - CONDO UP
 // delivery.js - Giro Rápido (MULTI-TENANT ATIVO)
 // ==========================================
 
 let deliveryGlobais = [];
-let memoriaDominóMoradores = []; // Motor do Dominó
+let memoriaDeliveryMoradores = []; // Motor do Dominó isolado para o Delivery
 
 const logosDelivery = {
     "ifood": "https://logodownload.org/wp-content/uploads/2017/05/ifood-logo-0.png",
@@ -31,15 +31,15 @@ async function carregarApartamentosNoSelect(idSelectDestino) {
             .where("excluido", "==", false)
             .get();
 
-        memoriaDominóMoradores = [];
+        memoriaDeliveryMoradores = [];
         select.innerHTML = '<option value="">Selecione o Apto...</option>';
 
-        snap.forEach(doc => memoriaDominóMoradores.push(doc.data()));
+        snap.forEach(doc => memoriaDeliveryMoradores.push(doc.data()));
 
         // Organiza em ordem alfabética bonita na tela (101 A, 101 B, 102 A...)
-        memoriaDominóMoradores.sort((a, b) => (a.apto || "").localeCompare(b.apto || ""));
+        memoriaDeliveryMoradores.sort((a, b) => (a.apto || "").localeCompare(b.apto || ""));
 
-        memoriaDominóMoradores.forEach(m => {
+        memoriaDeliveryMoradores.forEach(m => {
             let opt = document.createElement('option');
             opt.value = m.apto;
             opt.textContent = `Apto ${m.apto} - ${m.nome}`; // Exibe: "Apto 101 - Carlos"
