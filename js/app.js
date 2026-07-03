@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - PORTARIA PRO MASTER
+// EVO UPI - CONDO UP
 // app.js - Núcleo do Sistema (Menu, Relógio e Dashboard)
 // ==========================================
 
@@ -110,10 +110,6 @@ function atualizarDashboard() {
         console.log("⏳ Aguardando Firebase para atualizar a Dashboard...");
         return;
     }
-
-    // ==========================================
-    // ☁️ MÓDULOS BLINDADOS (DIRETO DA NUVEM EM TEMPO REAL)
-    // ==========================================
     
     // 1. Encomendas Pendentes
     db.collection("encomendas").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
@@ -207,19 +203,73 @@ function atualizarDashboard() {
     });
 }
 
-// --- INICIALIZAÇÃO ---
-window.onload = () => {
+// ==========================================
+// MOTOR DE NOTIFICAÇÕES PUSH (FIREBASE)
+// ==========================================
+function ativarNotificacoesPush() {
+    if ('Notification' in window && 'serviceWorker' in navigator && typeof firebase !== 'undefined') {
+        
+        const messaging = firebase.messaging();
+        const meuCondominio = localStorage.getItem("condominioId");
+        
+        // Pede a permissão pro usuário
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('✅ Permissão para notificações concedida!');
+                
+                // Gera o Token (CEP) do celular/PC com a sua Chave VAPID
+                messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" }).then((currentToken) => {
+                    if (currentToken) {
+                        console.log('📱 Token do Dispositivo gerado com sucesso!');
+                        localStorage.setItem("push_token", currentToken);
+                        
+                        // Salva no banco de dados
+                        if(meuCondominio && typeof db !== 'undefined') {
+                            db.collection("tokens_push").doc(currentToken).set({
+                                token: currentToken,
+                                condominioId: meuCondominio,
+                                dataRegistro: new Date().toISOString()
+                            }).then(() => {
+                                console.log("📡 Endereço do celular registrado na nuvem!");
+                            }).catch(err => console.error("Erro ao salvar token na nuvem: ", err));
+                        }
+                        
+                    } else {
+                        console.log('Nenhum token gerado. Peça permissão.');
+                    }
+                }).catch((err) => {
+                    console.log('Erro ao pegar token: ', err);
+                });
+                
+            } else {
+                console.log('❌ Permissão negada para notificações.');
+            }
+        });
+
+        // Escuta mensagens quando o app está aberto na tela
+        messaging.onMessage((payload) => {
+            console.log('Mensagem recebida com app aberto: ', payload);
+            alert(`📢 NOVO COMUNICADO:\n\n${payload.notification.title}\n${payload.notification.body}`);
+        });
+
+    } else {
+        console.warn("⚠️ Ambiente não suporta notificações ou Firebase não carregou a tempo.");
+    }
+}
+
+// ==========================================
+// INICIALIZAÇÃO BLINDADA DO SISTEMA
+// ==========================================
+window.addEventListener('load', () => {
     atualizarRelogio();
     
-    // Pequeno atraso (1.5s) para garantir a conexão estável com o Firestore
+    // Atraso para garantir a conexão estável com o Firestore
     setTimeout(atualizarDashboard, 1500);
     
-    // Recupera o tema escuro se o usuário tiver salvo no turno anterior
     if (localStorage.getItem('darkMode') === 'true') {
         document.body.classList.add('dark-mode');
     }
 
-    // MÁGICA DO NOME NA TELA INICIAL
     const nomeSalvo = localStorage.getItem("usuario_nome");
     const elementoNome = document.getElementById("nomeFuncionarioLogado");
 
@@ -230,4 +280,10 @@ window.onload = () => {
             elementoNome.innerText = "Guerreiro"; 
         }
     }
-};
+
+    // 🚀 DISPARA O GATILHO DE NOTIFICAÇÃO 3 SEGUNDOS APÓS A TELA CARREGAR
+    setTimeout(() => {
+        console.log("⏰ Iniciando verificação do Motor Push...");
+        ativarNotificacoesPush();
+    }, 3000);
+});
