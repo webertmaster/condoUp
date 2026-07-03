@@ -973,21 +973,21 @@
   });
 </script>
 
-<script src="js/app.js?v=10"></script>
-<script src="js/equipe.js?v=10"></script>
-<script src="js/plantao.js?v=10"></script>
-<script src="js/ponto.js?v=10"></script>
-<script src="js/moradores.js?v=10"></script>
+<script src="js/app.js?v=12"></script>
+<script src="js/equipe.js?v=11"></script>
+<script src="js/plantao.js?v=11"></script>
+<script src="js/ponto.js?v=11"></script>
+<script src="js/moradores.js?v=11"></script>
 <script src="js/veiculos.js"></script>
-<script src="js/reservas.js?v=8"></script>
-<script src="js/ocorrencias.js?v=10"></script>
+<script src="js/reservas.js?v=11"></script>
+<script src="js/ocorrencias.js?v=11"></script>
 <script src="js/encomendas.js?v=11"></script>
-<script src="js/comunicados.js?v=8"></script>
-<script src="js/relatorios.js?v=8"></script>
-<script src="js/limpeza.js?v=8"></script>
-<script src="js/delivery.js?v=10"></script>
-<script src="js/perfil.js?v=8"></script>
-<script src="js/ajuda.js?v=8"></script> 
+<script src="js/comunicados.js?v=11"></script>
+<script src="js/relatorios.js?v=11"></script>
+<script src="js/limpeza.js?v=11"></script>
+<script src="js/delivery.js?v=11"></script>
+<script src="js/perfil.js?v=11"></script>
+<script src="js/ajuda.js?v=11"></script> 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1000,17 +1000,6 @@
         });
     });
   }
-</script>
-
-<script>
-    window.addEventListener('load', () => {
-        if (typeof firebase !== 'undefined' && firebase.messaging.isSupported()) {
-            console.log("🚀 Motor de Push Iniciado!");
-            ativarNotificacoesPush();
-        } else {
-            console.warn("⚠️ Firebase Messaging não suportado ou não carregado.");
-        }
-    });
 </script>
 
 </body>
