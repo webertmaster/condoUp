@@ -204,56 +204,76 @@ function atualizarDashboard() {
 }
 
 // ==========================================
-// MOTOR DE NOTIFICAÇÕES PUSH (FIREBASE)
+// MOTOR DE NOTIFICAÇÕES PUSH (MODO DIAGNÓSTICO COM ALERTAS)
 // ==========================================
-function ativarNotificacoesPush() {
+
+// Função com Alertas para o iPhone "Falar" onde está travando
+function gerarESalvarToken() {
+    const messaging = firebase.messaging();
+    const meuCondominio = localStorage.getItem("condominioId");
+
+    alert("⏳ 1. Pedindo Token para o Firebase...");
+
+    messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" })
+        .then((currentToken) => {
+            if (currentToken) {
+                alert('✅ 2. Sucesso! Token criado pelo aparelho!');
+                localStorage.setItem("push_token", currentToken);
+                
+                if(meuCondominio && typeof db !== 'undefined') {
+                    db.collection("tokens_push").doc(currentToken).set({
+                        token: currentToken,
+                        condominioId: meuCondominio,
+                        dataRegistro: new Date().toISOString()
+                    }).then(() => {
+                        alert("📡 3. TUDO CERTO! Token salvo no Banco!");
+                    }).catch(err => alert("❌ Erro ao salvar no banco: " + err));
+                }
+            } else {
+                alert('⚠️ O Firebase não retornou nenhum Token.');
+            }
+        }).catch((err) => {
+            alert('🚨 ERRO DA APPLE/FIREBASE: ' + err);
+        });
+
+    messaging.onMessage((payload) => {
+        alert(`📢 NOVO COMUNICADO:\n\n${payload.notification.title}`);
+    });
+}
+
+// Armadilha com Alertas
+async function ativarNotificacoesPush() {
     if ('Notification' in window && 'serviceWorker' in navigator && typeof firebase !== 'undefined') {
         
-        const messaging = firebase.messaging();
-        const meuCondominio = localStorage.getItem("condominioId");
-        
-        // Pede a permissão pro usuário
-        Notification.requestPermission().then((permission) => {
-            if (permission === 'granted') {
-                console.log('✅ Permissão para notificações concedida!');
-                
-                // Gera o Token (CEP) do celular/PC com a sua Chave VAPID
-                messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" }).then((currentToken) => {
-                    if (currentToken) {
-                        console.log('📱 Token do Dispositivo gerado com sucesso!');
-                        localStorage.setItem("push_token", currentToken);
-                        
-                        // Salva no banco de dados
-                        if(meuCondominio && typeof db !== 'undefined') {
-                            db.collection("tokens_push").doc(currentToken).set({
-                                token: currentToken,
-                                condominioId: meuCondominio,
-                                dataRegistro: new Date().toISOString()
-                            }).then(() => {
-                                console.log("📡 Endereço do celular registrado na nuvem!");
-                            }).catch(err => console.error("Erro ao salvar token na nuvem: ", err));
-                        }
-                        
-                    } else {
-                        console.log('Nenhum token gerado. Peça permissão.');
-                    }
-                }).catch((err) => {
-                    console.log('Erro ao pegar token: ', err);
-                });
-                
-            } else {
-                console.log('❌ Permissão negada para notificações.');
-            }
-        });
+        if (Notification.permission === 'granted') {
+            alert("✅ O aparelho já tem permissão guardada. Indo direto para o Token...");
+            gerarESalvarToken();
+            return;
+        }
 
-        // Escuta mensagens quando o app está aberto na tela
-        messaging.onMessage((payload) => {
-            console.log('Mensagem recebida com app aberto: ', payload);
-            alert(`📢 NOVO COMUNICADO:\n\n${payload.notification.title}\n${payload.notification.body}`);
-        });
+        const toqueInvisivel = async () => {
+            try {
+                alert("👆 Toque detectado! Pedindo permissão para o usuário...");
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    alert('✅ Permissão CONCEDIDA agora!');
+                    gerarESalvarToken();
+                } else {
+                    alert('❌ O Usuário ou o aparelho NEGOU a permissão.');
+                }
+            } catch (error) {
+                alert("🚨 Erro na hora de pedir permissão: " + error);
+            } finally {
+                document.body.removeEventListener('click', toqueInvisivel);
+                document.body.removeEventListener('touchstart', toqueInvisivel);
+            }
+        };
+
+        document.body.addEventListener('click', toqueInvisivel);
+        document.body.addEventListener('touchstart', toqueInvisivel);
 
     } else {
-        console.warn("⚠️ Ambiente não suporta notificações ou Firebase não carregou a tempo.");
+        alert("⚠️ O aparelho está dizendo que não suporta Notificações Push aqui.");
     }
 }
 
@@ -281,9 +301,8 @@ window.addEventListener('load', () => {
         }
     }
 
-    // 🚀 DISPARA O GATILHO DE NOTIFICAÇÃO 3 SEGUNDOS APÓS A TELA CARREGAR
+    // 🚀 CHAMA O MOTOR PUSH (Que vai armar a armadilha de toque do iPhone)
     setTimeout(() => {
-        console.log("⏰ Iniciando verificação do Motor Push...");
         ativarNotificacoesPush();
-    }, 3000);
+    }, 1000);
 });
