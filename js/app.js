@@ -204,76 +204,81 @@ function atualizarDashboard() {
 }
 
 // ==========================================
-// MOTOR DE NOTIFICAÇÕES PUSH (MODO DIAGNÓSTICO COM ALERTAS)
+// MOTOR DE NOTIFICAÇÕES PUSH (MODO FANTASMA - iOS/Android)
 // ==========================================
 
-// Função com Alertas para o iPhone "Falar" onde está travando
+// Função isolada para Gerar e Salvar o Token de forma limpa
 function gerarESalvarToken() {
     const messaging = firebase.messaging();
     const meuCondominio = localStorage.getItem("condominioId");
 
-    alert("⏳ 1. Pedindo Token para o Firebase...");
-
     messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" })
         .then((currentToken) => {
             if (currentToken) {
-                alert('✅ 2. Sucesso! Token criado pelo aparelho!');
+                console.log('📱 Token do Dispositivo gerado com sucesso!');
                 localStorage.setItem("push_token", currentToken);
                 
+                // Salva no banco de dados
                 if(meuCondominio && typeof db !== 'undefined') {
                     db.collection("tokens_push").doc(currentToken).set({
                         token: currentToken,
                         condominioId: meuCondominio,
                         dataRegistro: new Date().toISOString()
                     }).then(() => {
-                        alert("📡 3. TUDO CERTO! Token salvo no Banco!");
-                    }).catch(err => alert("❌ Erro ao salvar no banco: " + err));
+                        console.log("📡 Endereço do celular registrado na nuvem!");
+                    }).catch(err => console.error("Erro ao salvar token na nuvem: ", err));
                 }
             } else {
-                alert('⚠️ O Firebase não retornou nenhum Token.');
+                console.log('Nenhum token gerado. O Firebase falhou em retornar um CEP.');
             }
         }).catch((err) => {
-            alert('🚨 ERRO DA APPLE/FIREBASE: ' + err);
+            console.log('Erro ao pegar token: ', err);
         });
 
+    // Escuta mensagens quando o app está aberto na tela
     messaging.onMessage((payload) => {
-        alert(`📢 NOVO COMUNICADO:\n\n${payload.notification.title}`);
+        console.log('Mensagem recebida com app aberto: ', payload);
+        alert(`📢 NOVO COMUNICADO:\n\n${payload.notification.title}\n${payload.notification.body}`);
     });
 }
 
-// Armadilha com Alertas
+// Função Principal que aciona a armadilha
 async function ativarNotificacoesPush() {
     if ('Notification' in window && 'serviceWorker' in navigator && typeof firebase !== 'undefined') {
         
+        // Se já tiver permissão de antes, roda direto sem incomodar
         if (Notification.permission === 'granted') {
-            alert("✅ O aparelho já tem permissão guardada. Indo direto para o Token...");
+            console.log("✅ Permissão já existia! Gerando token direto...");
             gerarESalvarToken();
             return;
         }
 
+        // --- A ARMADILHA INVISÍVEL PARA O IPHONE ---
         const toqueInvisivel = async () => {
             try {
-                alert("👆 Toque detectado! Pedindo permissão para o usuário...");
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
-                    alert('✅ Permissão CONCEDIDA agora!');
+                    console.log('✅ Permissão liberada pelo toque!');
                     gerarESalvarToken();
                 } else {
-                    alert('❌ O Usuário ou o aparelho NEGOU a permissão.');
+                    console.log('❌ Permissão negada pelo usuário.');
                 }
             } catch (error) {
-                alert("🚨 Erro na hora de pedir permissão: " + error);
+                console.error("Erro no toque invisível:", error);
             } finally {
+                // Desarma a armadilha depois de rodar a 1ª vez para não travar o app
                 document.body.removeEventListener('click', toqueInvisivel);
                 document.body.removeEventListener('touchstart', toqueInvisivel);
             }
         };
 
+        // Fica aguardando o primeiro toque do usuário na tela
         document.body.addEventListener('click', toqueInvisivel);
         document.body.addEventListener('touchstart', toqueInvisivel);
+        console.log("🕵️ Modo Fantasma armado. Aguardando o toque do usuário na tela...");
 
     } else {
-        alert("⚠️ O aparelho está dizendo que não suporta Notificações Push aqui.");
+        console.warn("⚠️ Ambiente não suporta notificações ou Firebase não carregou a tempo.");
     }
 }
 
