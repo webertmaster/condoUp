@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP (NUVEM FIREBASE)
+// ZERO LABS - CONDO UP (NUVEM FIREBASE)
 // comunicados.js - Mural de Avisos (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -91,16 +91,7 @@ function salvarComunicado() {
         db.collection("comunicados").add(dadosComunicado)
             .then(() => {
                 alert('📢 Comunicado publicado com sucesso!');
-                
-                // GATILHO DE NOTIFICAÇÃO
-                db.collection("notificacoes").add({
-                    titulo: titulo,
-                    mensagem: mensagem,
-                    condominioId: meuCondominio,
-                    dataDisparo: new Date().toISOString(),
-                    status: "aguardando_envio"
-                }).catch(err => console.error("Erro ao armar notificação: ", err));
-
+                // A cópia duplicada que ia para a tabela "notificacoes" foi removida daqui cirurgicamente!
                 finalizarAcaoComunicado(btnSalvar, textoOriginal);
             }).catch(err => {
                 alert("Erro ao publicar: " + err);
@@ -166,7 +157,7 @@ function excluirComunicado(idFirebase) {
 }
 
 // ==========================================
-// 4. RENDERIZAR MURAL (VISUAL CORRIGIDO)
+// 4. RENDERIZAR MURAL
 // ==========================================
 function atualizarListaComunicados() {
     const lista = document.getElementById('listaComunicados');
@@ -196,13 +187,11 @@ function atualizarListaComunicados() {
         if (com.tipo && com.tipo.includes('Assembleia')) { corBorda = '#8b5cf6'; iconeTipo = 'fa-users-rectangle'; }
         if (com.status && com.status.includes('Resolvido')) corBorda = '#10b981'; 
 
-        // BLINDAGEM DE VARIÁVEIS (Evita que o cartão suma se faltar dado)
         const tituloSeguro = com.titulo || 'Aviso da Portaria';
         const tipoSeguro = com.tipo ? com.tipo.replace('📢', '').replace('🔧', '').replace('🚨', '').replace('👥', '').trim() : 'Geral';
         const localSeguro = com.local || 'Geral';
         const mensagemSegura = com.mensagem || '';
         
-        // Formatação de Data Bonita
         const dataReg = com.dataRegistro ? new Date(com.dataRegistro).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'Data Desconhecida';
         const dataEvt = com.dataEvento ? com.dataEvento.split('-').reverse().join('/') : '';
         const horaEvt = com.horaEvento || '';
