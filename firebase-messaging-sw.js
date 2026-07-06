@@ -18,14 +18,6 @@ const messaging = firebase.messaging();
 
 // 4. Lida com as mensagens quando o aplicativo estiver fechado/minimizado
 messaging.onBackgroundMessage((payload) => {
-    console.log('[firebase-messaging-sw.js] Notificação recebida em segundo plano: ', payload);
-    
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/img/icon-512.png.png', // O ícone do seu app
-        badge: '/img/icon-512.png.png'
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    console.log('[firebase-messaging-sw.js] Notificação interceptada e tratada pelo Firebase Oficial.', payload);
+    // 🚨 A ordem de "desenhar notificação dupla" foi removida daqui!
 });
