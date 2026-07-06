@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONDO UP (NUVEM FIREBASE)
+// EVO UPI - CONDO UP (NUVEM FIREBASE)
 // comunicados.js - Mural de Avisos (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -10,7 +10,6 @@ let idComunicadoEditandoFirebase = null;
 // 1. ESCUTADOR EM TEMPO REAL (NUVEM COM FILTRO)
 // ==========================================
 window.addEventListener('DOMContentLoaded', () => {
-    // 1. Pega a credencial do prédio no bolso do navegador
     const meuCondominio = localStorage.getItem("condominioId");
 
     if (!meuCondominio) {
@@ -19,7 +18,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     if (typeof db !== 'undefined') {
-        // 2. MÁGICA MULTI-TENANT: Onde condominioId for igual ao meuCondominio
         db.collection("comunicados").where("condominioId", "==", meuCondominio).onSnapshot((snapshot) => {
             comunicadosGlobais = [];
             snapshot.forEach((doc) => {
@@ -28,7 +26,6 @@ window.addEventListener('DOMContentLoaded', () => {
                 comunicadosGlobais.push(c);
             });
             
-            // 3. Ordena os comunicados do mais novo para o mais antigo localmente
             comunicadosGlobais.sort((a, b) => new Date(b.dataRegistro) - new Date(a.dataRegistro));
             
             atualizarListaComunicados();
@@ -40,7 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 2. SALVAR E EDITAR NA NUVEM
+// 2. SALVAR E EDITAR NA NUVEM + GATILHO PUSH
 // ==========================================
 function salvarComunicado() {
     const tipo = document.getElementById('tipoComunicado').value;
@@ -60,11 +57,10 @@ function salvarComunicado() {
     let textoOriginal = idComunicadoEditandoFirebase ? '<i class="fa-solid fa-floppy-disk"></i> Salvar Alterações' : (btnSalvar ? btnSalvar.innerHTML : 'Publicar Comunicado');
 
     if (btnSalvar) {
-        btnSalvar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando na Nuvem...';
+        btnSalvar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Publicando...';
         btnSalvar.style.pointerEvents = 'none';
     }
 
-    // Pega a credencial para carimbar o documento
     const meuCondominio = localStorage.getItem("condominioId");
 
     const dadosComunicado = {
@@ -75,11 +71,10 @@ function salvarComunicado() {
         horaEvento: hora,
         local: local || 'Geral',
         mensagem,
-        condominioId: meuCondominio // A ETIQUETA INVISÍVEL FICA PRESA AQUI!
+        condominioId: meuCondominio
     };
 
     if (idComunicadoEditandoFirebase) {
-        // MODO EDIÇÃO
         db.collection("comunicados").doc(idComunicadoEditandoFirebase).update(dadosComunicado)
             .then(() => {
                 alert('✅ Comunicado atualizado com sucesso no mural!');
@@ -90,13 +85,22 @@ function salvarComunicado() {
                 if(btnSalvar) { btnSalvar.innerHTML = textoOriginal; btnSalvar.style.pointerEvents = 'auto'; }
             });
     } else {
-        // MODO NOVO COMUNICADO
         dadosComunicado.dataRegistro = new Date().toISOString();
-        dadosComunicado.excluido = false; // Soft Delete
+        dadosComunicado.excluido = false; 
 
         db.collection("comunicados").add(dadosComunicado)
             .then(() => {
-                alert('📢 Comunicado publicado com sucesso na nuvem!');
+                alert('📢 Comunicado publicado com sucesso!');
+                
+                // GATILHO DE NOTIFICAÇÃO
+                db.collection("notificacoes").add({
+                    titulo: titulo,
+                    mensagem: mensagem,
+                    condominioId: meuCondominio,
+                    dataDisparo: new Date().toISOString(),
+                    status: "aguardando_envio"
+                }).catch(err => console.error("Erro ao armar notificação: ", err));
+
                 finalizarAcaoComunicado(btnSalvar, textoOriginal);
             }).catch(err => {
                 alert("Erro ao publicar: " + err);
@@ -108,7 +112,7 @@ function salvarComunicado() {
 function finalizarAcaoComunicado(btnNode, textoFinal) {
     if(btnNode) {
         btnNode.innerHTML = textoFinal;
-        btnNode.style.background = "#3b82f6"; // Volta para o azul padrão
+        btnNode.style.background = "#3b82f6";
         btnNode.style.pointerEvents = 'auto';
     }
     document.getElementById('tipoComunicado').value = '📢 Geral';
@@ -145,7 +149,7 @@ function prepararEdicaoComunicado(idFirebase) {
     const btnSalvar = document.querySelector("#comunicados .btn[onclick='salvarComunicado()']") || document.getElementById('btnSalvarComunicado');
     if (btnSalvar) {
         btnSalvar.innerHTML = "<i class='fa-solid fa-floppy-disk'></i> Salvar Alterações";
-        btnSalvar.style.background = "#10b981"; // Verde para indicar modo de edição
+        btnSalvar.style.background = "#10b981"; 
     }
 
     idComunicadoEditandoFirebase = idFirebase;
@@ -162,16 +166,13 @@ function excluirComunicado(idFirebase) {
 }
 
 // ==========================================
-// 4. RENDERIZAR MURAL
+// 4. RENDERIZAR MURAL (VISUAL CORRIGIDO)
 // ==========================================
 function atualizarListaComunicados() {
     const lista = document.getElementById('listaComunicados');
     if (!lista) return;
 
-    // LÊ O CRACHÁ PARA DEFINIR A PERMISSÃO DOS BOTÕES
     const cargo = localStorage.getItem("usuario_cargo");
-
-    // Mostra apenas comunicados ativos
     const ativos = comunicadosGlobais.filter(c => !c.excluido);
     lista.innerHTML = '';
 
@@ -182,7 +183,6 @@ function atualizarListaComunicados() {
 
     const grid = document.createElement('div');
     grid.style.display = 'grid';
-    // Trocamos auto-fit por auto-fill
     grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))'; 
     grid.style.gap = '20px';
     grid.style.marginTop = '20px';
@@ -191,16 +191,30 @@ function atualizarListaComunicados() {
         let corBorda = '#3b82f6'; 
         let iconeTipo = 'fa-bullhorn';
         
-        if (com.tipo.includes('Manutenção')) { corBorda = '#f59e0b'; iconeTipo = 'fa-wrench'; }
-        if (com.tipo.includes('Ocorrência')) { corBorda = '#ef4444'; iconeTipo = 'fa-triangle-exclamation'; }
-        if (com.tipo.includes('Assembleia')) { corBorda = '#8b5cf6'; iconeTipo = 'fa-users-rectangle'; }
-        if (com.status.includes('Resolvido')) corBorda = '#10b981'; 
+        if (com.tipo && com.tipo.includes('Manutenção')) { corBorda = '#f59e0b'; iconeTipo = 'fa-wrench'; }
+        if (com.tipo && com.tipo.includes('Ocorrência')) { corBorda = '#ef4444'; iconeTipo = 'fa-triangle-exclamation'; }
+        if (com.tipo && com.tipo.includes('Assembleia')) { corBorda = '#8b5cf6'; iconeTipo = 'fa-users-rectangle'; }
+        if (com.status && com.status.includes('Resolvido')) corBorda = '#10b981'; 
 
-        const dataReg = new Date(com.dataRegistro).toLocaleDateString('pt-BR');
+        // BLINDAGEM DE VARIÁVEIS (Evita que o cartão suma se faltar dado)
+        const tituloSeguro = com.titulo || 'Aviso da Portaria';
+        const tipoSeguro = com.tipo ? com.tipo.replace('📢', '').replace('🔧', '').replace('🚨', '').replace('👥', '').trim() : 'Geral';
+        const localSeguro = com.local || 'Geral';
+        const mensagemSegura = com.mensagem || '';
+        
+        // Formatação de Data Bonita
+        const dataReg = com.dataRegistro ? new Date(com.dataRegistro).toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'Data Desconhecida';
         const dataEvt = com.dataEvento ? com.dataEvento.split('-').reverse().join('/') : '';
-        const badgeEvento = dataEvt ? `<span style="background: ${corBorda}15; color: ${corBorda}; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;"><i class="fa-regular fa-calendar" style="margin-right: 5px;"></i>${dataEvt} às ${com.horaEvento || '--:--'}</span>` : '';
+        const horaEvt = com.horaEvento || '';
+        
+        let badgeEvento = '';
+        if (dataEvt || horaEvt) {
+            badgeEvento = `<span style="background: ${corBorda}15; color: ${corBorda}; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">
+                <i class="fa-regular fa-calendar" style="margin-right: 5px;"></i>
+                ${dataEvt ? dataEvt : 'Data a definir'} ${horaEvt ? 'às ' + horaEvt : ''}
+            </span>`;
+        }
 
-        // BLINDAGEM DOS BOTÕES DE GESTÃO (EDITAR/ARQUIVAR)
         let botoesGestaoHtml = '';
         if (cargo === 'operacional') {
             botoesGestaoHtml = `
@@ -225,24 +239,24 @@ function atualizarListaComunicados() {
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
                 <div>
                     <h3 style="margin: 0; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid ${iconeTipo}" style="color: ${corBorda};"></i>${com.titulo}
+                        <i class="fa-solid ${iconeTipo}" style="color: ${corBorda};"></i>${tituloSeguro}
                     </h3>
                     <span style="font-size: 11px; color: #94a3b8; display: block; margin-top: 5px;">Publicado em ${dataReg}</span>
                 </div>
-                <span class="badge" style="background: ${corBorda}; color: white; margin-bottom: 0; padding: 4px 10px; font-size: 11px; border-radius: 20px;">${com.tipo.replace('📢', '').replace('🔧', '').replace('🚨', '').replace('👥', '').trim()}</span>
+                <span class="badge" style="background: ${corBorda}; color: white; margin-bottom: 0; padding: 4px 10px; font-size: 11px; border-radius: 20px;">${tipoSeguro}</span>
             </div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 ${badgeEvento}
-                <span style="font-size: 13px; color: #475569; font-weight: bold; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> ${com.local}</span>
+                <span style="font-size: 13px; color: #475569; font-weight: bold; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-location-dot" style="color: #ef4444;"></i> ${localSeguro}</span>
             </div>
 
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; color: #334155; font-size: 14px; line-height: 1.6; border: 1px solid #e2e8f0; border-left: 3px solid ${corBorda}; margin-bottom: 15px; white-space: pre-wrap; font-style: italic;">
-                <i class="fa-solid fa-quote-left" style="color: #cbd5e1; margin-right: 5px; font-size: 16px;"></i>${com.mensagem}
+                <i class="fa-solid fa-quote-left" style="color: #cbd5e1; margin-right: 5px; font-size: 16px;"></i>${mensagemSegura}
             </div>
             
-            <div style="display: grid; grid-template-columns: ${!com.status.includes('Resolvido') ? '1fr' : '1fr'}; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                ${!com.status.includes('Resolvido') ? `<button onclick="resolverComunicado('${com.idFirebase}')" style="background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'"><i class="fa-solid fa-check"></i> Marcar como Resolvido</button>` : `<div style="text-align: center; color: #10b981; font-weight: bold; font-size: 14px; padding: 5px 0; background: #ecfdf5; border-radius: 8px; border: 1px solid #d1fae5;"><i class="fa-solid fa-circle-check"></i> Assunto Resolvido</div>`}
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                ${(!com.status || !com.status.includes('Resolvido')) ? `<button onclick="resolverComunicado('${com.idFirebase}')" style="background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'"><i class="fa-solid fa-check"></i> Marcar como Resolvido</button>` : `<div style="text-align: center; color: #10b981; font-weight: bold; font-size: 14px; padding: 5px 0; background: #ecfdf5; border-radius: 8px; border: 1px solid #d1fae5;"><i class="fa-solid fa-circle-check"></i> Assunto Resolvido</div>`}
             </div>
             
             ${botoesGestaoHtml}
