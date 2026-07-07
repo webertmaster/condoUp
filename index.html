@@ -15,8 +15,15 @@
     
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS Principal do Sistema -->
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- 🚀 CSS DO NOVO BUSCADOR DE TRANSPORTADORAS -->
+    <link rel="stylesheet" href="css/transportadoras.css">
+    
     <link rel="icon" type="image/png" href="img/icon-512.png.png">
+    
 </head>
 
 <body>
@@ -260,32 +267,46 @@
     </div>
 
     <div id="ponto" class="tela">
-        <div class="box" style="text-align: center; max-width: 600px; margin: 0 auto 25px auto;">
-            <h2><i class="fa-solid fa-stopwatch" style="color: #3b82f6; margin-right: 8px;"></i>Ponto Digital</h2>
-            <p style="margin-bottom: 20px; font-size: 14px; color: #64748b;">Horário travado automaticamente pelo relógio.</p>
+        <div class="box" style="text-align: center; max-width: 600px; margin: 0 auto 25px auto; border-top: 4px solid #3b82f6;">
+            <h2><i class="fa-solid fa-fingerprint" style="color: #3b82f6; margin-right: 8px;"></i> Ponto Digital Integrado</h2>
+            <p style="margin-bottom: 10px; font-size: 14px; color: #64748b;">Autenticação vinculada ao login do usuário.</p>
             
-            <select id="pontoNome" style="text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 25px; height: 50px;">
-                <option value="" disabled selected>Selecione o seu Nome</option>
-            </select>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 20px;">Olá, <span id="nomeIdentificadoPonto" style="color: #3b82f6;">Carregando...</span></h3>
+                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;" id="statusAtualPonto">Verificando seu status de hoje...</p>
+            </div>
+
+            <div id="areaBotoesPonto" style="display: flex; flex-direction: column; gap: 15px;">
+                <button class="btn" style="background: #cbd5e1; cursor: not-allowed; margin: 0;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando sistema...</button>
+            </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <button class="btn" style="background: #10b981; margin:0; padding: 20px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="registrarPonto('Entrada')">
-                    <i class="fa-solid fa-play"></i> Entrada
-                </button>
-                <button class="btn" style="background: #f59e0b; margin:0; padding: 20px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="registrarPonto('Pausa Almoço')">
-                    <i class="fa-solid fa-pause"></i> Pausa Almoço
-                </button>
-                <button class="btn" style="background: #3b82f6; margin:0; padding: 20px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="registrarPonto('Retorno Almoço')">
-                    <i class="fa-solid fa-rotate-right"></i> Retorno Almoço
-                </button>
-                <button class="btn" style="background: #ef4444; margin:0; padding: 20px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="registrarPonto('Saída')">
-                    <i class="fa-solid fa-stop"></i> Saída
-                </button>
+            <div style="margin-top: 15px;">
+                <input type="text" id="obsPonto" placeholder="Observação opcional (Ex: Atraso por chuva, esqueci de bater na volta...)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; margin: 0;">
             </div>
         </div>
-        
+
+        <div id="painelGestaoPonto" class="box" style="display: none; background: rgba(59, 130, 246, 0.03); border-color: #bfdbfe; margin-bottom: 25px;">
+            <h2 style="color: #1e293b; margin-bottom: 20px;"><i class="fa-solid fa-users-viewfinder" style="color: #3b82f6; margin-right: 8px;"></i> Painel de Gestão - Quem está em serviço?</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; border-top: 4px solid #10b981;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #0f172a;"><i class="fa-solid fa-circle" style="color: #10b981; font-size: 12px; margin-right: 5px;"></i> Em Serviço (<span id="qtdEmServico">0</span>)</h3>
+                    <div id="listaEmServico" style="display: flex; flex-direction: column; gap: 10px;">
+                        <p style="color: #94a3b8; font-size: 14px; text-align: center; margin: 0;">Carregando equipe...</p>
+                    </div>
+                </div>
+
+                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; border-top: 4px solid #ef4444;">
+                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #0f172a;"><i class="fa-solid fa-circle" style="color: #ef4444; font-size: 12px; margin-right: 5px;"></i> Fora do Expediente (<span id="qtdForaServico">0</span>)</h3>
+                    <div id="listaForaServico" style="display: flex; flex-direction: column; gap: 10px;">
+                        <p style="color: #94a3b8; font-size: 14px; text-align: center; margin: 0;">Carregando equipe...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="box" style="background: rgba(59, 130, 246, 0.05);">
-            <h2><i class="fa-solid fa-chart-pie" style="color: #8b5cf6; margin-right: 8px;"></i>Folha de Ponto Individual</h2>
+            <h2><i class="fa-solid fa-chart-pie" style="color: #8b5cf6; margin-right: 8px;"></i> Folha de Ponto Individual</h2>
             <div class="filtro-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
     
                 <div style="display: flex; flex: 1; min-width: 150px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 45px;">
@@ -553,7 +574,39 @@
             <select id="encApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
                 <option value="">🏢 Selecione o Apartamento...</option>
             </select>
-            <input id="encTransportadora" placeholder="Transportadora">
+            <div class="transportadora-search-container" style="margin-bottom: 12px;">
+                <div class="search-box" onclick="toggleDropdown()">
+                    <img id="selectedLogo" src="" alt="" class="selected-logo" style="display: none;">
+                    <input type="text" 
+                           id="transportadoraSearch" 
+                           placeholder="Buscar ou digitar Transportadora..." 
+                           oninput="filtrarTransportadoras()"
+                           onfocus="mostrarDropdown()"
+                           autocomplete="off">
+                    <span class="dropdown-arrow">▼</span>
+                </div>
+                
+                <div id="transportadoraDropdown" class="dropdown-content">
+                    <div class="dropdown-category">📦 Transportadoras</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Correios')"><span class="icone-empresa">📮</span> Correios</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Jadlog')"><span class="icone-empresa">🚛</span> Jadlog</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Loggi')"><span class="icone-empresa">📨</span> Loggi</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('FedEx')"><span class="icone-empresa">✈️</span> FedEx</div>
+                    
+                    <div class="dropdown-category">🛒 Lojas</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Amazon')"><span class="icone-empresa">📦</span> Amazon</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Mercado Livre')"><span class="icone-empresa">🤝</span> Mercado Livre</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Shopee')"><span class="icone-empresa">🛍️</span> Shopee</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('AliExpress')"><span class="icone-empresa">🌍</span> AliExpress</div>
+                    <div class="dropdown-item" onclick="selecionarTransportadora('Shein')"><span class="icone-empresa">👗</span> Shein</div>
+                    
+                    <div class="dropdown-category">🏪 Outros</div>
+                    <div class="dropdown-item personalizada" onclick="buscarOutraEmpresa()">
+                        <span class="icone-empresa">➕</span> Digitar outra empresa...
+                    </div>
+                </div>
+                <input type="hidden" id="transportadoraSelecionada" value="">
+            </div>
             <input id="encCodigo" placeholder="Código/Rastreio">
             <input id="encVolumes" placeholder="Volumes">
             <input id="encPorteiro" placeholder="Porteiro que recebeu">
@@ -992,13 +1045,14 @@
 <script src="js/veiculos.js"></script>
 <script src="js/reservas.js?v=11"></script>
 <script src="js/ocorrencias.js?v=11"></script>
-<script src="js/encomendas.js?v=11"></script>
+<script src="js/encomendas.js?v=12"></script>
 <script src="js/comunicados.js?v=12"></script>
 <script src="js/relatorios.js?v=11"></script>
 <script src="js/limpeza.js?v=11"></script>
 <script src="js/delivery.js?v=11"></script>
 <script src="js/perfil.js?v=11"></script>
 <script src="js/ajuda.js?v=11"></script> 
+<script src="js/transportadoras.js?v=1"></script>
 
 <script>
   if ('serviceWorker' in navigator) {
