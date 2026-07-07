@@ -1,0 +1,156 @@
+/* Container do Buscador Inteligente */
+.transportadora-search-container {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 10px 14px;
+    background: white;
+    cursor: text;
+    transition: all 0.2s ease;
+    gap: 10px;
+}
+
+.search-box:hover {
+    border-color: #94a3b8;
+}
+
+.search-box:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.selected-logo {
+    height: 24px;
+    width: 24px;
+    object-fit: contain;
+    border-radius: 4px;
+    transition: all 0.2s;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px;
+}
+
+#transportadoraSearch {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 14px;
+    padding: 2px 0;
+    color: #1e293b;
+    background: transparent;
+}
+
+#transportadoraSearch::placeholder {
+    color: #94a3b8;
+}
+
+.dropdown-arrow {
+    color: #94a3b8;
+    font-size: 11px;
+    transition: transform 0.2s ease;
+}
+
+.dropdown-arrow.open {
+    transform: rotate(180deg);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 1100;
+}
+
+.dropdown-content.show {
+    display: block;
+}
+
+.dropdown-category {
+    padding: 8px 14px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+    color: #334155;
+    gap: 12px;
+}
+
+.dropdown-item:hover {
+    background-color: #f1f5f9;
+    padding-left: 18px;
+    color: #3b82f6;
+}
+
+.dropdown-item.personalizada {
+    border-top: 2px solid #f1f5f9;
+    color: #3b82f6;
+    font-weight: 600;
+    background: #f8fafc;
+    position: sticky;
+    bottom: 0;
+}
+
+.icone-empresa {
+    font-size: 18px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border-radius: 6px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.dropdown-content::-webkit-scrollbar {
+    width: 5px;
+}
+.dropdown-content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+.dropdown-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+.loading-logo {
+    animation: pulse 1.5s infinite;
+}
