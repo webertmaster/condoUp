@@ -3,17 +3,6 @@
 // encomendas.js - Gestão Premium (MULTI-TENANT ATIVO)
 // ==========================================
 
-const logosTransportadoras = {
-    "shopee": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Shopee.svg",
-    "mercadolivre": "https://upload.wikimedia.org/wikipedia/commons/d/d4/MercadoLibre_logo.PNG",
-    "amazon": "https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg",
-    "correios": "https://logodownload.org/wp-content/uploads/2014/05/correios-logo-1.png",
-    "shein":  "img/shein.jpg.jpg",
-    "dafiti":  "img/dafiti.png.png",
-    "aliexpress": "img/aliexpress.png.png", 
-    "temu": "img/temu.png.png"
-};
-
 let editandoIdFirebase = null;
 let encomendas = []; 
 
@@ -87,7 +76,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
                 encomendas.push(encomenda);
             });
             
-            encomendas.sort((a, b) => new Date(b.dataCadastro) - new Date(a.dataCadastro));
+            encomendas.sort((a, b) => new Date(b.dataRegistro) - new Date(a.dataRegistro));
 
             localStorage.setItem("encomendas", JSON.stringify(encomendas));
             mostrarEncomendas(); 
@@ -168,10 +157,13 @@ function criarEncomenda(foto, btnNode, textoOriginal){
     let agora = new Date(); 
     const meuCondominio = localStorage.getItem("condominioId");
 
+    // 🚀 ALTERAÇÃO CRÍTICA: Capta o valor do input oculto preenchido pelo script do logotipo inteligente
+    const transportadoraFinal = document.getElementById('transportadoraSelecionada').value || document.getElementById('transportadoraSearch').value || 'Não informada';
+
     let dadosEnviados = {
         morador: document.getElementById('encMorador').value,
         apto: document.getElementById('encApto').value,
-        transportadora: document.getElementById('encTransportadora').value,
+        transportadora: transportadoraFinal,
         codigo: document.getElementById('encCodigo').value,
         volumes: document.getElementById('encVolumes').value,
         porteiro: document.getElementById('encPorteiro').value,
@@ -214,8 +206,20 @@ function finalizarAcao(btnNode, textoFinal) {
         btnNode.style.background = "#3b82f6"; 
         btnNode.style.pointerEvents = 'auto';
     }
-    document.getElementById('encMorador').value=''; document.getElementById('encApto').value=''; document.getElementById('encTransportadora').value=''; 
-    document.getElementById('encCodigo').value=''; document.getElementById('encVolumes').value=''; document.getElementById('encPorteiro').value='';
+    document.getElementById('encMorador').value=''; 
+    document.getElementById('encApto').value=''; 
+    document.getElementById('encCodigo').value=''; 
+    document.getElementById('encVolumes').value=''; 
+    document.getElementById('encPorteiro').value='';
+    
+    // 🚀 RESET SEGURO DO CAMPO DE LOGOTIPO INTELIGENTE
+    if(document.getElementById('transportadoraSearch')) document.getElementById('transportadoraSearch').value = '';
+    if(document.getElementById('transportadoraSelecionada')) document.getElementById('transportadoraSelecionada').value = '';
+    if(document.getElementById('selectedLogo')) {
+        document.getElementById('selectedLogo').src = '';
+        document.getElementById('selectedLogo').style.display = 'none';
+    }
+
     if(document.getElementById('encFoto')) document.getElementById('encFoto').value = '';
     limparAssinaturaEncomenda(); 
 }
@@ -224,12 +228,21 @@ function prepararEdicaoEncomenda(index) {
     let e = encomendas[index];
     document.getElementById('encMorador').value = e.morador;
     document.getElementById('encApto').value = e.apto;
-    document.getElementById('encTransportadora').value = e.transportadora || "";
     document.getElementById('encCodigo').value = e.codigo || "";
     document.getElementById('encVolumes').value = e.volumes || "";
     document.getElementById('encPorteiro').value = e.porteiro || "";
     
-    limparAssinaturaEncomenda(); // Limpa para evitar sobrescrever a velha sem querer
+    // 🚀 INJEÇÃO INTELIGENTE NO MODO EDIÇÃO: Preenche o layout customizado e gera o logo na hora!
+    if (e.transportadora) {
+        if (typeof selecionarTransportadora === 'function') {
+            selecionarTransportadora(e.transportadora);
+        } else {
+            if(document.getElementById('transportadoraSearch')) document.getElementById('transportadoraSearch').value = e.transportadora;
+            if(document.getElementById('transportadoraSelecionada')) document.getElementById('transportadoraSelecionada').value = e.transportadora;
+        }
+    }
+
+    limparAssinaturaEncomenda(); 
 
     const btnNode = document.querySelector("#encomendas .btn[onclick='salvarEncomenda()']");
     if(btnNode) {
@@ -259,7 +272,6 @@ function mostrarEncomendas(){
     if (!window.abaEncomendaAtual) window.abaEncomendaAtual = 'Pendente';
     const qtdPendentes = encomendas.filter(enc => !enc.excluido && enc.status === 'Pendente').length;
 
-    // 🚀 ÍCONE 1: Ilustração Vetorial Premium 3D da Caixa
     const iconeCaixa3D = `<img src="https://cdn-icons-png.flaticon.com/512/3502/3502685.png" style="width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.15));">`;
 
     let abasHtml = `
@@ -274,10 +286,8 @@ function mostrarEncomendas(){
     `;
     lista.innerHTML = abasHtml;
 
-    // 🚀 INJETOR BLINDADO DA LUPA PREMIUM (Remove qualquer ícone antigo e coloca a Lupa 3D)
     const barraPesquisaEl = document.getElementById("pesquisaEncomenda");
     if (barraPesquisaEl && barraPesquisaEl.parentElement) {
-        // Pega qualquer ícone <i> que estiver ao lado do campo
         const iconeVelho = barraPesquisaEl.parentElement.querySelector("i");
         if (iconeVelho && !iconeVelho.classList.contains("lupa-premium-inserida")) {
             const lupa3D = document.createElement("img");
@@ -318,14 +328,13 @@ function mostrarEncomendas(){
             }
         }
         
-        let nomeTransp = (e.transportadora || "").toLowerCase().replace(/\s+/g, '');
+        // 🚀 MINI LOGO PREMIUM: Carrega dinamicamente o mini logo de qualquer marca usando Favicons API
         let logoHtml = "";
-        for (let chave in logosTransportadoras) {
-            let chaveLimpa = chave.replace(/\s+/g, '');
-            if (nomeTransp.includes(chaveLimpa)) {
-                logoHtml = `<img src="${logosTransportadoras[chave]}" style="width: 60px; height: 28px; object-fit: contain; margin-right: 10px; border-radius: 4px;">`;
-                break;
-            }
+        if (e.transportadora && e.transportadora !== "Não informada") {
+            let logoUrl = typeof obterFavicon === 'function' ? obterFavicon(e.transportadora) : `https://www.google.com/s2/favicons?domain=${e.transportadora.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br&sz=64`;
+            logoHtml = `<img src="${logoUrl}" style="width: 24px; height: 24px; object-fit: contain; margin-right: 10px; border-radius: 4px; background: #f8fafc; padding: 2px; border: 1px solid #e2e8f0;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2331/2331895.png'">`;
+        } else {
+            logoHtml = `<img src="https://cdn-icons-png.flaticon.com/512/2331/2331895.png" style="width: 24px; height: 24px; object-fit: contain; margin-right: 10px;">`;
         }
         
         let corBorda = e.status === 'Pendente' ? '#f59e0b' : '#10b981';
@@ -555,7 +564,7 @@ function fecharLeitorQR() {
 function tocarBipe() {
     const context = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = context.createOscillator();
-    oscillator.type = 'sine';
+     oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(800, context.currentTime);
     oscillator.connect(context.destination);
     oscillator.start();
