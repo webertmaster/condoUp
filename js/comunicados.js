@@ -91,7 +91,6 @@ function salvarComunicado() {
         db.collection("comunicados").add(dadosComunicado)
             .then(() => {
                 alert('📢 Comunicado publicado com sucesso!');
-                // A cópia duplicada que ia para a tabela "notificacoes" foi removida daqui cirurgicamente!
                 finalizarAcaoComunicado(btnSalvar, textoOriginal);
             }).catch(err => {
                 alert("Erro ao publicar: " + err);
@@ -167,6 +166,9 @@ function atualizarListaComunicados() {
     const ativos = comunicadosGlobais.filter(c => !c.excluido);
     lista.innerHTML = '';
 
+    // Cria um dicionário invisível para guardar os textos limpos para o botão Copiar
+    window.textosParaCopiar = {}; 
+
     if (ativos.length === 0) {
         lista.innerHTML = '<div style="text-align: center; grid-column: 1 / -1; padding: 40px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; color: #64748b;"><i class="fa-solid fa-envelope-open-text" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i><p>Nenhum comunicado ativo no mural.</p></div>';
         return;
@@ -188,7 +190,7 @@ function atualizarListaComunicados() {
         if (com.status && com.status.includes('Resolvido')) corBorda = '#10b981'; 
 
         const tituloSeguro = com.titulo || 'Aviso da Portaria';
-        const tipoSeguro = com.tipo ? com.tipo.replace('📢', '').replace('🔧', '').replace('🚨', '').replace('👥', '').trim() : 'Geral';
+        const tipoSeguro = com.tipo ? com.tipo.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uFFFD/g, '').replace('📢', '').replace('🔧', '').replace('🚨', '').replace('👥', '').replace('', '').trim() : 'Geral';
         const localSeguro = com.local || 'Geral';
         const mensagemSegura = com.mensagem || '';
         
@@ -220,6 +222,34 @@ function atualizarListaComunicados() {
             `;
         }
 
+        // ==========================================
+        // 🚀 PREPARA O TEXTO LIMPO PARA O WHATSAPP E PARA COPIAR
+        // ==========================================
+        let textoLimpo = `*CONDO UP - AVISO OFICIAL*\n`;
+        textoLimpo += `----------------------------------------\n`;
+        textoLimpo += `*Assunto:* ${tituloSeguro}\n`;
+        textoLimpo += `*Categoria:* ${tipoSeguro}\n`;
+        
+        if (localSeguro && localSeguro !== 'Geral') {
+            textoLimpo += `*Local:* ${localSeguro}\n`;
+        }
+        
+        if (dataEvt || horaEvt) {
+            textoLimpo += `*Evento:* ${dataEvt ? dataEvt : 'Data a definir'} ${horaEvt ? 'às ' + horaEvt : ''}\n`;
+        }
+
+        textoLimpo += `\n*Mensagem:*\n_${mensagemSegura}_\n`;
+        textoLimpo += `----------------------------------------`;
+
+        // 1. Guarda o texto no dicionário invisível usando o ID como chave (Para o botão Copiar)
+        window.textosParaCopiar[com.idFirebase] = textoLimpo;
+
+        // 2. Transforma o texto para link (Para o botão WhatsApp)
+        let linkWhatsapp = `https://wa.me/?text=${encodeURIComponent(textoLimpo)}`;
+
+        // ==========================================
+        // DESENHA O CARD COM OS BOTÕES LADO A LADO
+        // ==========================================
         const card = document.createElement('div');
         card.className = 'card';
         card.style.borderLeft = `5px solid ${corBorda}`;
@@ -249,9 +279,33 @@ function atualizarListaComunicados() {
             </div>
             
             ${botoesGestaoHtml}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                <a href="${linkWhatsapp}" target="_blank" style="background: #25d366; color: white; padding: 10px; border-radius: 8px; text-decoration: none; display: flex; justify-content: center; align-items: center; gap: 5px; font-weight: bold; font-size: 14px; transition: 0.2s;" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#25d366'">
+                    <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i> WhatsApp
+                </a>
+                
+                <button onclick="copiarTextoComunicado('${com.idFirebase}')" style="background: #64748b; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s; font-size: 14px;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#64748b'">
+                    <i class="fa-regular fa-copy" style="font-size: 18px;"></i> Copiar
+                </button>
+            </div>
         `;
         grid.appendChild(card);
     });
 
     lista.appendChild(grid);
 }
+
+// ==========================================
+// 5. FUNÇÃO PARA COPIAR O TEXTO LIMPO
+// ==========================================
+window.copiarTextoComunicado = function(idFirebase) {
+    const texto = window.textosParaCopiar[idFirebase];
+    if (texto) {
+        navigator.clipboard.writeText(texto).then(() => {
+            alert('📋 Aviso copiado com sucesso! Agora é só colar onde quiser.');
+        }).catch(err => {
+            alert('Erro ao copiar: ' + err);
+        });
+    }
+};
