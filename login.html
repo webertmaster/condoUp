@@ -142,7 +142,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        // IMPORTAMOS O FIRESTORE PARA BUSCAR O PERFIL DO USUÁRIO
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -156,7 +155,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app); // LIGAMOS O BANCO
+        const db = getFirestore(app); 
 
         const btnEntrar = document.getElementById('btn-entrar');
         const emailInput = document.getElementById('email');
@@ -171,32 +170,48 @@
             btnEntrar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
             btnEntrar.style.pointerEvents = 'none';
 
-            // 1. Verifica E-mail e Senha
+            // 1. Verifica E-mail e Senha no Firebase
             signInWithEmailAndPassword(auth, email, senha)
                 .then(async (userCredential) => {
-                    const uid = userCredential.user.uid;
+                    const user = userCredential.user;
+                    const uid = user.uid;
                     
+                    // ==========================================
+                    // 🚀 O TAPETE VERMELHO: CHAVE MESTRA DO ADM
+                    // ==========================================
+                    if (user.email === "webt2x@gmail.com") {
+                        localStorage.clear(); // Limpa sujeira antiga
+                        
+                        localStorage.setItem("condoup_logado", "true");
+                        localStorage.setItem("usuario_id", uid);
+                        localStorage.setItem("usuario_nome", "Ubert (Master)");
+                        localStorage.setItem("usuario_logado_nome", "Ubert (Master)"); // Sincronia Ponto
+                        localStorage.setItem("usuario_cargo", "ADM"); // 👑 ATIVA O MÓDULO MASTER
+                        localStorage.setItem("condominioId", "MASTER_GLOBAL");
+                        
+                        window.location.href = "index.html?v=" + new Date().getTime();
+                        return; // 🛑 Para a função aqui e não tenta buscar na tabela "usuarios"
+                    }
+
+                    // ==========================================
+                    // 👥 FLUXO NORMAL PARA FUNCIONÁRIOS (SaaS)
+                    // ==========================================
                     try {
-                        // 2. Vai no banco buscar o "Crachá" do funcionário
                         const docRef = doc(db, "usuarios", uid);
                         const docSnap = await getDoc(docRef);
 
                         if (docSnap.exists()) {
                             const dadosUsuario = docSnap.data();
                             
-                            // ==========================================
-                            // LIMPEZA GERAL ANTES DE SALVAR O NOVO CLIENTE
-                            // ==========================================
                             localStorage.clear();
                             
-                            // 3. Salva os dados do SaaS na memória do navegador
                             localStorage.setItem("condoup_logado", "true");
                             localStorage.setItem("usuario_id", uid);
                             localStorage.setItem("usuario_nome", dadosUsuario.nome);
-                            localStorage.setItem("usuario_cargo", dadosUsuario.cargo); // 'master' ou 'operacional'
-                            localStorage.setItem("condominioId", dadosUsuario.condominioId); // A MÁGICA ACONTECE AQUI
+                            localStorage.setItem("usuario_logado_nome", dadosUsuario.nome); // Sincronia Ponto
+                            localStorage.setItem("usuario_cargo", dadosUsuario.cargo); 
+                            localStorage.setItem("condominioId", dadosUsuario.condominioId); 
                             
-                            // 4. Libera a catraca
                             window.location.href = "index.html?v=" + new Date().getTime();
                         } else {
                             throw new Error("Perfil de usuário não encontrado no banco de dados.");
