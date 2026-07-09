@@ -37,7 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 2. SALVAR E EDITAR NA NUVEM + GATILHO PUSH
+// 2. SALVAR E EDITAR NA NUVEM + GATILHO PUSH & SINO
 // ==========================================
 function salvarComunicado() {
     const tipo = document.getElementById('tipoComunicado').value;
@@ -90,6 +90,27 @@ function salvarComunicado() {
 
         db.collection("comunicados").add(dadosComunicado)
             .then(() => {
+                
+                // 🔔 GATILHO DO SINO: Dispara a notificação para todos!
+                const idSeguro = localStorage.getItem("condominioId");
+                if(idSeguro) {
+                    // Limpa o emoji que já vem no select para ficar um título limpo no sino
+                    let tipoLimpo = dadosComunicado.tipo.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uFFFD/g, '').trim();
+
+                    db.collection("notificacoes").add({
+                        titulo: `📢 Novo Comunicado: ${tipoLimpo}`,
+                        mensagem: dadosComunicado.titulo,
+                        tipo: "comunicado",
+                        lida: false,
+                        condominioId: idSeguro,
+                        timestamp: new Date().getTime()
+                    }).then(() => {
+                        console.log("Sino avisado sobre o novo comunicado!");
+                    }).catch((err) => {
+                        console.error("Erro ao notificar o sino: ", err);
+                    });
+                }
+
                 alert('📢 Comunicado publicado com sucesso!');
                 finalizarAcaoComunicado(btnSalvar, textoOriginal);
             }).catch(err => {
