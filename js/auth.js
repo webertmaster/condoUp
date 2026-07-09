@@ -26,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         sincronizarChavesPonto();
         aplicarRegrasDeCargo();
         
+        // 🚀 GATILHO DO CRACHÁ: Chama a função para desenhar o badge na tela
+        renderizarBadgeSeguro();
+        
         // Seta o nome do funcionário logado no topo da tela do Dashboard
         const nome = localStorage.getItem("usuario_nome") || localStorage.getItem("usuario_logado_nome");
         const elementoNome = document.getElementById('nomeFuncionarioLogado');
@@ -126,5 +129,39 @@ function deslogarSistema() {
 
         // Chuta de volta pro Login
         window.location.href = 'login.html';
+    }
+}
+
+// ==========================================
+// RENDERIZA O CRACHÁ VIRTUAL (BADGE DE ACESSO)
+// ==========================================
+function renderizarBadgeSeguro() {
+    const cargo = localStorage.getItem("usuario_cargo") || "Porteiro";
+    const badge = document.getElementById('badge-acesso-virtual');
+    
+    // Se não achou o espaço do crachá na tela, não faz nada
+    if (!badge) return;
+
+    // Faz o crachá aparecer
+    badge.style.display = 'inline-flex';
+
+    // Pinta a cor e o ícone de acordo com o nível
+    if (cargo === 'ADM' || cargo === 'admin-master') {
+        badge.innerHTML = '<i class="fa-solid fa-crown"></i> ADM MASTER';
+        badge.style.background = 'rgba(56, 189, 248, 0.15)';
+        badge.style.color = '#38bdf8';
+        badge.style.border = '1px solid rgba(56, 189, 248, 0.3)';
+    } 
+    else if (cargo === 'Síndico' || cargo === 'sindico' || cargo === 'Gerente' || cargo === 'Administrador(a)') {
+        badge.innerHTML = '<i class="fa-solid fa-user-shield"></i> GESTÃO';
+        badge.style.background = 'rgba(16, 185, 129, 0.15)';
+        badge.style.color = '#10b981';
+        badge.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+    } 
+    else {
+        badge.innerHTML = '<i class="fa-solid fa-id-badge"></i> PORTARIA';
+        badge.style.background = 'rgba(148, 163, 184, 0.15)';
+        badge.style.color = '#94a3b8';
+        badge.style.border = '1px solid rgba(148, 163, 184, 0.3)';
     }
 }
