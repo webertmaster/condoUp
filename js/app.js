@@ -209,6 +209,7 @@ function atualizarDashboard() {
 function gerarESalvarToken() {
     const messaging = firebase.messaging();
     const meuCondominio = localStorage.getItem("condominioId");
+    const meuCargo = localStorage.getItem("usuario_cargo"); // 🚀 Pegamos o seu cargo aqui!
 
     messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" })
         .then((currentToken) => {
@@ -216,16 +217,21 @@ function gerarESalvarToken() {
                 console.log('📱 Token gerado silenciosamente.');
                 localStorage.setItem("push_token", currentToken);
                 
-                if(meuCondominio && typeof db !== 'undefined') {
-                    db.collection("tokens_push").doc(currentToken).set({
-                        token: currentToken,
-                        condominioId: meuCondominio,
-                        dataRegistro: new Date().toISOString()
-                    }, { merge: true }).catch(err => console.error("Erro no banco:", err));
+                if (typeof db !== 'undefined') {
+                    // 🚀 A MÁGICA ACONTECE AQUI: Libera o passe VIP para o ADM Master
+                    if (meuCondominio || meuCargo === 'ADM') {
+                        db.collection("tokens_push").doc(currentToken).set({
+                            token: currentToken,
+                            // Se você for ADM, o sistema te carimba como GLOBAL_MASTER
+                            condominioId: meuCondominio || "GLOBAL_MASTER", 
+                            cargo: meuCargo || "operacional",
+                            dataRegistro: new Date().toISOString()
+                        }, { merge: true }).catch(err => console.error("Erro no banco:", err));
+                    }
                 }
             }
         }).catch((err) => {
-            console.log('Erro silencioso ao pegar token (Normal no iOS se bloqueado).');
+            console.log('Erro silencioso ao pegar token (Normal no iOS se bloqueado ou em localhost sem HTTPS).', err);
         });
 
     // Removido o alert de quando a mensagem chega com o app aberto (modo silencioso)
@@ -242,7 +248,11 @@ async function ativarNotificacoesPush() {
     try {
         // AUTOCURA DO IOS: Força o registro do Service Worker para limpar bugs passados
         const registration = await navigator.serviceWorker.register('./sw.js?v=99');
-        firebase.messaging().useServiceWorker(registration);
+        
+        // 🚀 Trava anti-erro: Só roda se a função existir na sua versão do Firebase (limpa o erro vermelho do F12)
+        if (typeof firebase.messaging().useServiceWorker === 'function') {
+            firebase.messaging().useServiceWorker(registration);
+        }
     } catch (e) {
         console.log("Falha no SW (Normal se testando local):", e);
     }
