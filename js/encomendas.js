@@ -56,11 +56,26 @@ function configurarCanvas(canvasId){
 let encomendaCanvas = null;
 
 // ==========================================
+// FUNÇÃO DE SEGURANÇA: TRAVA O NOME DO PORTEIRO
+// ==========================================
+function autoPreencherPorteiro() {
+    const nomeLogado = localStorage.getItem("usuario_nome") || localStorage.getItem("usuario_logado_nome");
+    const campoPorteiro = document.getElementById('encPorteiro');
+    if (campoPorteiro && nomeLogado) {
+        campoPorteiro.value = nomeLogado;
+        campoPorteiro.readOnly = true; // Trava o campo
+        campoPorteiro.style.background = "#f1f5f9"; // Visual de campo bloqueado
+    }
+}
+
+// ==========================================
 // 1. ESCUTADOR EM TEMPO REAL E GATILHOS DOMINÓ
 // ==========================================
 window.addEventListener('DOMContentLoaded', (event) => {
     encomendaCanvas = configurarCanvas("canvasEncomenda");
     const meuCondominio = localStorage.getItem("condominioId");
+
+    autoPreencherPorteiro(); // Aciona a trava do porteiro ao carregar
 
     if (!meuCondominio) {
         console.error("Erro Crítico: Condomínio não identificado no navegador!");
@@ -86,7 +101,7 @@ window.addEventListener('DOMContentLoaded', (event) => {
         console.error("Firebase DB não encontrado. Verifique o index.html");
     }
 
-    // 🚀 GATILHO DOMINÓ PREMIUM: Puxa o nome do destinatário instantaneamente
+    // 🚀 GATILHO DOMINÓ PREMIUM: Puxa o nome mas deixa livre para digitar parentes/filhos
     const selectAptoEnc = document.getElementById('encApto');
     if (selectAptoEnc) {
         selectAptoEnc.addEventListener('change', function() {
@@ -94,21 +109,14 @@ window.addEventListener('DOMContentLoaded', (event) => {
             const campoMorador = document.getElementById('encMorador');
             if (!campoMorador) return;
 
-            if (!aptoEscolhido) {
-                campoMorador.value = '';
-                return;
-            }
+            if (!aptoEscolhido) return;
 
+            // Se achar o morador principal no banco, ele sugere o nome. Se não achar, não trava o sistema.
             if (typeof memoriaDominóMoradores !== 'undefined' && memoriaDominóMoradores.length > 0) {
                 const moradorEncontrado = memoriaDominóMoradores.find(m => m.apto === aptoEscolhido);
-                
                 if (moradorEncontrado) {
                     campoMorador.value = moradorEncontrado.nome;
-                } else {
-                    campoMorador.value = "Morador não cadastrado";
                 }
-            } else {
-                campoMorador.value = "Buscando morador...";
             }
         });
     }
@@ -157,7 +165,7 @@ function criarEncomenda(foto, btnNode, textoOriginal){
     let agora = new Date(); 
     const meuCondominio = localStorage.getItem("condominioId");
 
-    // 🚀 ALTERAÇÃO CRÍTICA: Capta o valor do input oculto preenchido pelo script do logotipo inteligente
+    // Capta o valor do input oculto preenchido pelo script do logotipo inteligente
     const transportadoraFinal = document.getElementById('transportadoraSelecionada').value || document.getElementById('transportadoraSearch').value || 'Não informada';
 
     let dadosEnviados = {
@@ -194,9 +202,26 @@ function criarEncomenda(foto, btnNode, textoOriginal){
         dadosEnviados.excluido = false; 
         db.collection("encomendas").add(dadosEnviados)
         .then(() => {
+            
+            // 🔔 DISPARA A NOTIFICAÇÃO PARA O SINO (AGORA COM DETECTOR DE ERRO)
+            console.log("Tentando enviar aviso para o sino...");
+            db.collection("notificacoes").add({
+                titulo: "📦 Nova Encomenda",
+                mensagem: `Pacote recebido para o Apto ${dadosEnviados.apto}.`,
+                tipo: "encomenda",
+                lida: false,
+                condominioId: meuCondominio,
+                timestamp: new Date().getTime()
+            }).then(() => {
+                console.log("🔔 SUCESSO: Notificação gravada no banco!");
+            }).catch((erroSino) => {
+                console.error("❌ ERRO NO SINO:", erroSino);
+                alert("A encomenda salvou, mas o sino falhou. Erro: " + erroSino.message);
+            });
+
             alert("📦 Encomenda salva na NUVEM com sucesso!");
             finalizarAcao(btnNode, textoOriginal);
-        }).catch(err => { alert("Erro ao salvar!"); finalizarAcao(btnNode, textoOriginal); });
+        }).catch(err => { alert("Erro ao salvar encomenda!"); finalizarAcao(btnNode, textoOriginal); });
     }
 }
 
@@ -210,7 +235,6 @@ function finalizarAcao(btnNode, textoFinal) {
     document.getElementById('encApto').value=''; 
     document.getElementById('encCodigo').value=''; 
     document.getElementById('encVolumes').value=''; 
-    document.getElementById('encPorteiro').value='';
     
     // 🚀 RESET SEGURO DO CAMPO DE LOGOTIPO INTELIGENTE
     if(document.getElementById('transportadoraSearch')) document.getElementById('transportadoraSearch').value = '';
@@ -222,6 +246,9 @@ function finalizarAcao(btnNode, textoFinal) {
 
     if(document.getElementById('encFoto')) document.getElementById('encFoto').value = '';
     limparAssinaturaEncomenda(); 
+
+    // Trava e preenche novamente o nome do porteiro
+    autoPreencherPorteiro(); 
 }
 
 function prepararEdicaoEncomenda(index) {
