@@ -177,21 +177,21 @@
                     const uid = user.uid;
                     
                     // ==========================================
-                    // 🚀 O TAPETE VERMELHO: CHAVE MESTRA DO ADM
-                    // ==========================================
-                    if (user.email === "webt2x@gmail.com") {
-                        localStorage.clear(); // Limpa sujeira antiga
-                        
-                        localStorage.setItem("condoup_logado", "true");
-                        localStorage.setItem("usuario_id", uid);
-                        localStorage.setItem("usuario_nome", "Ubert (Master)");
-                        localStorage.setItem("usuario_logado_nome", "Ubert (Master)"); // Sincronia Ponto
-                        localStorage.setItem("usuario_cargo", "ADM"); // 👑 ATIVA O MÓDULO MASTER
-                        localStorage.setItem("condominioId", "MASTER_GLOBAL");
-                        
-                        window.location.href = "index.html?v=" + new Date().getTime();
-                        return; // 🛑 Para a função aqui e não tenta buscar na tabela "usuarios"
-                    }
+// 🚀 O TAPETE VERMELHO: CHAVE MESTRA DO ADM
+// ==========================================
+if (user.email === "webt2x@gmail.com") {
+    localStorage.clear(); // Limpa sujeira antiga
+    
+    localStorage.setItem("condoup_logado", "true");
+    localStorage.setItem("usuario_id", uid);
+    localStorage.setItem("usuario_nome", "Webert"); 
+    localStorage.setItem("usuario_logado_nome", "Webert"); 
+    localStorage.setItem("usuario_cargo", "ADM"); 
+    localStorage.setItem("condominioId", "GLOBAL_MASTER"); 
+    
+    window.location.href = "index.html?v=" + new Date().getTime();
+    return; // 🛑 Para a função aqui e não tenta buscar na tabela "usuarios"
+}
 
                     // ==========================================
                     // 👥 FLUXO NORMAL PARA FUNCIONÁRIOS (SaaS)
