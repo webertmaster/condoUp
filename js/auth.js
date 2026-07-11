@@ -49,72 +49,48 @@ function sincronizarChavesPonto() {
 }
 
 // ==========================================
-// MÁGICA DA HIERARQUIA (SÍNDICO VS PORTEIRO VS ADM)
+// MÁGICA DA HIERARQUIA E SEGURANÇA VISUAL
 // ==========================================
 function aplicarRegrasDeCargo() {
     const cargo = localStorage.getItem("usuario_cargo");
     
-    // Captura os menus sensíveis
+    // Captura os menus sensíveis normais
     const menuEquipe = document.getElementById('menu-equipe') || document.querySelector('[onclick*="equipe"]'); 
     const menuRelatorios = document.getElementById('menu-relatorios') || document.querySelector('[onclick*="relatorios"]'); 
-    const menuPonto = document.getElementById('menu-ponto') || document.querySelector('[onclick*="ponto"]');
+    
+    // Captura o Bloco inteiro das GAVETAS DO MASTER (Escondido por padrão no CSS)
+    const blocoMasterSaaS = document.getElementById('secao-master-saas');
 
-    // 🚨 1. REGRAS PARA O MÓDULO ADM INTERNO MASTER (Você)
+    // 👑 1. REGRAS PARA O MÓDULO ADM INTERNO MASTER (Você/Dono)
     if (cargo === 'ADM' || cargo === 'admin-master') {
-        console.log("👑 Acesso MASTER detectado: Carregando módulos administrativos exclusivos.");
+        console.log("👑 Acesso MASTER detectado: Destrancando Gavetas Administrativas.");
         
-        // Garante que todas as abas padrões estão visíveis
+        // Libera tudo
         if (menuEquipe) menuEquipe.style.display = 'block';
         if (menuRelatorios) menuRelatorios.style.display = 'block';
         
-        // Renderiza dinamicamente as novas abas de gerenciamento global SaaS no menu se elas não existirem
-        injetarAbasExclusivasADM();
+        // 🔓 DESTRANCA AS GAVETAS DO MASTER
+        if (blocoMasterSaaS) blocoMasterSaaS.style.display = 'block';
+        
         return;
+    }
+
+    // Se NÃO FOR ADM Master, GARANTE que as gavetas continuam trancadas e invisíveis!
+    if (blocoMasterSaaS) {
+        blocoMasterSaaS.style.display = 'none';
     }
 
     // 🔒 2. REGRAS PARA MÓDULO OPERACIONAL (Porteiro)
     if (cargo === 'operacional' || cargo === 'Porteiro' || cargo === 'Porteiro Diurno' || cargo === 'Porteiro Noturno') {
         if (menuEquipe) menuEquipe.style.display = 'none';
         if (menuRelatorios) menuRelatorios.style.display = 'none';
-        
         console.log("🔒 Modo Operacional ativado: Menus administrativos ocultados.");
     } 
     // 🔓 3. REGRAS PARA MÓDULO DE SÍNDICO E GERENTES
     else if (cargo === 'Síndico' || cargo === 'sindico' || cargo === 'Gerente' || cargo === 'Administrador(a)') {
         if (menuEquipe) menuEquipe.style.display = 'block';
         if (menuRelatorios) menuRelatorios.style.display = 'block';
-        
         console.log("🔓 Modo Gestão Ativado: Visão de relatórios e equipe liberados.");
-    }
-}
-
-// ==========================================
-// 🛠️ INJEÇÃO DINÂMICA DO MENU MASTER SAA-S
-// ==========================================
-function injetarAbasExclusivasADM() {
-    const menuLateral = document.querySelector('.sidebar .menu');
-    if (!menuLateral) return;
-
-    // Verifica se a aba secreta já foi injetada para não duplicar
-    if (document.getElementById('menu-master-saaS')) return;
-
-    // Cria a estrutura da gaveta administrativa
-    const containerADM = document.createElement('div');
-    containerADM.id = 'menu-master-saaS';
-    containerADM.innerHTML = `
-        <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px; border-top: 1px dashed rgba(56, 189, 248, 0.2); margin-top: 10px;">
-            <i class="fa-solid fa-screwdriver-wrench"></i> Painel Master ADM
-        </div>
-        <button onclick="trocarTela('adm-condominios')" id="menu-adm-condominios" style="color: #38bdf8;"><i class="fa-solid fa-building"></i> Cadastrar Condomínio</button>
-        <button onclick="trocarTela('adm-funcionarios')" id="menu-adm-funcionarios" style="color: #38bdf8;"><i class="fa-solid fa-user-tie"></i> Controle de Acessos</button>
-    `;
-
-    // Insere o bloco administrativo logo antes do botão Sair do sistema
-    const botaoSair = document.getElementById('menu-sair');
-    if (botaoSair) {
-        menuLateral.insertBefore(containerADM, botaoSair.previousSibling);
-    } else {
-        menuLateral.appendChild(containerADM);
     }
 }
 
