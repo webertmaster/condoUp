@@ -84,8 +84,10 @@ function carregarCondominiosSaaS() {
         });
 
         clientes.forEach((cond) => {
-            // Cálculos para o Dashboard
-            if (cond.ativo !== false) { // Ativo por padrão
+            const isAtivo = cond.ativo !== false;
+
+            /// Cálculos para o Dashboard Master
+            if (isAtivo) {
                 qtdAtivos++;
                 totalAptos += (cond.aptos || 0);
                 totalReceita += (cond.valorPlano || 0);
@@ -94,7 +96,7 @@ function carregarCondominiosSaaS() {
             }
 
             // Formatação Visual da Tabela
-            const statusBadge = cond.ativo !== false 
+            const statusBadge = isAtivo 
                 ? `<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> ATIVO</span>` 
                 : `<span style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-ban"></i> SUSPENSO</span>`;
 
@@ -113,10 +115,10 @@ function carregarCondominiosSaaS() {
                     </td>
                     <td style="padding: 15px 20px;">${statusBadge}</td>
                     <td style="padding: 15px 20px; text-align: right; gap: 8px;">
-                        <button class="btn" style="background: #3b82f6; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="alert('Funcionalidade Impersonate (Fantasma) em construção!')">
+                        <button class="btn" style="background: #10b981; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="entrarComoCondominio('${cond.condominioId}', '${cond.nome}')">
                             <i class="fa-solid fa-eye"></i> Entrar
                         </button>
-                        <button class="btn" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="alert('Edição em breve!')">
+                        <button class="btn" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="abrirModalEditarSaaS('${cond.condominioId}', '${cond.nome}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})">
                             <i class="fa-solid fa-pen"></i>
                         </button>
                     </td>
@@ -124,7 +126,7 @@ function carregarCondominiosSaaS() {
             `;
         });
 
-        // Atualiza os números nos cards vermelhos/verdes lá em cima
+        // Atualiza os números nos cards lá em cima
         atualizarCardsMaster(totalReceita, totalAptos, qtdAtivos, qtdSuspensos);
 
     }, (error) => {
@@ -143,6 +145,59 @@ function atualizarCardsMaster(receita, aptos, ativos, suspensos) {
     if(elAptos) elAptos.innerText = aptos;
     if(elAtivos) elAtivos.innerText = ativos;
     if(elSuspensos) elSuspensos.innerText = suspensos;
+}
+
+// 👁️ MODO FANTASMA
+function entrarComoCondominio(condId, nome) {
+    if (confirm(`🚨 MODO FANTASMA 🚨\n\nVocê vai acessar o painel de "${nome}" exatamente como o Síndico deles vê.\n\nDeseja continuar?`)) {
+        localStorage.setItem("condominio_fantasma", condId);
+        localStorage.setItem("condominio_fantasma_nome", nome);
+        window.location.href = 'index.html';
+    }
+}
+
+// 🛠️ EDICAO SaaS: FUNÇÃO QUE ABRE O MODAL PREENCHIDO
+function abrirModalEditarSaaS(id, nome, aptos, valor, ativo) {
+    document.getElementById('edit-cond-id').value = id;
+    document.getElementById('edit-cond-nome').value = nome;
+    document.getElementById('edit-cond-aptos').value = aptos;
+    document.getElementById('edit-cond-valor').value = valor;
+    document.getElementById('edit-cond-status').value = ativo ? "true" : "false";
+    
+    document.getElementById('modalEditarCondominio').style.display = 'flex';
+}
+
+function fecharModalEditarSaaS() {
+    document.getElementById('modalEditarCondominio').style.display = 'none';
+}
+
+async function salvarEdicaoCondominioSaaS() {
+    const id = document.getElementById('edit-cond-id').value;
+    const nome = document.getElementById('edit-cond-nome').value.trim();
+    const aptos = parseInt(document.getElementById('edit-cond-aptos').value) || 0;
+    const valorPlano = parseFloat(document.getElementById('edit-cond-valor').value) || 0;
+    const statusAtivo = document.getElementById('edit-cond-status').value === "true";
+
+    if (!nome) {
+        alert("⚠️ O nome do condomínio não pode ficar vazio!");
+        return;
+    }
+
+    try {
+        await db.collection("condominios").doc(id).update({
+            nome: nome,
+            aptos: aptos,
+            valorPlano: valorPlano,
+            ativo: statusAtivo
+        });
+
+        alert("✅ Dados do condomínio atualizados com sucesso!");
+        fecharModalEditarSaaS();
+
+    } catch (error) {
+        console.error("Erro ao atualizar condomínio:", error);
+        alert("❌ Erro ao atualizar os dados no banco.");
+    }
 }
 
 // ==========================================
