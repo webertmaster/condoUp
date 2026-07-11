@@ -17,11 +17,36 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <link rel="stylesheet" href="css/style.css">
-    
     <link rel="stylesheet" href="css/transportadoras.css">
     
     <link rel="icon" type="image/png" href="img/icon-512.png.png">
     
+    <style>
+        .gaveta-btn {
+            width: 100%; background: transparent; border: none; color: #94a3b8; padding: 12px 15px;
+            text-align: left; font-size: 13px; font-weight: 600; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 8px; transition: 0.2s; font-family: inherit; margin-bottom: 2px;
+        }
+        .gaveta-btn:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+        .gaveta-btn.gaveta-aberta { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; }
+        
+        .gaveta-conteudo {
+            display: none; flex-direction: column; background: rgba(15, 23, 42, 0.5);
+            border-left: 1px dashed #334155; margin-left: 15px; padding-left: 5px; margin-bottom: 10px; border-radius: 0 0 8px 8px;
+        }
+        .gaveta-conteudo.aberta { display: flex; animation: descerGaveta 0.3s ease-out; }
+        .gaveta-conteudo button {
+            background: none; border: none; color: #64748b; padding: 10px 15px; text-align: left;
+            font-size: 12px; cursor: pointer; border-radius: 6px; transition: 0.2s; font-family: inherit; display: flex; align-items: center; gap: 8px;
+        }
+        .gaveta-conteudo button:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+        @keyframes descerGaveta {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 
 <body>
@@ -53,10 +78,55 @@
         <button onclick="trocarTela('relatorios')" id="menu-relatorios" style="color: #38bdf8;"><i class="fa-solid fa-chart-line"></i> Relatórios</button>
         <button onclick="trocarTela('equipe')" id="menu-equipe"><i class="fa-solid fa-id-badge"></i> Equipe</button>
 
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Minha Conta</div>
+        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 15px;">Minha Conta</div>
         <button onclick="trocarTela('perfil')" id="menu-perfil"><i class="fa-solid fa-user-gear"></i> Meu Perfil</button>
         <button onclick="trocarTela('ajuda')" id="menu-ajuda"><i class="fa-solid fa-headset"></i> Ajuda / Suporte</button>
-        
+
+        <div id="secao-master-saas" style="display: none;">
+            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; padding: 25px 15px 10px 15px; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 15px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-gem" style="font-size: 13px;"></i> Master CondoUp
+            </div>
+
+            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-condominios')">
+                <span><i class="fa-solid fa-building" style="width: 20px;"></i> Condomínios</span>
+            </button>
+            <div id="gaveta-condominios" class="gaveta-conteudo">
+                <button onclick="trocarTela('adm-condominios')"><i class="fa-solid fa-list" style="width: 15px;"></i> Lista e Cadastros</button>
+                <button onclick="abrirModalMegafone()"><i class="fa-solid fa-bullhorn" style="width: 15px; color: #ef4444;"></i> Megafone Global</button>
+            </div>
+
+            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-funcionarios')">
+                <span><i class="fa-solid fa-user-shield" style="width: 20px;"></i> Funcionários</span>
+            </button>
+            <div id="gaveta-funcionarios" class="gaveta-conteudo">
+                <button onclick="trocarTela('adm-funcionarios')"><i class="fa-solid fa-key" style="width: 15px;"></i> Criar Acessos</button>
+                <button onclick="alert('Tela de controle da equipe do condomínio em breve!')"><i class="fa-solid fa-users-gear" style="width: 15px;"></i> Controle Geral</button>
+            </div>
+
+            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-contratos')">
+                <span><i class="fa-solid fa-file-signature" style="width: 20px;"></i> Contratos</span>
+            </button>
+            <div id="gaveta-contratos" class="gaveta-conteudo">
+                <button onclick="alert('Gestão de Planos em breve')"><i class="fa-solid fa-layer-group" style="width: 15px;"></i> Planos e Limites</button>
+                <button onclick="alert('Controle de Suspensão em breve')"><i class="fa-solid fa-ban" style="width: 15px;"></i> Suspensões</button>
+            </div>
+
+            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-financeiro')">
+                <span><i class="fa-solid fa-sack-dollar" style="width: 20px;"></i> Financeiro</span>
+            </button>
+            <div id="gaveta-financeiro" class="gaveta-conteudo">
+                <button onclick="alert('Tela Financeira em breve')"><i class="fa-solid fa-file-invoice-dollar" style="width: 15px;"></i> Faturas</button>
+                <button onclick="alert('Tela de Inadimplência em breve')"><i class="fa-solid fa-chart-pie" style="width: 15px;"></i> Receita MRR</button>
+            </div>
+
+            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-suporte')">
+                <span><i class="fa-solid fa-headset" style="width: 20px;"></i> Suporte</span>
+            </button>
+            <div id="gaveta-suporte" class="gaveta-conteudo">
+                <button onclick="alert('Central de Tickets em breve')"><i class="fa-solid fa-ticket" style="width: 15px;"></i> Chamados Abertos</button>
+            </div>
+        </div>
+
         <div style="margin: 20px 15px 10px 15px; border-top: 1px dashed rgba(255,255,255,0.1);"></div>
         <button onclick="deslogarSistema()" id="menu-sair" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</button>
     </div>
@@ -997,64 +1067,88 @@
     </div>
 
     <div id="adm-condominios" class="tela">
-        <div class="box" style="border-top: 4px solid #38bdf8;">
-            <h2 style="color: #1e293b; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-building" style="color: #38bdf8; font-size: 24px;"></i> 
-                Gestão de Condomínios
-            </h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 25px;">Cadastre e gerencie todos os prédios que utilizam o seu sistema.</p>
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-building" style="color: #38bdf8; margin-right: 10px;"></i>Gestão de Condomínios (SaaS)</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Controle de clientes, planos e acessos remotos.</p>
+            </div>
+            <button class="btn" style="background: #38bdf8; height: 45px; margin: 0;" onclick="document.getElementById('box-cad-condominio').style.display='block'">
+                <i class="fa-solid fa-plus"></i> Novo Cliente
+            </button>
+        </div>
 
-            <div style="background: rgba(56, 189, 248, 0.05); border-radius: 12px; padding: 25px; border: 1px solid #bae6fd; margin-bottom: 25px;">
-                <h3 style="color: #0f172a; margin-top: 0; border-bottom: 1px dashed #bae6fd; padding-bottom: 10px; font-size: 16px;">
-                    <i class="fa-solid fa-plus" style="color: #38bdf8;"></i> Cadastrar Novo Cliente
-                </h3>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
-                    <div>
-                        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
-                        <input type="text" id="novo-cond-nome" placeholder="Ex: Residencial Flores" style="width: 100%; margin-top: 0;">
-                    </div>
-                    <div>
-                        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">ID Único (Sem espaços)</label>
-                        <input type="text" id="novo-cond-id" placeholder="Ex: res_flores_001" style="width: 100%; margin-top: 0; font-family: monospace;">
-                    </div>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 25px; gap: 15px;">
+            <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; text-align: center; padding: 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Receita Recorrente (MRR)</h3>
+                <span id="master-mrr" style="font-size: 26px; font-weight: bold; color: #10b981; display: block; margin-bottom: 5px;">R$ 0,00</span>
+            </div>
+            <div class="stat-card" style="border-bottom: 4px solid #3b82f6; background: white; text-align: center; padding: 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Total de Apartamentos</h3>
+                <span id="master-aptos" style="font-size: 26px; font-weight: bold; color: #3b82f6; display: block; margin-bottom: 5px;">0</span>
+            </div>
+            <div class="stat-card" style="border-bottom: 4px solid #8b5cf6; background: white; text-align: center; padding: 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Condomínios Ativos</h3>
+                <span id="master-ativos" style="font-size: 26px; font-weight: bold; color: #8b5cf6; display: block; margin-bottom: 5px;">0</span>
+            </div>
+            <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; text-align: center; padding: 20px;">
+                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Inadimplentes / Suspensos</h3>
+                <span id="master-suspensos" style="font-size: 26px; font-weight: bold; color: #ef4444; display: block; margin-bottom: 5px;">0</span>
+            </div>
+        </div>
+
+        <div id="box-cad-condominio" style="display: none; background: rgba(56, 189, 248, 0.05); border-radius: 12px; padding: 25px; border: 1px solid #bae6fd; margin-bottom: 25px; position: relative;">
+            <button onclick="document.getElementById('box-cad-condominio').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="color: #0f172a; margin-top: 0; border-bottom: 1px dashed #bae6fd; padding-bottom: 10px; font-size: 16px;">
+                <i class="fa-solid fa-building-circle-check" style="color: #38bdf8;"></i> Cadastrar Novo Cliente
+            </h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
+                <div>
+                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
+                    <input type="text" id="novo-cond-nome" placeholder="Ex: Residencial Flores" style="width: 100%; margin-top: 0;">
                 </div>
-
-                <button onclick="salvarNovoCondominioSaaS()" class="btn" style="background: #38bdf8; margin-top: 20px; width: 100%; max-width: 250px;">
-                    <i class="fa-solid fa-check"></i> Cadastrar Condomínio
-                </button>
-            </div>
-
-            <div style="background: #f8fafc; border-radius: 12px; padding: 25px; border: 1px solid #e2e8f0;">
-                <h3 style="color: #0f172a; margin-top: 0; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px; font-size: 16px;">
-                    <i class="fa-solid fa-list" style="color: #64748b;"></i> Clientes Ativos
-                </h3>
-                <div id="lista-condominios-saas" style="margin-top: 15px; color: #64748b; font-size: 14px;">
-                    <i class="fa-solid fa-spinner fa-spin"></i> Carregando clientes...
+                <div>
+                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">ID Único (Sem espaços)</label>
+                    <input type="text" id="novo-cond-id" placeholder="Ex: res_flores_001" style="width: 100%; margin-top: 0; font-family: monospace;">
+                </div>
+                <div>
+                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Quantidade de Aptos</label>
+                    <input type="number" id="novo-cond-aptos" placeholder="Ex: 80" style="width: 100%; margin-top: 0;">
+                </div>
+                <div>
+                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Valor do Plano (R$)</label>
+                    <input type="number" id="novo-cond-valor" placeholder="Ex: 890.00" style="width: 100%; margin-top: 0;">
                 </div>
             </div>
 
-            <div style="background: rgba(239, 68, 68, 0.05); border-radius: 12px; padding: 25px; border: 1px solid #fca5a5; margin-top: 25px;">
-                <h3 style="color: #0f172a; margin-top: 0; border-bottom: 1px dashed #fca5a5; padding-bottom: 10px; font-size: 16px;">
-                    <i class="fa-solid fa-bullhorn" style="color: #ef4444;"></i> Megafone Global (Push para Todos)
-                </h3>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">
-                    Envie uma notificação direta para a tela do celular/PC de <b>absolutamente todos</b> os usuários ativos de todos os condomínios.
-                </p>
-                
-                <input type="text" id="megaTitulo" placeholder="Título do Aviso (Ex: Atualização Importante)" style="width: 100%; margin-bottom: 10px; border: 1px solid #fca5a5; padding: 12px; border-radius: 8px; outline: none; background: white;">
-                <textarea id="megaMensagem" placeholder="Mensagem que aparecerá na tela dos clientes..." style="width: 100%; min-height: 80px; margin-bottom: 15px; border: 1px solid #fca5a5; padding: 12px; border-radius: 8px; font-family: inherit; outline: none; background: white;"></textarea>
-                
-                <button onclick="dispararMegafoneGlobal()" class="btn" style="background: #ef4444; color: white; width: 100%; margin: 0; font-size: 15px;">
-                    <i class="fa-solid fa-tower-broadcast"></i> Disparar para Todos
-                </button>
-            </div>
+            <button onclick="salvarNovoCondominioSaaS()" class="btn" style="background: #38bdf8; margin-top: 20px; width: 100%; max-width: 250px;">
+                <i class="fa-solid fa-check"></i> Salvar Condomínio
+            </button>
+        </div>
 
+        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-list" style="color: #64748b; margin-right: 8px;"></i> Condomínios Cadastrados</h3>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 15px 20px;">Condomínio</th>
+                            <th style="padding: 15px 20px;">Plano / Aptos</th>
+                            <th style="padding: 15px 20px;">Status</th>
+                            <th style="padding: 15px 20px; text-align: right;">Ações Mestre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-condominios-saas" style="font-size: 14px;">
+                        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando sistema...</td></tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <div id="adm-funcionarios" class="tela">
-        
         <div class="box" style="border-top: 4px solid #38bdf8;">
             <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                 <i class="fa-solid fa-user-shield" style="color: #38bdf8; font-size: 24px;"></i> 
@@ -1093,7 +1187,6 @@
                     <label style="font-size: 12px; font-weight: bold; color: #475569;">Vincular ao Condomínio</label>
                     <select id="admFuncCondominio" style="margin-top: 5px;">
                         <option value="" disabled selected>Carregando condomínios...</option>
-                        <option value="condominio_teste_123">🏢 Edifício Teste (Código: 123)</option>
                     </select>
                 </div>
             </div>
@@ -1106,37 +1199,10 @@
 
 </div> 
 
-<div id="modalMorador" class="modal-overlay">
-    <div class="modal-content">
-        <button class="fechar-modal" onclick="fecharModalMorador()"><i class="fa-solid fa-xmark"></i></button>
-        <div id="conteudoModalMorador"></div>
-    </div>
-</div>
-
-<div id="modalPlantao" class="modal-overlay">
-    <div class="modal-content">
-        <button class="fechar-modal" onclick="fecharModalPlantao()"><i class="fa-solid fa-xmark"></i></button>
-        <div id="conteudoModalPlantao"></div>
-    </div>
-</div>
-
-<div id="modalVeiculo" class="modal-overlay">
-    <div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden;">
-        <button class="fechar-modal" onclick="fecharModalVeiculo()" style="z-index: 10; background: white; color: #1e293b; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"><i class="fa-solid fa-xmark"></i></button>
-        <div id="conteudoModalVeiculo"></div>
-    </div>
-</div>
-
-<div id="modalGestaoPonto" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="modal-content" style="background: white; width: 90%; max-width: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-        <div id="modalPontoHeader" style="padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center;">
-            <h3 id="modalPontoTitulo" style="margin: 0; font-size: 16px;">Lista de Funcionários</h3>
-            <button onclick="document.getElementById('modalGestaoPonto').style.display='none'" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div id="modalPontoLista" style="padding: 20px; max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
-            </div>
-    </div>
-</div>
+<div id="modalMorador" class="modal-overlay"><div class="modal-content"><button class="fechar-modal" onclick="fecharModalMorador()"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalMorador"></div></div></div>
+<div id="modalPlantao" class="modal-overlay"><div class="modal-content"><button class="fechar-modal" onclick="fecharModalPlantao()"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalPlantao"></div></div></div>
+<div id="modalVeiculo" class="modal-overlay"><div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden;"><button class="fechar-modal" onclick="fecharModalVeiculo()" style="z-index: 10; background: white; color: #1e293b; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalVeiculo"></div></div></div>
+<div id="modalGestaoPonto" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);"><div class="modal-content" style="background: white; width: 90%; max-width: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);"><div id="modalPontoHeader" style="padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center;"><h3 id="modalPontoTitulo" style="margin: 0; font-size: 16px;">Lista de Funcionários</h3><button onclick="document.getElementById('modalGestaoPonto').style.display='none'" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button></div><div id="modalPontoLista" style="padding: 20px; max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;"></div></div></div>
 
 <div id="modal-permissao-ios" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);">
     <div style="background-color: white; margin: 20% auto; padding: 20px; border-radius: 10px; width: 80%; text-align: center; font-family: sans-serif;">
@@ -1144,6 +1210,30 @@
         <p style="color: #666; font-size: 14px;">Para receber os avisos da portaria, precisamos que você libere as notificações.</p>
         <p style="color: #666; font-size: 14px;">Vá em <strong>Ajustes > Safari > Avançado > Dados dos Sites</strong>, limpe os dados e acesse novamente.</p>
         <button onclick="fecharModalIos()" style="background-color: #d9534f; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 15px; cursor: pointer;">Entendi</button>
+    </div>
+</div>
+
+<div id="modalMegafoneGlobal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-content" style="max-width: 500px; border-top: 5px solid #ef4444; border-radius: 12px; padding: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #0f172a; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-bullhorn" style="color: #ef4444; font-size: 24px;"></i> Megafone Global
+            </h3>
+            <button onclick="fecharModalMegafone()" style="background: #f1f5f9; border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
+            Envie uma notificação Push urgente para a tela do celular e PC de <b>absolutamente todos</b> os usuários de todos os condomínios ativos.
+        </p>
+        
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Título do Alerta</label>
+        <input type="text" id="megaTitulo" placeholder="Ex: Atualização Importante do Sistema" style="width: 100%; margin-bottom: 15px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; font-weight: bold;">
+        
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Mensagem Principal</label>
+        <textarea id="megaMensagem" placeholder="Escreva a mensagem que aparecerá na tela dos clientes..." style="width: 100%; min-height: 100px; margin-bottom: 20px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-family: inherit; outline: none; background: #f8fafc;"></textarea>
+        
+        <button onclick="dispararMegafoneGlobal(); fecharModalMegafone();" class="btn" style="background: #ef4444; color: white; width: 100%; margin: 0; padding: 15px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
+            <i class="fa-solid fa-tower-broadcast"></i> Propagar para Todos
+        </button>
     </div>
 </div>
 
@@ -1181,6 +1271,17 @@
       const destino = document.getElementById('relatorioFuncPonto');
       if(origem && destino) destino.innerHTML = origem.innerHTML;
   });
+
+  /* SCRIPTS DO MENU GAVETA E MODAL MEGAFONE */
+  function toggleGaveta(id) {
+      const gaveta = document.getElementById(id);
+      const btn = gaveta.previousElementSibling;
+      gaveta.classList.toggle('aberta');
+      btn.classList.toggle('gaveta-aberta');
+  }
+
+  function abrirModalMegafone() { document.getElementById('modalMegafoneGlobal').style.display = 'flex'; }
+  function fecharModalMegafone() { document.getElementById('modalMegafoneGlobal').style.display = 'none'; }
 </script>
 
 <script src="js/app.js?v=99"></script>
@@ -1199,7 +1300,7 @@
 <script src="js/perfil.js?v=11"></script>
 <script src="js/ajuda.js?v=11"></script> 
 <script src="js/transportadoras.js?v=1"></script>
-<script src="js/adm.js?v=4"></script>
+<script src="js/adm.js?v=6"></script>
 <script src="js/notificacoes.js?v=1"></script>
 
 <script>
