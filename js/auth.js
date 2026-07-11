@@ -33,6 +33,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const nome = localStorage.getItem("usuario_nome") || localStorage.getItem("usuario_logado_nome");
         const elementoNome = document.getElementById('nomeFuncionarioLogado');
         if (elementoNome && nome) elementoNome.innerText = nome;
+
+        // 👁️ VERIFICAÇÃO DO MODO FANTASMA ATIVO
+        const fantasma = localStorage.getItem("condominio_fantasma");
+        if (fantasma) {
+            const aviso = document.getElementById('aviso-modo-fantasma');
+            if (aviso) {
+                aviso.style.display = 'block';
+                const elNomeFantasma = document.getElementById('fantasma-nome');
+                if (elNomeFantasma) elNomeFantasma.innerText = localStorage.getItem("condominio_fantasma_nome");
+            }
+        }
     }
 });
 
@@ -40,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // 🚀 PONTE DE SEGURANÇA DO RELÓGIO DE PONTO
 // ==========================================
 function sincronizarChavesPonto() {
-    // Pega as chaves antigas e espelha para as chaves novas do ponto.js
     const nome = localStorage.getItem("usuario_nome");
     const cargo = localStorage.getItem("usuario_cargo");
     
@@ -139,5 +149,16 @@ function renderizarBadgeSeguro() {
         badge.style.background = 'rgba(148, 163, 184, 0.15)';
         badge.style.color = '#94a3b8';
         badge.style.border = '1px solid rgba(148, 163, 184, 0.3)';
+    }
+}
+
+// ==========================================
+// 👁️ ENCERRAMENTO DO MODO FANTASMA
+// ==========================================
+function sairDoModoFantasma() {
+    if(confirm("Deseja encerrar a sessão remota e voltar para o seu Painel Master?")) {
+        localStorage.removeItem("condominio_fantasma");
+        localStorage.removeItem("condominio_fantasma_nome");
+        window.location.href = 'index.html';
     }
 }
