@@ -10,14 +10,13 @@
 async function salvarNovoCondominioSaaS() {
     const nomeInput = document.getElementById('novo-cond-nome');
     const idInput = document.getElementById('novo-cond-id');
-
-    if (!nomeInput || !idInput) {
-        alert("❌ Erro no HTML: Campos de cadastro de condomínio não encontrados.");
-        return;
-    }
+    const aptosInput = document.getElementById('novo-cond-aptos');
+    const valorInput = document.getElementById('novo-cond-valor');
 
     const nome = nomeInput.value.trim();
     const condominioId = idInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+    const aptos = parseInt(aptosInput.value) || 0;
+    const valorPlano = parseFloat(valorInput.value) || 0;
 
     if (!nome || !condominioId) {
         alert("⚠️ Preencha o Nome e o ID Único do condomínio!");
@@ -34,13 +33,19 @@ async function salvarNovoCondominioSaaS() {
         await db.collection("condominios").doc(condominioId).set({
             nome: nome,
             condominioId: condominioId,
+            aptos: aptos,
+            valorPlano: valorPlano,
             dataCadastro: new Date().toISOString(),
             ativo: true
         });
 
         alert("✅ Condomínio cadastrado com sucesso!");
+        
         nomeInput.value = '';
         idInput.value = '';
+        aptosInput.value = '';
+        valorInput.value = '';
+        document.getElementById('box-cad-condominio').style.display = 'none';
 
     } catch (error) {
         console.error("Erro ao cadastrar condomínio:", error);
@@ -55,8 +60,14 @@ function carregarCondominiosSaaS() {
     db.collection("condominios").onSnapshot((snapshot) => {
         listaHtml.innerHTML = ''; 
 
+        let totalAptos = 0;
+        let totalReceita = 0;
+        let qtdAtivos = 0;
+        let qtdSuspensos = 0;
+
         if (snapshot.empty) {
-            listaHtml.innerHTML = '<p style="text-align: center; margin: 20px 0; color: #94a3b8;">Nenhum condomínio cadastrado ainda.</p>';
+            listaHtml.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Nenhum condomínio cadastrado ainda.</td></tr>';
+            atualizarCardsMaster(0, 0, 0, 0);
             return;
         }
 
@@ -65,6 +76,7 @@ function carregarCondominiosSaaS() {
             clientes.push(doc.data());
         });
 
+        // Ordena por data (mais novo primeiro)
         clientes.sort((a, b) => {
             const dataA = a.dataCadastro ? new Date(a.dataCadastro).getTime() : 0;
             const dataB = b.dataCadastro ? new Date(b.dataCadastro).getTime() : 0;
@@ -72,30 +84,65 @@ function carregarCondominiosSaaS() {
         });
 
         clientes.forEach((cond) => {
-            let dataFormatada = "Data desconhecida";
-            if (cond.dataCadastro) {
-                try {
-                    dataFormatada = new Date(cond.dataCadastro).toLocaleDateString('pt-BR');
-                } catch(e) {}
+            // Cálculos para o Dashboard
+            if (cond.ativo !== false) { // Ativo por padrão
+                qtdAtivos++;
+                totalAptos += (cond.aptos || 0);
+                totalReceita += (cond.valorPlano || 0);
+            } else {
+                qtdSuspensos++;
             }
 
+            // Formatação Visual da Tabela
+            const statusBadge = cond.ativo !== false 
+                ? `<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> ATIVO</span>` 
+                : `<span style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-ban"></i> SUSPENSO</span>`;
+
+            const valorFormatado = (cond.valorPlano || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const aptosFormatado = cond.aptos ? `${cond.aptos} aptos` : 'N/D';
+
             listaHtml.innerHTML += `
-                <div style="background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="color: #0f172a; font-size: 15px; display: block; text-transform: capitalize;">${cond.nome || 'Sem Nome'}</strong>
-                        <span style="color: #3b82f6; font-size: 12px; font-family: monospace; background: #eff6ff; padding: 2px 6px; border-radius: 4px;">ID: ${cond.condominioId || 'Sem ID'}</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="color: #10b981; font-size: 12px; font-weight: bold; display: block;"><i class="fa-solid fa-circle-check"></i> Ativo</span>
-                        <span style="color: #64748b; font-size: 11px;">Desde ${dataFormatada}</span>
-                    </div>
-                </div>
+                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 15px 20px;">
+                        <strong style="color: #0f172a; display: block; text-transform: capitalize;">${cond.nome || 'Sem Nome'}</strong>
+                        <span style="color: #64748b; font-size: 12px; font-family: monospace;">ID: ${cond.condominioId || 'Sem ID'}</span>
+                    </td>
+                    <td style="padding: 15px 20px; color: #475569;">
+                        <strong style="display: block;">${valorFormatado}</strong>
+                        <span style="font-size: 12px;"><i class="fa-solid fa-door-closed" style="color: #94a3b8;"></i> ${aptosFormatado}</span>
+                    </td>
+                    <td style="padding: 15px 20px;">${statusBadge}</td>
+                    <td style="padding: 15px 20px; text-align: right; gap: 8px;">
+                        <button class="btn" style="background: #3b82f6; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="alert('Funcionalidade Impersonate (Fantasma) em construção!')">
+                            <i class="fa-solid fa-eye"></i> Entrar
+                        </button>
+                        <button class="btn" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="alert('Edição em breve!')">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </td>
+                </tr>
             `;
         });
+
+        // Atualiza os números nos cards vermelhos/verdes lá em cima
+        atualizarCardsMaster(totalReceita, totalAptos, qtdAtivos, qtdSuspensos);
+
     }, (error) => {
         console.error("🚨 Erro ao carregar lista:", error);
-        listaHtml.innerHTML = `<p style="color: #ef4444; text-align: center;">Erro na conexão com o banco de dados.</p>`;
+        listaHtml.innerHTML = `<tr><td colspan="4" style="color: #ef4444; text-align: center; padding: 20px;">Erro na conexão com o banco de dados.</td></tr>`;
     });
+}
+
+function atualizarCardsMaster(receita, aptos, ativos, suspensos) {
+    const elReceita = document.getElementById('master-mrr');
+    const elAptos = document.getElementById('master-aptos');
+    const elAtivos = document.getElementById('master-ativos');
+    const elSuspensos = document.getElementById('master-suspensos');
+
+    if(elReceita) elReceita.innerText = receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    if(elAptos) elAptos.innerText = aptos;
+    if(elAtivos) elAtivos.innerText = ativos;
+    if(elSuspensos) elSuspensos.innerText = suspensos;
 }
 
 // ==========================================
@@ -166,15 +213,14 @@ function criarUsuarioPeloADM() {
 }
 
 // ==========================================
-// 📢 MEGAFONE: DISPARO VIA ROBÔ DA NUVEM (MÚLTIPLOS TENANTS)
+// 📢 MEGAFONE: DISPARO VIA ROBÔ DA NUVEM
 // ==========================================
 async function dispararMegafoneGlobal() {
     const campoTitulo = document.getElementById('megaTitulo');
     const campoMensagem = document.getElementById('megaMensagem');
 
-    // 🚨 DIAGNÓSTICO DE SEGURANÇA: Se a caixinha sumir do HTML, o sistema avisa amigavelmente em vez de travar tudo!
     if (!campoTitulo || !campoMensagem) {
-        alert("❌ ERRO CRÍTICO: Os campos visuais do Megafone não foram localizados na tela. Verifique se o código do index.html foi salvo corretamente!");
+        alert("❌ ERRO CRÍTICO: Os campos visuais do Megafone não foram localizados na tela.");
         return;
     }
 
@@ -191,7 +237,6 @@ async function dispararMegafoneGlobal() {
 
     try {
         const snapshot = await db.collection("condominios").get();
-
         if (snapshot.empty) {
             alert("Nenhum condomínio ativo foi localizado no banco de dados.");
             return;
@@ -200,32 +245,21 @@ async function dispararMegafoneGlobal() {
         const timestampDisparo = new Date().toISOString();
         const promessasDeInjecao = [];
 
-        // 🚀 O SEGREDO DO SUCESSO: Replica o formato exato que o seu robô da nuvem lê para disparar o Push!
         snapshot.forEach((doc) => {
             const predio = doc.data();
             if (predio.condominioId) {
-                
-                // 1. Injeta na coleção "comunicados" para acordar o Robô Push da Nuvem
                 const acaoMural = db.collection("comunicados").add({
-                    tipo: "📢 Geral",
-                    status: "🟡 Pendente",
+                    tipo: "📢 Geral", status: "🟡 Pendente",
                     titulo: `📢 AVISO GLOBAL: ${titulo}`,
-                    dataEvento: "",
-                    horaEvento: "",
-                    local: "Geral",
-                    mensagem: messageText,
-                    condominioId: predio.condominioId,
-                    dataRegistro: timestampDisparo,
-                    excluido: false
+                    dataEvento: "", horaEvento: "", local: "Geral",
+                    mensagem: messageText, condominioId: predio.condominioId,
+                    dataRegistro: timestampDisparo, excluido: false
                 });
                 
-                // 2. Injeta na coleção "notificacoes" para acionar o sininho interno também
                 const acaoSino = db.collection("notificacoes").add({
                     titulo: `📢 Alerta Geral: ${titulo}`,
-                    mensagem: messageText,
-                    tipo: "comunicado",
-                    lida: false,
-                    condominioId: predio.condominioId,
+                    mensagem: messageText, tipo: "comunicado",
+                    lida: false, condominioId: predio.condominioId,
                     timestamp: new Date().getTime()
                 });
 
@@ -235,10 +269,8 @@ async function dispararMegafoneGlobal() {
 
         await Promise.all(promessasDeInjecao);
 
-        alert(`🚀 MEGAFONE PROPAGADO COM SUCESSO!\nO aviso foi injetado em todos os condomínios e o seu robô da nuvem já está entregando os Pushs.`);
-        
-        campoTitulo.value = '';
-        campoMensagem.value = '';
+        alert(`🚀 MEGAFONE PROPAGADO COM SUCESSO!\nO aviso foi injetado em todos os condomínios.`);
+        campoTitulo.value = ''; campoMensagem.value = '';
 
     } catch (error) {
         console.error("Falha na execução do Megafone Global:", error);
@@ -247,7 +279,7 @@ async function dispararMegafoneGlobal() {
 }
 
 // ==========================================
-// 🚀 INICIALIZAÇÃO BLINDADA (MOTOR V8.3)
+// 🚀 INICIALIZAÇÃO BLINDADA
 // ==========================================
 const ligarMotorADM = setInterval(() => {
     const listaNaTela = document.getElementById('lista-condominios-saas');
