@@ -3,11 +3,18 @@
 // app.js - Núcleo do Sistema (Menu, Relógio e Dashboard)
 // ==========================================
 
+// --- CHAVE MESTRA DA MULTI-TENANCY (RESOLUÇÃO DE CONDOMÍNIO ATIVO) ---
+function obterCondominioAtivo() {
+    // Se o Modo Fantasma estiver ligado, retorna o ID do condomínio visitado. 
+    // Caso contrário, usa o condomínio padrão do usuário logado.
+    return localStorage.getItem("condominio_fantasma") || localStorage.getItem("condominioId");
+}
+
 // --- MOTOR UNIVERSAL DO DOMINÓ (COMPARTILHADO PARA TODO O PRÉDIO) ---
 let memoriaDominóMoradores = []; 
 
 async function carregarApartamentosNoSelect(idSelectDestino) {
-    const meuCondominio = localStorage.getItem("condominioId");
+    const meuCondominio = obterCondominioAtivo();
     const select = document.getElementById(idSelectDestino);
     if (!meuCondominio || !select || typeof db === 'undefined') return;
 
@@ -111,9 +118,9 @@ function toggleDarkMode() {
     localStorage.setItem('darkMode', isDark);
 }
 
-// --- DASHBOARD (NUVEM EM TEMPO REAL) ---
+// --- DASHBOARD (NUVEM EM TEMPO REAL REDIRECIONADA) ---
 function atualizarDashboard() {
-    const meuCondominio = localStorage.getItem("condominioId");
+    const meuCondominio = obterCondominioAtivo();
 
     if (!meuCondominio || typeof db === 'undefined') {
         console.log("⏳ Aguardando Firebase para atualizar a Dashboard...");
@@ -203,13 +210,13 @@ function atualizarDashboard() {
 }
 
 // ==========================================
-// MOTOR DE NOTIFICAÇÕES PUSH (IOS & ANDROID - SISTEMA SILENCIOSO)
+// MOTOR DE NOTIFICAÇÕES PUSH (SISTEMA INTEGRADO ATIVO)
 // ==========================================
 
 function gerarESalvarToken() {
     const messaging = firebase.messaging();
-    const meuCondominio = localStorage.getItem("condominioId");
-    const meuCargo = localStorage.getItem("usuario_cargo"); // 🚀 Pegamos o seu cargo aqui!
+    const meuCondominio = obterCondominioAtivo();
+    const meuCargo = localStorage.getItem("usuario_cargo"); 
 
     messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" })
         .then((currentToken) => {
@@ -218,11 +225,9 @@ function gerarESalvarToken() {
                 localStorage.setItem("push_token", currentToken);
                 
                 if (typeof db !== 'undefined') {
-                    // 🚀 A MÁGICA ACONTECE AQUI: Libera o passe VIP para o ADM Master
                     if (meuCondominio || meuCargo === 'ADM') {
                         db.collection("tokens_push").doc(currentToken).set({
                             token: currentToken,
-                            // Se você for ADM, o sistema te carimba como GLOBAL_MASTER
                             condominioId: meuCondominio || "GLOBAL_MASTER", 
                             cargo: meuCargo || "operacional",
                             dataRegistro: new Date().toISOString()
@@ -234,7 +239,6 @@ function gerarESalvarToken() {
             console.log('Erro silencioso ao pegar token (Normal no iOS se bloqueado ou em localhost sem HTTPS).', err);
         });
 
-    // Removido o alert de quando a mensagem chega com o app aberto (modo silencioso)
     messaging.onMessage((payload) => {
         console.log('🔔 Mensagem em background (App Aberto): ', payload);
     });
@@ -246,10 +250,8 @@ async function ativarNotificacoesPush() {
     }
 
     try {
-        // AUTOCURA DO IOS: Força o registro do Service Worker para limpar bugs passados
         const registration = await navigator.serviceWorker.register('./sw.js?v=99');
         
-        // 🚀 Trava anti-erro: Só roda se a função existir na sua versão do Firebase (limpa o erro vermelho do F12)
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
         }
@@ -257,15 +259,12 @@ async function ativarNotificacoesPush() {
         console.log("Falha no SW (Normal se testando local):", e);
     }
 
-    // A CHECAGEM DE PERMISSÃO (SEM BOTÃO)
     if (Notification.permission === 'granted') {
         gerarESalvarToken();
     } else if (Notification.permission === 'denied') {
-        // Gatilho para o Modal do iOS que criaremos no HTML
         const modalIos = document.getElementById('modal-permissao-ios');
         if (modalIos) modalIos.style.display = 'block';
     } else {
-        // Pede a permissão de forma natural no primeiro toque na tela
         const toqueInvisivel = async () => {
             try {
                 const permission = await Notification.requestPermission();
@@ -282,7 +281,6 @@ async function ativarNotificacoesPush() {
     }
 }
 
-// Fechar o Modal de Permissão (Para colocar no HTML depois)
 window.fecharModalIos = function() {
     const modalIos = document.getElementById('modal-permissao-ios');
     if (modalIos) modalIos.style.display = 'none';
@@ -310,6 +308,5 @@ window.addEventListener('load', () => {
         }
     }
 
-    // Aciona a checagem de notificação
     setTimeout(ativarNotificacoesPush, 1000);
 });
