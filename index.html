@@ -19,7 +19,9 @@
     <link rel="stylesheet" href="css/style.css?v=2">
     <link rel="stylesheet" href="css/transportadoras.css">
     
-    <link rel="icon" type="image/png" href="img/icon-512.png.png">
+    <link rel="icon" href="/img/icon-192.png.png" type="image/png">
+<link rel="apple-touch-icon" href="/img/icon-192.png.png">
+<link rel="icon" sizes="512x512" href="/img/icon-512.png.png" type="image/png">
     
     <style>
         .gaveta-btn {
@@ -1373,7 +1375,7 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=104"></script>
+<script src="js/app.js?v=106"></script>
 <script src="js/equipe.js?v=11"></script>
 <script src="js/plantao.js?v=11"></script>
 <script src="js/ponto.js?v=13"></script>
@@ -1395,7 +1397,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=104')
+     navigator.serviceWorker.register('sw.js?v=106')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
