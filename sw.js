@@ -40,7 +40,7 @@ messaging.onBackgroundMessage((payload) => {
 // O SEU CÓDIGO DE CACHE INTACTO (Apenas subi a versão)
 // =========================================================
 
-const CACHE_NAME = 'condo-up-v36'; // Versão alterada para forçar o celular a baixar o arquivo novo
+const CACHE_NAME = 'condo-up-v37'; // Versão alterada para forçar o celular a baixar o arquivo novo
 
 self.addEventListener('install', event => {
     self.skipWaiting(); 
