@@ -20,7 +20,7 @@ self.addEventListener('push', function(event) {
     const body = payload?.notification?.body || payload?.data?.body || "Você tem uma nova mensagem.";
     
     // Força a imagem absoluta cravada!
-    const iconeOficial = self.location.origin + '/img/icon-192.png.png';
+    const iconeOficial = 'https://cdn-icons-png.flaticon.com/512/3114/3114883.png';
 
     const options = {
         body: body,
@@ -56,7 +56,7 @@ firebase.initializeApp({
 });
 
 // 4. MOTOR DE CACHE (Versão atualizada)
-const CACHE_NAME = 'condo-up-v38';
+const CACHE_NAME = 'condo-up-v40';
 
 self.addEventListener('install', event => {
     self.skipWaiting();
