@@ -1,12 +1,46 @@
 // ==========================================
 // CONDO UP - SERVICE WORKER INTELIGENTE
-// sw.js - Cache dinâmico com Salvo-Conduto para APIs
+// sw.js - Cache dinâmico e Controle de Push
 // ==========================================
 
-const CACHE_NAME = 'condo-up-v31';
+// 1. IMPORTA O MOTOR DO FIREBASE PARA SEGUNDO PLANO
+importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js');
+
+// 2. INICIALIZA O FIREBASE COM AS SUAS CHAVES (Condo Up)
+firebase.initializeApp({
+    apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
+    authDomain: "portaria-pro-ebc5c.firebaseapp.com",
+    projectId: "portaria-pro-ebc5c",
+    storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
+    messagingSenderId: "948781126590",
+    appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
+});
+
+// 3. CAPTURA A NOTIFICAÇÃO E FORÇA A SUA LOGO
+const messaging = firebase.messaging();
+messaging.onBackgroundMessage((payload) => {
+    console.log('[ServiceWorker] Notificação recebida em background.', payload);
+
+    const notificationTitle = payload.notification?.title || "📢 AVISO GLOBAL";
+    const notificationOptions = {
+        body: payload.notification?.body || "Você tem um novo comunicado do condomínio.",
+        icon: '/img/icon-512.png.png', // 🚀 AQUI ESTÁ A MÁGICA: A SUA LOGO FORÇADA!
+        badge: '/img/icon-512.png.png', // Ícone da barra de status superior
+        vibrate: [200, 100, 200]
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// =========================================================
+// O SEU CÓDIGO DE CACHE INTACTO (Apenas subi a versão)
+// =========================================================
+
+const CACHE_NAME = 'condo-up-v35'; // Versão alterada para forçar o celular a baixar o arquivo novo
 
 self.addEventListener('install', event => {
-    self.skipWaiting(); // Força a instalação imediata da nova versão
+    self.skipWaiting(); 
 });
 
 self.addEventListener('activate', event => {
@@ -15,7 +49,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cache => {
                     if (cache !== CACHE_NAME) {
-                        return caches.delete(cache); // Limpa os caches velhos
+                        return caches.delete(cache); 
                     }
                 })
             );
@@ -23,13 +57,9 @@ self.addEventListener('activate', event => {
     );
 });
 
-// MOTOR DE INTERCEPTAÇÃO
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
 
-    // =========================================================
-    // 🚨 SALVO-CONDUTO VIP (O SERVICE WORKER ESTÁ PROIBIDO DE TOCAR AQUI)
-    // =========================================================
     if (
         event.request.method !== 'GET' || 
         url.hostname.includes('firestore.googleapis.com') || 
@@ -38,10 +68,9 @@ self.addEventListener('fetch', event => {
         url.hostname.includes('identitytoolkit') ||
         url.hostname.includes('wa.me')
     ) {
-        return; // Retorna vazio -> Obriga o navegador a ir direto pra internet real!
+        return; 
     }
 
-    // Para as imagens, HTML, CSS e JS locais, faz o cache normal:
     event.respondWith(
         caches.match(event.request).then(cachedResponse => {
             return cachedResponse || fetch(event.request).then(networkResponse => {
