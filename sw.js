@@ -1,13 +1,51 @@
 // ==========================================
 // CONDO UP - SERVICE WORKER INTELIGENTE
-// sw.js - Cache dinâmico e Controle de Push
+// sw.js - Controle TOTAL de Notificações
 // ==========================================
 
-// 1. IMPORTA O MOTOR DO FIREBASE PARA SEGUNDO PLANO
+// 1. O INTERCEPTADOR SUPREMO (VEM ANTES DO FIREBASE)
+self.addEventListener('push', function(event) {
+    // 🛑 PARA A EXECUÇÃO PADRÃO DO FIREBASE AQUI! (Evita duplicar e mata a letra C)
+    event.stopImmediatePropagation();
+
+    let payload = {};
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        console.log("Erro ao ler dados da notificação", e);
+    }
+
+    // Puxa os dados que vieram da nuvem
+    const title = payload?.notification?.title || payload?.data?.title || "📢 Condo Up";
+    const body = payload?.notification?.body || payload?.data?.body || "Você tem uma nova mensagem.";
+    
+    // Força a imagem absoluta cravada!
+    const iconeOficial = self.location.origin + '/img/icon-512.png.png';
+
+    const options = {
+        body: body,
+        icon: iconeOficial,
+        badge: iconeOficial,
+        vibrate: [200, 100, 200],
+        data: payload?.data || {}
+    };
+
+    // Nós mesmos desenhamos a notificação na tela
+    event.waitUntil(
+        self.registration.showNotification(title, options)
+    );
+});
+
+// 2. AÇÃO AO CLICAR NA NOTIFICAÇÃO (Abre o App)
+self.addEventListener('notificationclick', function(event) {
+    event.notification.close();
+    event.waitUntil(clients.openWindow('/'));
+});
+
+// 3. IMPORTA O MOTOR DO FIREBASE EM SEGUNDO PLANO
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js');
 
-// 2. INICIALIZA O FIREBASE COM AS SUAS CHAVES (Condo Up)
 firebase.initializeApp({
     apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
     authDomain: "portaria-pro-ebc5c.firebaseapp.com",
@@ -17,33 +55,11 @@ firebase.initializeApp({
     appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
 });
 
-// 3. CAPTURA A NOTIFICAÇÃO E FORÇA A SUA LOGO COM LINK ABSOLUTO
-const messaging = firebase.messaging();
-messaging.onBackgroundMessage((payload) => {
-    console.log('[ServiceWorker] Notificação recebida em background.', payload);
-
-    // Força o link completo da imagem para o Android não se perder
-    const iconeOficial = self.location.origin + '/img/icon-512.png.png';
-
-    const notificationTitle = payload.notification?.title || "📢 AVISO GLOBAL";
-    const notificationOptions = {
-        body: payload.notification?.body || "Você tem um novo comunicado do condomínio.",
-        icon: iconeOficial, 
-        badge: iconeOficial, 
-        vibrate: [200, 100, 200]
-    };
-
-    return self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-// =========================================================
-// O SEU CÓDIGO DE CACHE INTACTO (Apenas subi a versão)
-// =========================================================
-
-const CACHE_NAME = 'condo-up-v37'; // Versão alterada para forçar o celular a baixar o arquivo novo
+// 4. MOTOR DE CACHE (Versão atualizada)
+const CACHE_NAME = 'condo-up-v37';
 
 self.addEventListener('install', event => {
-    self.skipWaiting(); 
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
@@ -52,7 +68,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cache => {
                     if (cache !== CACHE_NAME) {
-                        return caches.delete(cache); 
+                        return caches.delete(cache);
                     }
                 })
             );
@@ -71,7 +87,7 @@ self.addEventListener('fetch', event => {
         url.hostname.includes('identitytoolkit') ||
         url.hostname.includes('wa.me')
     ) {
-        return; 
+        return;
     }
 
     event.respondWith(
