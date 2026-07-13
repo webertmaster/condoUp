@@ -17,16 +17,19 @@ firebase.initializeApp({
     appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
 });
 
-// 3. CAPTURA A NOTIFICAÇÃO E FORÇA A SUA LOGO
+// 3. CAPTURA A NOTIFICAÇÃO E FORÇA A SUA LOGO COM LINK ABSOLUTO
 const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[ServiceWorker] Notificação recebida em background.', payload);
 
+    // Força o link completo da imagem para o Android não se perder
+    const iconeOficial = self.location.origin + '/img/icon-512.png.png';
+
     const notificationTitle = payload.notification?.title || "📢 AVISO GLOBAL";
     const notificationOptions = {
         body: payload.notification?.body || "Você tem um novo comunicado do condomínio.",
-        icon: '/img/icon-512.png.png', // 🚀 AQUI ESTÁ A MÁGICA: A SUA LOGO FORÇADA!
-        badge: '/img/icon-512.png.png', // Ícone da barra de status superior
+        icon: iconeOficial, 
+        badge: iconeOficial, 
         vibrate: [200, 100, 200]
     };
 
@@ -37,7 +40,7 @@ messaging.onBackgroundMessage((payload) => {
 // O SEU CÓDIGO DE CACHE INTACTO (Apenas subi a versão)
 // =========================================================
 
-const CACHE_NAME = 'condo-up-v35'; // Versão alterada para forçar o celular a baixar o arquivo novo
+const CACHE_NAME = 'condo-up-v36'; // Versão alterada para forçar o celular a baixar o arquivo novo
 
 self.addEventListener('install', event => {
     self.skipWaiting(); 
