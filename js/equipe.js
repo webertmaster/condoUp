@@ -1,6 +1,6 @@
 // ==========================================
 // EVO UPI - CONDO UP
-// equipe.js - Gestão de Equipe na Nuvem (MULTI-TENANT ATIVO)
+// equipe.js - Gestão de Equipe na Nuvem Automatizada
 // ==========================================
 
 let equipeGlobais = [];
@@ -15,7 +15,6 @@ window.addEventListener('DOMContentLoaded', () => {
     // 1. Prepara o Quadro de Assinatura
     canvas = document.getElementById('quadroAssinatura');
     if(canvas) {
-        // 🚀 CORREÇÃO: Força a resolução interna para não bugar com a aba oculta
         canvas.width = 600; 
         canvas.height = 150;
         
@@ -26,7 +25,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
         const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
-            // Calcula a proporção real entre o tamanho visível e a resolução interna
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -86,13 +84,16 @@ function isCanvasBlank(canvas) {
 }
 
 // ==========================================
-// SALVAR E EDITAR NA NUVEM
+// SALVAR, CRIAR LOGIN E ENVIAR E-MAIL
 // ==========================================
-function addFuncionario() {
+async function addFuncionario() {
     const nome = document.getElementById('funcNome').value.trim();
-    const cargo = document.getElementById('funcCargo').value.trim();
+    const cargo = document.getElementById('funcCargo').value;
     const cpfEl = document.getElementById('funcCpf');
     const cpf = cpfEl ? cpfEl.value.trim() : "";
+    
+    const emailEl = document.getElementById('funcEmail');
+    const email = emailEl ? emailEl.value.trim() : "";
 
     if (!nome || !cargo || !cpf) {
         alert('⚠️ Nome, Cargo e CPF são obrigatórios!');
@@ -110,36 +111,117 @@ function addFuncionario() {
 
     const meuCondominio = localStorage.getItem("condominioId");
 
-    if (idFuncionarioEditando) {
-        // MODO EDIÇÃO
-        let dadosUpdate = { nome: nome, cargo: cargo, cpf: cpf };
-        
-        // Se ele desenhou uma assinatura nova, atualiza. Se não, mantém a velha.
-        if (assinaturaBase64) {
-            dadosUpdate.assinatura = assinaturaBase64;
+    const btnSalvar = document.getElementById('btnSalvarEquipe');
+    const textoOriginal = btnSalvar ? btnSalvar.innerHTML : "Cadastrar Funcionário";
+
+    if (btnSalvar) {
+        btnSalvar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando Acesso e Enviando...';
+        btnSalvar.style.pointerEvents = 'none';
+    }
+
+    try {
+        if (idFuncionarioEditando) {
+            // ==========================================
+            // MODO EDIÇÃO (Só atualiza a ficha)
+            // ==========================================
+            let dadosUpdate = { nome: nome, cargo: cargo, cpf: cpf };
+            
+            // Se tem o campo de email preenchido na edição, atualiza a ficha também
+            if (email) dadosUpdate.email = email;
+            if (assinaturaBase64) dadosUpdate.assinatura = assinaturaBase64;
+
+            await db.collection("equipe").doc(idFuncionarioEditando).update(dadosUpdate);
+            resetarFormulario();
+            alert('✅ Ficha atualizada com sucesso!');
+
+        } else {
+            // ==========================================
+            // MODO NOVO: CRIA LOGIN + SALVA + DISPARA EMAIL
+            // ==========================================
+            if (!email) {
+                alert("⚠️ O E-mail é obrigatório para criar o acesso do funcionário!");
+                if(btnSalvar) { btnSalvar.innerHTML = textoOriginal; btnSalvar.style.pointerEvents = 'auto'; }
+                return;
+            }
+
+            // 1. Cria uma Senha Aleatória e Segura (Ex: CondoUp@4821)
+            const senhaGerada = "CondoUp@" + Math.floor(1000 + Math.random() * 9000);
+
+            // 2. Cria o login no Firebase Auth usando App Secundário
+            const secondaryApp = firebase.initializeApp(firebaseConfig, "AppEquipe_" + Date.now());
+            const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senhaGerada);
+            const novoUid = userCredential.user.uid;
+
+            // 3. Salva a Permissão Global no banco de "Usuarios" (Para o Login funcionar)
+            await db.collection("usuarios").doc(novoUid).set({
+                nome: nome,
+                emailAcesso: email,
+                cpf: cpf,
+                cargo: cargo,
+                condominioId: meuCondominio,
+                dataCadastro: new Date().toISOString()
+            });
+
+            // 4. Salva a Ficha na aba "Equipe" do Síndico
+            await db.collection("equipe").add({
+                uidLogin: novoUid,
+                nome: nome,
+                cargo: cargo,
+                cpf: cpf,
+                email: email,
+                assinatura: assinaturaBase64,
+                dataCadastro: new Date().toISOString(),
+                condominioId: meuCondominio,
+                excluido: false
+            });
+
+            // 5. Apaga o App Secundário para o Síndico não ser deslogado
+            await secondaryApp.auth().signOut();
+            await secondaryApp.delete();
+
+            // 6. Monta o E-mail Profissional e Dispara pela Brevo
+            const htmlDoEmail = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                    <div style="background-color: #0F172A; padding: 25px; text-align: center;">
+                        <h2 style="color: #38bdf8; margin: 0; font-size: 24px; letter-spacing: 1px;">CONDO UP</h2>
+                    </div>
+                    <div style="padding: 30px; background-color: #ffffff; color: #334155;">
+                        <h3 style="color: #1e293b; font-size: 20px; margin-top: 0;">Bem-vindo(a) à equipe, ${nome}!</h3>
+                        <p style="font-size: 15px; line-height: 1.6;">O seu cadastro como <strong>${cargo}</strong> foi finalizado pela administração.</p>
+                        
+                        <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; margin: 25px 0;">
+                            <p style="margin: 0 0 10px 0; font-size: 15px;"><b>E-mail de acesso:</b> ${email}</p>
+                            <p style="margin: 0; font-size: 15px;"><b>Senha provisória:</b> <span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace;">${senhaGerada}</span></p>
+                        </div>
+                        
+                        <p style="font-size: 15px;">Acesse o painel pelo link abaixo para iniciar o seu trabalho:</p>
+                        <div style="text-align: center; margin-top: 25px;">
+                            <a href="https://condoup.evoupi.com.br" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
+                        </div>
+                        
+                        <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 30px 0;">
+                        <p style="margin: 0; font-size: 12px; color: #94a3b8; text-align: center;">Por segurança, recomendamos que você altere sua senha no primeiro acesso através da aba "Meu Perfil".</p>
+                    </div>
+                </div>
+            `;
+
+            // Usa a função do motor da Brevo (que está lá no adm.js)
+            if(typeof dispararEmail === 'function') {
+                await dispararEmail(email, nome, "Seus dados de acesso - CondoUp", htmlDoEmail);
+            }
+
+            resetarFormulario();
+            alert('🚀 Funcionário cadastrado na base, login ativado e E-mail enviado com sucesso!');
         }
-
-        db.collection("equipe").doc(idFuncionarioEditando).update(dadosUpdate).then(() => {
-            resetarFormulario();
-            alert('✅ Dados atualizados com sucesso!');
-        }).catch(err => alert("Erro ao editar: " + err));
-
-    } else {
-        // MODO NOVO FUNCIONÁRIO
-        db.collection("equipe").add({
-            nome: nome,
-            cargo: cargo,
-            cpf: cpf,
-            assinatura: assinaturaBase64, // <-- CARIMBO SALVO NA NUVEM!
-            dataCadastro: new Date().toISOString(),
-            condominioId: meuCondominio,
-            excluido: false
-        })
-        .then(() => {
-            resetarFormulario();
-            alert('👥 Funcionário e Assinatura cadastrados na nuvem!');
-        })
-        .catch(err => alert("Erro ao salvar: " + err));
+    } catch (error) {
+        console.error("Erro ao processar:", error);
+        alert("❌ Ocorreu um erro no processo: " + error.message);
+        try { if(firebase.apps.length > 1) { await firebase.app("AppEquipe_" + Date.now()).delete(); } } catch(e) {}
+    } finally {
+        if (btnSalvar) {
+            btnSalvar.innerHTML = textoOriginal;
+            btnSalvar.style.pointerEvents = 'auto';
+        }
     }
 }
 
@@ -147,10 +229,14 @@ function resetarFormulario() {
     idFuncionarioEditando = null;
     document.getElementById('funcNome').value = '';
     document.getElementById('funcCargo').value = '';
+    
     const cpfEl = document.getElementById('funcCpf');
     if(cpfEl) cpfEl.value = '';
     
-    limparAssinatura(); // Limpa o quadro branco
+    const emailEl = document.getElementById('funcEmail');
+    if(emailEl) emailEl.value = '';
+    
+    limparAssinatura(); 
 
     const btnSalvar = document.getElementById('btnSalvarEquipe') || document.querySelector("button[onclick='addFuncionario()']");
     if (btnSalvar) {
@@ -168,8 +254,11 @@ function carregarFuncionarioParaEdicao(index) {
     
     const cpfEl = document.getElementById('funcCpf');
     if(cpfEl) cpfEl.value = func.cpf || '';
+    
+    const emailEl = document.getElementById('funcEmail');
+    if(emailEl) emailEl.value = func.email || '';
 
-    limparAssinatura(); // Zera para não sobrescrever sem querer
+    limparAssinatura(); 
 
     const btnSalvar = document.getElementById('btnSalvarEquipe') || document.querySelector("button[onclick='addFuncionario()']");
     if (btnSalvar) {
@@ -240,7 +329,6 @@ function atualizarListaEquipe() {
                 else if (nomeGrupo === "Manutenção e Limpeza") { corBadge = '#f59e0b'; icone = 'fa-broom'; }
                 else if (nomeGrupo === "Administração") { corBadge = '#8b5cf6'; icone = 'fa-user-tie'; }
 
-                // ADICIONA O SELO DE ASSINATURA NO CARD
                 let assinaturaBadge = func.assinatura 
                     ? `<span style="background: #ecfdf5; color: #059669; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #34d399;"><i class="fa-solid fa-check"></i> Assinatura Salva</span>` 
                     : `<span style="background: #fef2f2; color: #dc2626; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #f87171;"><i class="fa-solid fa-xmark"></i> Sem Assinatura</span>`;
@@ -282,6 +370,12 @@ function atualizarListaEquipe() {
                             <span style="display: flex; align-items: center; gap: 8px;">
                                 <i class="fa-solid fa-id-card-clip" style="color: #64748b; width: 15px;"></i> 
                                 <strong>Cargo:</strong> <span style="background: ${corBadge}20; color: ${corBadge}; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 13px;">${func.cargo}</span>
+                            </span>
+                        </p>
+                        <p style="font-size: 14px; color: #475569; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-envelope" style="color: #64748b; width: 15px;"></i>
+                                ${func.email || 'Não informado'}
                             </span>
                         </p>
                         <p style="font-size: 14px; color: #475569; display: flex; align-items: center; justify-content: space-between; margin: 0;">
