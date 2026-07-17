@@ -251,7 +251,7 @@ async function ativarNotificacoesPush() {
 
     try {
         // 🚀 AQUI ESTÁ A MUDANÇA: v=100 para forçar o celular a baixar a logo!
-        const registration = await navigator.serviceWorker.register('./sw.js?v=106');
+        const registration = await navigator.serviceWorker.register('./sw.js?v=110');
         
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
