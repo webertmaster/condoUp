@@ -476,7 +476,7 @@
             <i class="fa-solid fa-download"></i> Como instalar o App
         </button>
 
-        <button class="btn-tertiary" onclick="alert('Módulo de recuperação de senha em desenvolvimento.')">
+        <button class="btn-tertiary" onclick="recuperarSenha()">
             Esqueceu sua senha?
         </button>
     </div>
@@ -681,6 +681,26 @@
                     console.error(error);
                     btn.innerHTML = 'Entrar na Plataforma';
                     btn.style.opacity = '1';
+                });
+        }
+
+        // Função para o botão "Esqueci minha senha"
+        function recuperarSenha() {
+            const email = prompt("🔒 Digite o seu e-mail de acesso para receber o link de redefinição:");
+            
+            if (!email) return; // Se cancelar, não faz nada
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("✅ Link de redefinição enviado! Verifique a sua caixa de entrada (e o Spam).");
+                })
+                .catch((error) => {
+                    console.error("Erro ao resetar senha:", error);
+                    if (error.code === 'auth/user-not-found') {
+                        alert("❌ Este e-mail não está cadastrado no sistema.");
+                    } else {
+                        alert("❌ Erro ao enviar e-mail: " + error.message);
+                    }
                 });
         }
     </script>
