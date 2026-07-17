@@ -85,6 +85,8 @@ function carregarCondominiosSaaS() {
 
         clientes.forEach((cond) => {
             const isAtivo = cond.ativo !== false;
+            const id = cond.condominioId;
+            const nomeCond = cond.nome || 'Sem Nome';
 
             /// Cálculos para o Dashboard Master
             if (isAtivo) {
@@ -106,21 +108,26 @@ function carregarCondominiosSaaS() {
             listaHtml.innerHTML += `
                 <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 15px 20px;">
-                        <strong style="color: #0f172a; display: block; text-transform: capitalize;">${cond.nome || 'Sem Nome'}</strong>
-                        <span style="color: #64748b; font-size: 12px; font-family: monospace;">ID: ${cond.condominioId || 'Sem ID'}</span>
+                        <strong style="color: #0f172a; display: block; text-transform: capitalize;">${nomeCond}</strong>
+                        <span style="color: #64748b; font-size: 12px; font-family: monospace;">ID: ${id || 'Sem ID'}</span>
                     </td>
                     <td style="padding: 15px 20px; color: #475569;">
                         <strong style="display: block;">${valorFormatado}</strong>
                         <span style="font-size: 12px;"><i class="fa-solid fa-door-closed" style="color: #94a3b8;"></i> ${aptosFormatado}</span>
                     </td>
                     <td style="padding: 15px 20px;">${statusBadge}</td>
-                    <td style="padding: 15px 20px; text-align: right; gap: 8px;">
-                        <button class="btn" style="background: #10b981; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="entrarComoCondominio('${cond.condominioId}', '${cond.nome}')">
-                            <i class="fa-solid fa-eye"></i> Entrar
-                        </button>
-                        <button class="btn" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; margin: 0; padding: 6px 12px; font-size: 12px;" onclick="abrirModalEditarSaaS('${cond.condominioId}', '${cond.nome}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
+                    <td style="padding: 15px 20px; text-align: right;">
+                        <div style="display: flex; justify-content: flex-end; gap: 5px;">
+                            <button onclick="entrarComoCondominio('${id}', '${nomeCond}')" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;" title="Acessar Sistema">
+                                <i class="fa-solid fa-right-to-bracket"></i>
+                            </button>
+                            <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;" title="Editar Plano">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="gerarQrCodeConvite('${id}')" style="background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;" title="QR Code e Link de Convite">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -219,7 +226,63 @@ function carregarListaCondominios() {
     });
 }
 
-function criarUsuarioPeloADM() {
+// ---------------------------------------------------------
+// 🚀 MOTOR DE E-MAILS (BUSCA AS CHAVES NO FIREBASE)
+// ---------------------------------------------------------
+async function dispararEmail(destinatarioEmail, destinatarioNome, assunto, conteudoHTML) {
+    
+    // 1. Busca a configuração salva na sua aba de "Configurações"
+    const configDoc = await db.collection("configuracoes").doc("smtp").get();
+    
+    // 2. Trava de segurança: Se a aba estiver vazia, cancela
+    if (!configDoc.exists) {
+        alert("❌ Erro de Sistema: Configure o SMTP na aba de Configurações do painel Master antes de enviar e-mails!");
+        return false;
+    }
+
+    // 3. Puxa os dados direto do banco
+    const config = configDoc.data(); 
+    const CHAVE_API_BREVO = config.pass; 
+    const REMETENTE_EMAIL = config.user; 
+
+    const url = "https://api.brevo.com/v3/smtp/email";
+
+    const dadosDoEmail = {
+        sender: { name: "CondoUp - Portaria Inteligente", email: REMETENTE_EMAIL },
+        to: [{ email: destinatarioEmail, name: destinatarioNome }],
+        subject: assunto,
+        htmlContent: conteudoHTML
+    };
+
+    try {
+        const resposta = await fetch(url, {
+            method: "POST",
+            headers: {
+                "accept": "application/json",
+                "api-key": CHAVE_API_BREVO, 
+                "content-type": "application/json"
+            },
+            body: JSON.stringify(dadosDoEmail)
+        });
+
+        if (resposta.ok) {
+            console.log("🚀 E-mail disparado com as credenciais do banco!");
+            return true;
+        } else {
+            console.error("❌ Erro da Brevo:", await resposta.text());
+            return false;
+        }
+    } catch (erro) {
+        console.error("❌ Falha na conexão:", erro);
+        return false;
+    }
+}
+// ---------------------------------------------------------
+
+// ---------------------------------------------------------
+// NOVA FUNÇÃO: CRIA USUÁRIO NO FIREBASE E MANDA O E-MAIL
+// ---------------------------------------------------------
+async function criarUsuarioPeloADM() {
     const email = document.getElementById('admFuncEmail').value.trim();
     const senha = document.getElementById('admFuncSenha').value.trim();
     const nome = document.getElementById('admFuncNome').value.trim();
@@ -236,36 +299,84 @@ function criarUsuarioPeloADM() {
         return;
     }
 
-    const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
+    // Mudando o botão para o modo "Carregando"
+    const btn = document.querySelector('button[onclick="criarUsuarioPeloADM()"]');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando e Enviando E-mail...';
+    btn.disabled = true;
 
-    secondaryApp.auth().createUserWithEmailAndPassword(email, senha)
-    .then((userCredential) => {
+    try {
+        // 1. Cria o usuário usando SecondaryApp (Para não deslogar o Admin)
+        const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
+        const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senha);
         const uid = userCredential.user.uid;
 
-        db.collection("usuarios").doc(uid).set({
+        // 2. Salva no banco de dados (Firestore)
+        await db.collection("usuarios").doc(uid).set({
             nome: nome,
             email: email,
             cargo: cargo,
             condominioId: condominioId,
             criadoEm: new Date().toISOString()
-        }).then(() => {
-            alert(`✅ Sucesso! Login de ${nome} (${cargo}) criado e vinculado ao prédio.`);
-            
-            document.getElementById('admFuncNome').value = '';
-            document.getElementById('admFuncEmail').value = '';
-            document.getElementById('admFuncSenha').value = '';
-            
-            secondaryApp.auth().signOut().then(() => {
-                secondaryApp.delete();
-            });
         });
-    })
-    .catch((error) => {
-        console.error("Erro no Firebase:", error);
+
+        // 3. Desloga do SecondaryApp e limpa ele
+        await secondaryApp.auth().signOut();
+        await secondaryApp.delete();
+
+        // 4. Monta o E-mail Premium
+        const htmlDoEmail = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="background-color: #0F172A; padding: 25px; text-align: center;">
+                    <h2 style="color: #38bdf8; margin: 0; font-size: 24px; letter-spacing: 1px;">CONDO UP</h2>
+                </div>
+                <div style="padding: 30px; background-color: #ffffff; color: #334155;">
+                    <h3 style="color: #1e293b; font-size: 20px; margin-top: 0;">Olá, ${nome}!</h3>
+                    <p style="font-size: 15px; line-height: 1.6;">Seu acesso ao sistema da portaria inteligente foi criado com sucesso. O seu perfil registrado é de <strong>${cargo}</strong>.</p>
+                    
+                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; margin: 25px 0;">
+                        <p style="margin: 0 0 10px 0; font-size: 15px;"><b>E-mail de acesso:</b> ${email}</p>
+                        <p style="margin: 0; font-size: 15px;"><b>Senha provisória:</b> <span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace;">${senha}</span></p>
+                    </div>
+                    
+                    <p style="font-size: 15px;">Acesse o painel pelo link abaixo para iniciar o seu trabalho:</p>
+                    <div style="text-align: center; margin-top: 25px;">
+                        <a href="https://app.condoup.com.br" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
+                    </div>
+                    
+                    <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 30px 0;">
+                    <p style="margin: 0; font-size: 12px; color: #94a3b8; text-align: center;">Por segurança, recomendamos que você altere sua senha no primeiro acesso através da aba "Meu Perfil".</p>
+                </div>
+            </div>
+        `;
+
+        // 5. Dispara o E-mail!
+        const emailEnviado = await dispararEmail(email, nome, "Seus dados de acesso - CondoUp", htmlDoEmail);
+
+        if(emailEnviado) {
+            alert(`✅ Sucesso! Login de ${nome} (${cargo}) criado e E-MAIL ENVIADO.`);
+        } else {
+            alert(`⚠️ O Login foi criado, mas houve falha ao enviar o e-mail via Brevo.`);
+        }
+
+        // 6. Limpa as caixas da tela
+        document.getElementById('admFuncNome').value = '';
+        document.getElementById('admFuncEmail').value = '';
+        document.getElementById('admFuncSenha').value = '';
+
+    } catch (error) {
+        console.error("Erro no processo:", error);
         alert("❌ Erro ao criar login: " + error.message);
-        secondaryApp.delete(); 
-    });
+        
+        // Tenta limpar o secondaryApp se der erro no meio do caminho
+        try { if(firebase.apps.length > 1) { await firebase.app("SecondaryApp").delete(); } } catch(e) {}
+    } finally {
+        // Volta o botão ao normal
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
+    }
 }
+
 
 // ==========================================
 // 📢 MEGAFONE: DISPARO VIA ROBÔ DA NUVEM
@@ -331,6 +442,42 @@ async function dispararMegafoneGlobal() {
         console.error("Falha na execução do Megafone Global:", error);
         alert("❌ Erro ao processar o disparo em massa na base de dados.");
     }
+}
+
+// ==========================================
+// 🔗 MÓDULO DE QR CODE E LINK DE CONVITE
+// ==========================================
+function gerarQrCodeConvite(condominioId) {
+    if (!condominioId) {
+        alert("Erro: ID do condomínio não encontrado.");
+        return;
+    }
+
+    // 🔥 AQUI ESTÁ A MÁGICA: Fixamos o seu domínio oficial!
+    const baseUrl = "https://condoup.evoupi.com.br"; 
+    const linkOficial = `${baseUrl}/cadastro-morador.html?cond=${condominioId}`;
+
+    // Atualiza o input com o link
+    document.getElementById('input-link-convite').value = linkOficial;
+
+    // Gera o QR Code dinâmico usando uma API gratuita rápida
+    const urlQrCode = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkOficial)}&margin=10`;
+    document.getElementById('img-qrcode-convite').src = urlQrCode;
+
+    // Abre o Modal na tela
+    document.getElementById('modalQRCodeConvite').style.display = 'flex';
+}
+
+function copiarLinkConvite() {
+    const inputLink = document.getElementById('input-link-convite');
+    inputLink.select();
+    inputLink.setSelectionRange(0, 99999); // Ajuste para funcionar 100% no celular
+
+    navigator.clipboard.writeText(inputLink.value).then(() => {
+        alert("✅ Link copiado com sucesso! Agora é só colar no WhatsApp do morador.");
+    }).catch(err => {
+        console.error('Erro ao copiar: ', err);
+    });
 }
 
 // ==========================================
