@@ -156,12 +156,12 @@
             </div>
 
             <button class="gaveta-btn" onclick="toggleGaveta('gaveta-funcionarios')">
-                <span><i class="fa-solid fa-user-shield" style="width: 20px;"></i> Funcionários</span>
-            </button>
-            <div id="gaveta-funcionarios" class="gaveta-conteudo">
-                <button onclick="trocarTela('adm-funcionarios')"><i class="fa-solid fa-key" style="width: 15px;"></i> Criar Acessos</button>
-                <button onclick="alert('Tela de controle da equipe do condomínio em breve!')"><i class="fa-solid fa-users-gear" style="width: 15px;"></i> Controle Geral</button>
-            </div>
+    <span><i class="fa-solid fa-user-shield" style="width: 20px;"></i> Funcionários</span>
+</button>
+<div id="gaveta-funcionarios" class="gaveta-conteudo">
+    <button onclick="trocarTela('adm-funcionarios')"><i class="fa-solid fa-key" style="width: 15px;"></i> Criar Acessos</button>
+    <button onclick="trocarTela('adm-controle-geral')"><i class="fa-solid fa-users-gear" style="width: 15px;"></i> Controle Geral</button>
+</div>
 
             <button class="gaveta-btn" onclick="toggleGaveta('gaveta-contratos')">
                 <span><i class="fa-solid fa-file-signature" style="width: 20px;"></i> Contratos</span>
@@ -175,8 +175,9 @@
                 <span><i class="fa-solid fa-sack-dollar" style="width: 20px;"></i> Financeiro</span>
             </button>
             <div id="gaveta-financeiro" class="gaveta-conteudo">
-                <button onclick="alert('Tela Financeira em breve')"><i class="fa-solid fa-file-invoice-dollar" style="width: 15px;"></i> Faturas</button>
-                <button onclick="alert('Tela de Inadimplência em breve')"><i class="fa-solid fa-chart-pie" style="width: 15px;"></i> Receita MRR</button>
+                <!-- BOTÕES DO FINANCEIRO ATUALIZADOS -->
+                <button onclick="trocarTela('adm-faturas')"><i class="fa-solid fa-file-invoice-dollar" style="width: 15px;"></i> Faturas</button>
+                <button onclick="trocarTela('adm-mrr')"><i class="fa-solid fa-chart-pie" style="width: 15px;"></i> Receita MRR</button>
             </div>
 
             <button class="gaveta-btn" onclick="toggleGaveta('gaveta-suporte')">
@@ -324,7 +325,7 @@
                 </button>
             </div>
             
-            <select id="funcCargo">
+            <select id="funcCargo" style="margin-bottom: 15px;">
                 <option value="" disabled selected>Selecione o Cargo</option>
                 <option>Porteiro Diurno</option>
                 <option>Porteiro Noturno</option>
@@ -335,6 +336,14 @@
                 <option>Gerente</option>
                 <option>Administrador(a)</option>
             </select>
+            
+            <!-- 🚀 CHECKBOX PARA OBRIGAR O PONTO ADICIONADO AQUI -->
+            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed #3b82f6;">
+                <input type="checkbox" id="funcExigePonto" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
+                <label for="funcExigePonto" style="font-size: 13px; color: #1e293b; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <i class="fa-regular fa-clock" style="color: #3b82f6;"></i> Obrigatório bater ponto eletrônico?
+                </label>
+            </div>
             
             <button class="btn" id="btnSalvarEquipe" onclick="addFuncionario()" style="background: #3b82f6;">Cadastrar Funcionário</button>
         </div>
@@ -517,7 +526,6 @@
                 </h2>
                 
                 <div style="display: flex; gap: 10px;">
-                    <!-- BOTÃO DO LINK DE CONVITE ADICIONADO AQUI -->
                     <button onclick="gerarQrCodeConvite(localStorage.getItem('condominioId'))" style="background: #8b5cf6; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
                         <i class="fa-solid fa-link"></i> Link de Convite
                     </button>
@@ -566,6 +574,7 @@
             <div id="listaMoradores"></div>
         </div>
     </div>
+
     <div id="veiculos" class="tela">
         <div class="box">
             <h2>🚘 Cadastro de Veículos</h2>
@@ -783,7 +792,7 @@
                 }
             </style>
 
-            <input id="encMorador" placeholder="Morador (Obrigatório)">
+            <input id="encMorador" placeholder="Destinatário (Obrigatório)">
             <select id="encApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
                 <option value="">🏢 Selecione o Apartamento...</option>
             </select>
@@ -894,18 +903,59 @@
                 </h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div>
-                        <label>Apto / Bloco</label>
-                        <select id="delApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Apto / Bloco</label>
+                        <select id="delApto" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; outline: none;">
                             <option value="">Selecione o Apto...</option>
                         </select>
                     </div>
                     <div>
-                        <label>Morador Responsável</label>
-                        <input type="text" id="delMorador" placeholder="Nome do Morador..." style="background: #ffffff; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px;">
+                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Destinatário</label>
+                        <input type="text" id="delMorador" placeholder="Nome do Destinatário..." style="background: #ffffff; width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; box-sizing: border-box;">
                     </div>
                     <div>
-                        <label>Aplicativo</label>
-                        <input type="text" id="delPlataforma" placeholder="Ex: iFood, Rappi...">
+                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Entregador / Aplicativo</label>
+                        <!-- INÍCIO DO COMPONENTE PREMIUM COM LOGO -->
+                        <div class="transportadora-search-container" style="margin: 0; width: 100%; position: relative;">
+                            
+                            <div class="search-box" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
+                                <img id="selectedDeliveryLogo" src="" alt="" style="display: none; width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: #f8fafc; padding: 2px;">
+                                
+                                <input type="text" 
+                                       id="delPlataforma" 
+                                       placeholder="Buscar app/loja..." 
+                                       oninput="filtrarDeliveryDropdown()"
+                                       onfocus="mostrarDeliveryDropdown()"
+                                       autocomplete="off"
+                                       style="border: none; outline: none; width: 100%; font-size: 14px; color: #334155; background: transparent; margin: 0;">
+                                
+                                <!-- A SETA AGORA TEM O CLIQUE EXCLUSIVO DELA -->
+                                <span class="dropdown-arrow-delivery" onclick="toggleDeliveryDropdown(event)" style="color: #94a3b8; font-size: 12px; cursor: pointer; transition: transform 0.3s ease; padding: 5px;">▼</span>
+                            </div>
+                            
+                            <div id="deliveryAppDropdown" class="dropdown-content" style="display: none; position: absolute; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 250px; overflow-y: auto; z-index: 1000; width: 100%; margin-top: 5px;">
+                                <!-- Apps de Comida -->
+                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #ef4444; background: #fef2f2; text-transform: uppercase;">🍔 Apps de Comida</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('iFood')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🛵</span> iFood</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Rappi')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🧑‍🍳</span> Rappi</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Uber Eats')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🍽️</span> Uber Eats</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Zé Delivery')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🍻</span> Zé Delivery</div>
+                                
+                                <!-- Farmácias -->
+                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #10b981; background: #ecfdf5; text-transform: uppercase;">💊 Farmácias</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Pague Menos')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">⚕️</span> Pague Menos</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Drogasil')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">➕</span> Drogasil</div>
+                                
+                                <!-- Transporte Rápido -->
+                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #3b82f6; background: #eff6ff; text-transform: uppercase;">🚗 Transporte</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Uber Flash')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">📦</span> Uber Flash</div>
+                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('99 Entrega')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🚕</span> 99 Entrega</div>
+                                
+                                <div class="dropdown-item-del personalizada" onclick="buscarOutraEmpresaDelivery()" style="padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #ef4444; font-weight: bold; background: #fef2f2; position: sticky; bottom: 0;">
+                                    <span style="font-size: 18px;">➕</span> Digitar outro estabelecimento...
+                                </div>
+                            </div>
+                        </div>
+                        <!-- FIM DO COMPONENTE PREMIUM -->
                     </div>
                 </div>
             </div>
@@ -983,6 +1033,192 @@
             <button class="btn" id="btnSalvarComunicado" onclick="salvarComunicado()">Publicar Comunicado</button>
         </div>
         <div id="listaComunicados"></div>
+    </div>
+
+    <!-- TELA MASTER: FUNCIONÁRIOS (CRIAR ACESSOS) -->
+    <div id="adm-funcionarios" class="tela">
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-key" style="color: #38bdf8; margin-right: 10px;"></i>Criar Acessos</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Geração de login para síndicos e administradores.</p>
+            </div>
+        </div>
+        <div class="box" style="border-top: 4px solid #38bdf8;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nome Completo</label>
+                    <input type="text" id="admFuncNome" placeholder="Ex: Carlos Silva" style="width: 100%; margin: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">E-mail de Login</label>
+                    <input type="email" id="admFuncEmail" placeholder="Ex: carlos@email.com" style="width: 100%; margin: 0;">
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Senha de Acesso</label>
+                    <input type="password" id="admFuncSenha" placeholder="Mín. 6 caracteres" style="width: 100%; margin: 0;">
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Cargo / Perfil</label>
+                    <select id="admFuncCargo" style="width: 100%; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                        <option value="" disabled selected>Selecione...</option>
+                        <option value="Síndico">Síndico</option>
+                        <option value="Administradora">Administradora</option>
+                        <option value="Porteiro">Porteiro</option>
+                        <option value="Zelador">Zelador</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Vincular ao Condomínio</label>
+                    <select id="admFuncCondominio" style="width: 100%; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+                        <option value="" disabled selected>Carregando condomínios...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" onclick="criarUsuarioPeloADM()" style="background: #38bdf8; color: white; width: 100%; font-weight: bold; font-size: 16px; margin: 0;">
+                <i class="fa-solid fa-paper-plane"></i> Gerar Login e Enviar E-mail
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA MASTER: CONTROLE GERAL -->
+    <!-- TELA MASTER: CONTROLE GERAL -->
+    <div id="adm-controle-geral" class="tela">
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-users-gear" style="color: #8b5cf6; margin-right: 10px;"></i>Controle Geral de Contas</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Visão completa de todos os usuários (síndicos e porteiros) cadastrados na sua plataforma.</p>
+            </div>
+        </div>
+        
+        <div class="box" style="padding: 0; overflow: visible; border: 1px solid #e2e8f0;">
+            
+            <!-- 🚀 INÍCIO DA NOVA BARRA DE FILTROS -->
+            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-users" style="color: #64748b; margin-right: 8px;"></i> Logins Ativos</h3>
+                
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
+                    <!-- Travei a largura máxima para não estourar a tela -->
+                    <select id="filtroCondominioGeral" onchange="filtrarUsuariosGeral()" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; background: white; width: 250px; margin: 0;">
+                        <option value="">🏢 Todos os Condomínios</option>
+                        <!-- O Javascript vai preencher os clientes aqui -->
+                    </select>
+                    
+                    <div style="position: relative; width: 250px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 12px; color: #94a3b8;"></i>
+                        <input type="text" id="pesquisaUserGeral" placeholder="Buscar nome ou e-mail..." onkeyup="filtrarUsuariosGeral()" style="padding: 10px 10px 10px 35px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; width: 100%; margin: 0; box-sizing: border-box;">
+                    </div>
+                </div>
+            </div>
+            <!-- FIM DA BARRA DE FILTROS -->
+            
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 15px 20px;">Usuário</th>
+                            <th style="padding: 15px 20px;">Condomínio Vinculado</th>
+                            <th style="padding: 15px 20px;">Perfil / Cargo</th>
+                            <th style="padding: 15px 20px; text-align: right;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-usuarios-geral" style="font-size: 14px;">
+                        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando usuários...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TELA 1: GESTÃO DE FATURAS E COBRANÇAS      -->
+    <!-- ========================================== -->
+    <div id="adm-faturas" class="tela">
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981; margin-right: 10px;"></i>Gestão de Faturas</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Controle de cobranças mensais dos condomínios.</p>
+            </div>
+            <button class="btn" style="background: #10b981; height: 45px; margin: 0;" onclick="gerarFaturasDoMes()">
+              <i class="fa-solid fa-plus"></i> Gerar Fatura
+            </button>
+        </div>
+
+        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-list" style="color: #64748b; margin-right: 8px;"></i> Histórico de Cobranças</h3>
+                
+                <select id="filtroStatusFatura" style="margin: 0; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; cursor: pointer;">
+                    <option value="todas">Todas as Faturas</option>
+                    <option value="pendente">🟡 Pendentes</option>
+                    <option value="paga">🟢 Pagas</option>
+                    <option value="vencida">🔴 Vencidas</option>
+                </select>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 15px 20px;">Cliente (Condomínio)</th>
+                            <th style="padding: 15px 20px;">Vencimento</th>
+                            <th style="padding: 15px 20px;">Valor (R$)</th>
+                            <th style="padding: 15px 20px;">Status</th>
+                            <th style="padding: 15px 20px; text-align: right;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-faturas-saas" style="font-size: 14px;">
+                        <tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando faturas...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- TELA 2: DASHBOARD DE RECEITA MRR           -->
+    <!-- ========================================== -->
+    <div id="adm-mrr" class="tela">
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-chart-pie" style="color: #3b82f6; margin-right: 10px;"></i>Dashboard de Receita (MRR)</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Análise de saúde financeira da plataforma.</p>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px; gap: 15px;">
+            <!-- Receita Bruta Prevista -->
+            <div class="stat-card" style="border-bottom: 4px solid #3b82f6; background: white; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Receita Mensal (MRR)</h3>
+                    <i class="fa-solid fa-sack-dollar" style="color: #3b82f6; font-size: 20px;"></i>
+                </div>
+                <span id="mrr-total-previsto" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block;">R$ 0,00</span>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">100% das assinaturas ativas</p>
+            </div>
+
+            <!-- Receita Recebida -->
+            <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Já Recebido (Mês Atual)</h3>
+                    <i class="fa-solid fa-hand-holding-dollar" style="color: #10b981; font-size: 20px;"></i>
+                </div>
+                <span id="mrr-total-recebido" style="font-size: 28px; font-weight: bold; color: #10b981; display: block;">R$ 0,00</span>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">Faturas pagas no mês</p>
+            </div>
+
+            <!-- Inadimplência -->
+            <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Inadimplência</h3>
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 20px;"></i>
+                </div>
+                <span id="mrr-total-vencido" style="font-size: 28px; font-weight: bold; color: #ef4444; display: block;">R$ 0,00</span>
+                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">Faturas em atraso</p>
+            </div>
+        </div>
     </div>
 
     <div id="relatorios" class="tela">
@@ -1079,7 +1315,7 @@
 
             <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <i class="fa-solid fa-motorcycle" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Delivery Rápido</h3>
+                <h3 style="margin: 0; color: #0f172a;">Delivery Rápido</h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relatório do período.</p>
                 <button class="btn" style="background: #ef4444; width: 100%; margin: 0;" onclick="gerarRelatorioDelivery(this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
             </div>
@@ -1219,6 +1455,7 @@
         </div>
     </div>
 
+    <!-- TELA MASTER: CONDOMINIOS (COM O NOVO LAYOUT DO BOTÃO AÇÕES) -->
     <div id="adm-condominios" class="tela">
         <div class="dash-header" style="margin-bottom: 20px;">
             <div>
@@ -1256,35 +1493,47 @@
             </h3>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
-                <div>
-                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
-                    <input type="text" id="novo-cond-nome" placeholder="Ex: Residencial Flores" style="width: 100%; margin-top: 0;">
-                </div>
-                <div>
-                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">ID Único (Sem espaços)</label>
-                    <input type="text" id="novo-cond-id" placeholder="Ex: res_flores_001" style="width: 100%; margin-top: 0; font-family: monospace;">
-                </div>
-                <div>
-                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Quantidade de Aptos</label>
-                    <input type="number" id="novo-cond-aptos" placeholder="Ex: 80" style="width: 100%; margin-top: 0;">
-                </div>
-                <div>
-                    <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Valor do Plano (R$)</label>
-                    <input type="number" id="novo-cond-valor" placeholder="Ex: 890.00" style="width: 100%; margin-top: 0;">
-                </div>
-            </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
+        <input type="text" id="novo-cond-nome" placeholder="Ex: Residencial Flores" style="width: 100%; margin-top: 0;">
+    </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">ID Único (Sem espaços)</label>
+        <input type="text" id="novo-cond-id" placeholder="Ex: res_flores_001" style="width: 100%; margin-top: 0; font-family: monospace;">
+    </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Quantidade de Aptos</label>
+        <input type="number" id="novo-cond-aptos" placeholder="Ex: 80" style="width: 100%; margin-top: 0;">
+    </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Valor do Plano (R$)</label>
+        <input type="number" id="novo-cond-valor" placeholder="Ex: 890.00" style="width: 100%; margin-top: 0;">
+    </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Período do Contrato</label>
+        <select id="novo-cond-periodo" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+            <option value="12">1 Ano (12 Meses)</option>
+            <option value="24">2 Anos (24 Meses)</option>
+            <option value="36">3 Anos (36 Meses)</option>
+        </select>
+    </div>
+    <div>
+        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Logo do Sistema (Opcional)</label>
+        <input type="file" id="novo-cond-logo" accept="image/*" style="width: 100%; font-size: 12px;">
+    </div>
+</div>
 
             <button onclick="salvarNovoCondominioSaaS()" class="btn" style="background: #38bdf8; margin-top: 20px; width: 100%; max-width: 250px;">
                 <i class="fa-solid fa-check"></i> Salvar Condomínio
             </button>
         </div>
 
-        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
+        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; overflow: visible;">
             <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
                 <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-list" style="color: #64748b; margin-right: 8px;"></i> Condomínios Cadastrados</h3>
             </div>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <div style="overflow-x: auto; overflow: visible;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left; overflow: visible;">
                     <thead>
                         <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
                             <th style="padding: 15px 20px;">Condomínio</th>
@@ -1298,55 +1547,6 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    </div>
-
-    <div id="adm-funcionarios" class="tela">
-        <div class="box" style="border-top: 4px solid #38bdf8;">
-            <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-user-shield" style="color: #38bdf8; font-size: 24px;"></i> 
-                Painel ADM - Criar Acessos (Síndicos e Porteiros)
-            </h2>
-            <p style="color: #64748b; font-size: 14px; margin-bottom: 20px;">
-                Crie as contas de acesso ao sistema. O funcionário/síndico só verá os dados do condomínio que você vincular aqui.
-            </p>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Nome Completo</label>
-                    <input type="text" id="admFuncNome" placeholder="Ex: João Síndico" style="margin-top: 5px;">
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569;">E-mail de Login</label>
-                    <input type="email" id="admFuncEmail" placeholder="joao@email.com" style="margin-top: 5px;">
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Senha de Acesso (Mín. 6 letras)</label>
-                    <input type="password" id="admFuncSenha" placeholder="******" style="margin-top: 5px;">
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Cargo / Permissão</label>
-                    <select id="admFuncCargo" style="margin-top: 5px;">
-                        <option value="" disabled selected>Selecione o cargo...</option>
-                        <option value="Síndico">👑 Síndico / Gestor (Vê tudo do prédio)</option>
-                        <option value="Porteiro">👨‍✈️ Porteiro / Operacional (Apenas portaria)</option>
-                        <option value="Zelador">👨‍🔧 Zelador</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Vincular ao Condomínio</label>
-                    <select id="admFuncCondominio" style="margin-top: 5px;">
-                        <option value="" disabled selected>Carregando condomínios...</option>
-                    </select>
-                </div>
-            </div>
-
-            <button class="btn" onclick="criarUsuarioPeloADM()" style="background: #38bdf8; width: 100%; margin: 0; font-size: 16px;">
-                <i class="fa-solid fa-user-plus"></i> Gerar Login e Liberar Acesso
-            </button>
         </div>
     </div>
 
@@ -1404,15 +1604,29 @@
         <input type="text" id="edit-cond-nome" style="width: 100%; margin-bottom: 15px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; font-weight: bold;">
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-            <div>
-                <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Mensalidade (R$)</label>
-                <input type="number" id="edit-cond-valor" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
-            </div>
-            <div>
-                <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nº de Apartamentos</label>
-                <input type="number" id="edit-cond-aptos" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
-            </div>
-        </div>
+    <div>
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Mensalidade (R$)</label>
+        <input type="number" id="edit-cond-valor" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
+    </div>
+    <div>
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nº de Apartamentos</label>
+        <input type="number" id="edit-cond-aptos" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
+    </div>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+    <div>
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Período do Contrato</label>
+        <select id="edit-cond-periodo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
+            <option value="12">1 Ano (12 Meses)</option>
+            <option value="24">2 Anos (24 Meses)</option>
+            <option value="36">3 Anos (36 Meses)</option>
+        </select>
+    </div>
+    <div>
+        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Alterar Logo</label>
+        <input type="file" id="edit-cond-logo" accept="image/*" style="width: 100%; font-size: 12px;">
+    </div>
+</div>
 
         <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Status da Licença</label>
         <select id="edit-cond-status" style="width: 100%; margin-bottom: 25px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; cursor: pointer; font-weight: bold;">
@@ -1475,29 +1689,30 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=111"></script>
-<script src="js/equipe.js?v=12"></script>
-<script src="js/plantao.js?v=11"></script>
-<script src="js/ponto.js?v=13"></script>
-<script src="js/moradores.js?v=13"></script>
-<script src="js/veiculos.js?v=2"></script>
-<script src="js/reservas.js?v=11"></script>
-<script src="js/ocorrencias.js?v=11"></script>
-<script src="js/encomendas.js?v=14"></script>
-<script src="js/comunicados.js?v=13"></script>
-<script src="js/relatorios.js?v=11"></script>
+<script src="js/app.js?v=122"></script>
+<script src="js/equipe.js?v=14"></script>
+<script src="js/plantao.js?v=13"></script>
+<script src="js/ponto.js?v=15"></script>
+<script src="js/moradores.js?v=17"></script>
+<script src="js/veiculos.js?v=3"></script>
+<script src="js/reservas.js?v=12"></script>
+<script src="js/ocorrencias.js?v=12"></script>
+<script src="js/encomendas.js?v=16"></script>
+<script src="js/comunicados.js?v=14"></script>
+<script src="js/relatorios.js?v=12"></script>
 <script src="js/limpeza.js?v=11"></script>
-<script src="js/delivery.js?v=11"></script>
+<script src="js/delivery.js?v=13"></script>
 <script src="js/perfil.js?v=11"></script>
 <script src="js/ajuda.js?v=11"></script> 
 <script src="js/transportadoras.js?v=1"></script>
-<script src="js/adm.js?v=11"></script>
+<script src="js/adm.js?v=16"></script>
+<script src="js/financeiro.js?v=1"></script>
 <script src="js/notificacoes.js?v=2"></script>
 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=111')
+     navigator.serviceWorker.register('sw.js?v=122')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
@@ -1575,6 +1790,98 @@
         <button onclick="copiarLinkConvite()" class="btn" style="background: #8b5cf6; color: white; width: 100%; margin: 0; padding: 15px; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);">
             <i class="fa-solid fa-copy"></i> Copiar Link Oficial
         </button>
+    </div>
+</div>
+
+<!-- 🚀 MODAL: EDITAR USUÁRIO GERAL -->
+    <div id="modalEditarUsuarioGeral" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+        <div class="modal-content" style="max-width: 450px; width: 90%; background: #fff; border-top: 5px solid #8b5cf6; border-radius: 12px; padding: 25px; position: relative;">
+            <button onclick="fecharModalEditarUsuarioGeral()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            
+            <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-user-pen" style="color: #8b5cf6;"></i> Editar Perfil do Usuário</h3>
+            
+            <input type="hidden" id="editUserId">
+            
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Nome Completo</label>
+                <input type="text" id="editUserNome" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">E-mail (Login) - <span style="color: #ef4444; font-weight: normal;">*Não pode ser alterado</span></label>
+                <input type="email" id="editUserEmail" disabled style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Cargo / Perfil</label>
+                    <select id="editUserCargo" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
+                        <option value="Síndico">Síndico</option>
+                        <option value="Administradora">Administradora</option>
+                        <option value="Porteiro">Porteiro</option>
+                        <option value="Zelador">Zelador</option>
+                        <option value="Morador">Morador</option>
+                        <option value="ADM">ADM</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Condomínio</label>
+                    <select id="editUserCondominio" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
+                        <!-- JS vai preencher -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Botão Mágico de Recuperar Senha -->
+            <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <p style="font-size: 12px; color: #b45309; margin-bottom: 10px; font-weight: 600;">O usuário esqueceu a senha?</p>
+                <button onclick="enviarRedefinicaoSenhaGeral()" style="background: #f59e0b; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-envelope"></i> Enviar Link de Recuperação</button>
+            </div>
+
+            <button onclick="salvarEdicaoUsuarioGeral()" style="background: #8b5cf6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px;"><i class="fa-solid fa-check"></i> Salvar Alterações</button>
+        </div>
+    </div>
+
+<!-- ====================================================================== -->
+<!-- 🚀 MODAL UNIVERSAL: JUSTIFICATIVA DE ARQUIVAMENTO (PARA FUNCIONÁRIOS)  -->
+<!-- ====================================================================== -->
+<div id="modalJustificativaArquivamento" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+    <div class="modal-content" style="max-width: 450px; width: 90%; background: #fff; border-top: 5px solid #ef4444; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; color: #ef4444;">
+            <i class="fa-solid fa-circle-exclamation" style="font-size: 30px;"></i>
+            <h3 style="font-size: 18px; color: #0f172a; margin: 0;">Arquivar Registro</h3>
+        </div>
+
+        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5; background: #f8fafc; padding: 10px; border-left: 3px solid #ef4444; border-radius: 4px;">
+            Atenção: Seu perfil não possui permissão de exclusão direta. Por favor, informe o motivo do arquivamento para auditoria da administração.
+        </p>
+
+        <input type="hidden" id="justificativaItemId">
+        <input type="hidden" id="justificativaColecao">
+
+        <div style="margin-bottom: 15px;">
+            <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Motivo Principal</label>
+            <select id="motivoArquivamento" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #fff; cursor: pointer;">
+                <option value="Cadastrado por engano">Cadastrado por engano / Erro de digitação</option>
+                <option value="Registro Duplicado">Registro Duplicado</option>
+                <option value="Morador cancelou">Morador / Visitante cancelou</option>
+                <option value="Outro motivo">Outro motivo (Especifique abaixo)</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Detalhes da Correção (Opcional)</label>
+            <textarea id="detalhesArquivamento" rows="3" placeholder="Ex: Placa do carro estava errada e cadastrei novamente..." style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none; resize: none; font-family: inherit; font-size: 13px;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button onclick="document.getElementById('modalJustificativaArquivamento').style.display='none'" style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Cancelar</button>
+            
+            <button onclick="confirmarArquivamentoComJustificativa()" style="flex: 1; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
+                <i class="fa-solid fa-box-archive"></i> Arquivar
+            </button>
+        </div>
     </div>
 </div>
 </body>
