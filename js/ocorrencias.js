@@ -235,9 +235,20 @@ function prepararEdicaoOcorrencia(idFirebase) {
 }
 
 // ==========================================
-// 4. EXCLUIR (SOFT DELETE) E ESTATÍSTICAS
+// 4. LIXEIRA BLINDADA
 // ==========================================
 function excluirOco(idFirebase) { 
+    // 1. Se for Porteiro (Operacional), joga para a Justificativa!
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("ocorrencias", idFirebase);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada.");
+        }
+        return; 
+    }
+
+    // 2. Se for Gestão/Síndico, arquiva direto e avisa os síndicos (caso tenha mais de um)
     if(confirm("🚨 Arquivar Registro: Tem certeza que deseja arquivar esta ocorrência? Ela sairá do painel, mas será mantida nos relatórios da auditoria.")) { 
         db.collection("ocorrencias").doc(idFirebase).update({
             excluido: true,
@@ -271,48 +282,79 @@ function mostrarOcorrencias(filtro="") {
         if(filtro && !conteudoBuscavel.includes(filtro.toLowerCase())) return;
         
         if(o.prioridade === "Alta" && !o.status.includes("Resolvido")) urg++; 
-        if(o.status.includes("Pendente") || o.status === "Em aberto") abertos++; 
+        if(o.status.includes("Pendente") || o.status.includes("Aberta") || o.status === "Em aberto") abertos++; 
         if(o.status.includes("Resolvido")) res++; 
-        if(o.data === dHoje) hoje++;
+        if(o.data === dHoje || o.dataRegistro?.startsWith(dHoje)) hoje++;
         
         let corBorda = "#cbd5e1"; let classeBadge = ""; let iconeStatus = "";
-        if (o.status.includes("Não Resolvido") || o.status.includes("🔴")) { corBorda = "#ef4444"; classeBadge = "status-urgente"; iconeStatus = '<i class="fa-solid fa-circle-exclamation"></i> '; } 
-        else if (o.status.includes("Pendente") || o.status === "Em aberto" || o.status.includes("🟡")) { corBorda = "#f59e0b"; classeBadge = "status-pendente"; iconeStatus = '<i class="fa-solid fa-clock-rotate-left"></i> '; } 
-        else if (o.status.includes("Resolvido") || o.status.includes("🟢")) { corBorda = "#10b981"; classeBadge = "status-entregue"; iconeStatus = '<i class="fa-solid fa-circle-check"></i> '; }
         
-        let dataFormatada = o.data ? o.data.split('-').reverse().join('/') : "Data Indefinida";
-
-        let botoesAcaoHtml = '';
-        if (cargo === 'operacional') {
-            botoesAcaoHtml = `
-                <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 8px;">
-                    <button onclick="prepararEdicaoOcorrencia('${o.idFirebase}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar"><i class="fa-solid fa-pen"></i> Editar</button>
-                </div>
-            `;
-        } else {
-            botoesAcaoHtml = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
-                    <button onclick="prepararEdicaoOcorrencia('${o.idFirebase}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar"><i class="fa-solid fa-pen"></i> Editar</button>
-                    <button onclick="excluirOco('${o.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar"><i class="fa-solid fa-trash-can"></i> Arquivar</button>
-                </div>
-            `;
+        if (o.status.includes("Não Resolvido") || o.status.includes("🔴")) { corBorda = "#ef4444"; classeBadge = "status-urgente"; iconeStatus = '<i class="fa-solid fa-circle-exclamation"></i> '; } 
+        else if (o.status.includes("Pendente") || o.status.includes("Aberta") || o.status === "Em aberto" || o.status.includes("🟡")) { corBorda = "#f59e0b"; classeBadge = "status-pendente"; iconeStatus = '<i class="fa-solid fa-clock-rotate-left"></i> '; } 
+        else if (o.status.includes("Resolvida") || o.status.includes("Resolvido") || o.status.includes("🟢")) { corBorda = "#10b981"; classeBadge = "status-entregue"; iconeStatus = '<i class="fa-solid fa-circle-check"></i> '; }
+        
+        let dataFormatada = "Data Indefinida";
+        let horaFormatada = "";
+        
+        if(o.data) {
+            dataFormatada = o.data.split('-').reverse().join('/');
+            horaFormatada = o.hora ? `às ${o.hora}` : '';
+        } else if (o.timestamp) {
+            let dataCriacao = new Date(o.timestamp);
+            dataFormatada = dataCriacao.toLocaleDateString('pt-BR');
+            horaFormatada = `às ${dataCriacao.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}`;
         }
+
+        let prioridadeExibida = o.prioridade ? o.prioridade : "Média"; 
+        let porteiroExibido = o.registradoPor || 'App do Morador';
+        let moradorExibido = o.morador || 'N/A';
+
+        // Mensagem do WhatsApp codificada para não quebrar o link
+        let txtWhatsRaw = `Olá ${moradorExibido}, sou da Administração do CondoUp. Entro em contato referente à sua ocorrência: "${o.tipo}".`;
+        let txtWhats = encodeURIComponent(txtWhatsRaw);
+        
+        // ==========================================
+        // 🚀 O NOVO DESIGN DOS BOTÕES (SaaS LEVEL)
+        // ==========================================
+        
+        // 1. Botão Resolver (Só aparece se não estiver resolvido)
+        let btnResolver = !o.status.includes("Resolvido") && !o.status.includes("Resolvida") 
+            ? `<button onclick="resolverOcorrencia('${o.idFirebase}')" title="Marcar como Resolvida" style="flex: 1; height: 42px; background: #dcfce7; color: #16a34a; border: 1px solid #bbf7d0; border-radius: 8px; cursor: pointer; font-size: 18px; transition: 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#16a34a'; this.style.color='white'" onmouseout="this.style.background='#dcfce7'; this.style.color='#16a34a'"><i class="fa-solid fa-check-double"></i></button>` 
+            : '';
+
+        // 2. Botão WhatsApp (Sempre aparece)
+        let btnZap = `<a href="https://wa.me/?text=${txtWhats}" target="_blank" title="Avisar Morador no WhatsApp" style="flex: 1; height: 42px; background: rgba(37,211,102,0.1); color: #25D366; border: 1px solid rgba(37,211,102,0.3); border-radius: 8px; cursor: pointer; font-size: 20px; transition: 0.2s; display: flex; align-items: center; justify-content: center; text-decoration: none;" onmouseover="this.style.background='#25D366'; this.style.color='white'" onmouseout="this.style.background='rgba(37,211,102,0.1)'; this.style.color='#25D366'"><i class="fa-brands fa-whatsapp"></i></a>`;
+
+        // 3. Botão Editar
+        let btnEditar = `<button onclick="prepararEdicaoOcorrencia('${o.idFirebase}')" title="Editar Ocorrência" style="flex: 1; height: 42px; background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#3b82f6'; this.style.color='white'" onmouseout="this.style.background='#eff6ff'; this.style.color='#3b82f6'"><i class="fa-solid fa-pen"></i></button>`;
+
+        // 4. Botão Arquivar
+        let btnArquivar = `<button onclick="excluirOco('${o.idFirebase}')" title="Arquivar Ocorrência" style="flex: 1; height: 42px; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; border-radius: 8px; cursor: pointer; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='#ef4444'; this.style.color='white'" onmouseout="this.style.background='#fef2f2'; this.style.color='#ef4444'"><i class="fa-solid fa-trash-can"></i></button>`;
+
+        // A MÁGICA DO ALINHAMENTO: Coloca todos lado a lado dividindo o espaço igualmente (flex: 1)
+        let containerBotoes = `
+            <div style="display: flex; gap: 10px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                ${btnResolver}
+                ${btnZap}
+                ${btnEditar}
+                ${btnArquivar}
+            </div>
+        `;
 
         lista.innerHTML += `
         <div class="card" style="border-left: 5px solid ${corBorda}; padding: 18px;">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
                 <h3 style="margin: 0; font-size: 16px; color: #0f172a; display: flex; flex-direction: column; gap: 5px;">
                     <div><i class="fa-solid fa-triangle-exclamation" style="color: ${corBorda}; margin-right: 8px; font-size: 18px;"></i>${o.tipo}</div>
-                    <span style="font-size: 11px; color: #64748b; font-weight: normal; background: #f1f5f9; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0; width: fit-content;">Prioridade: ${o.prioridade}</span>
+                    <span style="font-size: 11px; color: #64748b; font-weight: normal; background: #f1f5f9; padding: 2px 8px; border-radius: 12px; border: 1px solid #e2e8f0; width: fit-content;">Prioridade: ${prioridadeExibida}</span>
                 </h3>
                 <span class="badge ${classeBadge}" style="margin: 0; padding: 5px 10px; font-size: 11px; border-radius: 20px;">${iconeStatus}${o.status.replace('🔴', '').replace('🟡', '').replace('🟢', '')}</span>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 14px; color: #475569; margin-bottom: 15px; background: rgba(241, 245, 249, 0.5); padding: 12px; border-radius: 8px; border: 1px solid #f1f5f9;">
                 <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-building" style="color: #3b82f6; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Local:</b>&nbsp; <span style="color: #0f172a;">${o.apto || 'Área Comum'}</span></p>
-                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-clock" style="color: #8b5cf6; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Data:</b>&nbsp; <span style="color: #0f172a;">${dataFormatada} ${o.hora ? `às ${o.hora}` : ''}</span></p>
-                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-user" style="color: #f59e0b; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Morador:</b>&nbsp; <span style="color: #0f172a;">${o.morador || 'N/A'}</span></p>
-                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-user-shield" style="color: #10b981; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Porteiro:</b>&nbsp; <span style="color: #0f172a;">${o.registradoPor || 'Sistema'}</span></p>
+                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-clock" style="color: #8b5cf6; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Data:</b>&nbsp; <span style="color: #0f172a;">${dataFormatada} ${horaFormatada}</span></p>
+                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-user" style="color: #f59e0b; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Morador:</b>&nbsp; <span style="color: #0f172a;">${moradorExibido}</span></p>
+                <p style="margin: 0; display: flex; align-items: center;"><i class="fa-solid fa-user-shield" style="color: #10b981; width: 20px; text-align: center; margin-right: 5px;"></i> <b>Origem:</b>&nbsp; <span style="color: #0f172a;">${porteiroExibido}</span></p>
             </div>
             
             <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-style: italic; font-size: 14px; color: #334155; border-left: 3px solid #cbd5e1; line-height: 1.5;">
@@ -321,11 +363,7 @@ function mostrarOcorrencias(filtro="") {
             
             ${o.foto ? `<img src="${o.foto}" class="foto" style="max-height: 180px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e2e8f0; width: 100%; object-fit: cover; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">` : ''}
             
-            <div style="display: grid; grid-template-columns: ${!o.status.includes("Resolvido") ? '1fr' : '1fr'}; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                ${!o.status.includes("Resolvido") ? `<button onclick="resolverOcorrencia('${o.idFirebase}')" style="background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'"><i class="fa-solid fa-check"></i> Marcar como Resolvida</button>` : ''}
-            </div>
-            
-            ${botoesAcaoHtml}
+            ${containerBotoes}
         </div>`;
     });
     
@@ -333,10 +371,4 @@ function mostrarOcorrencias(filtro="") {
     let sAb = document.getElementById("stat-aberto"); if(sAb) sAb.innerText = abertos;
     let sRes = document.getElementById("stat-resolvida"); if(sRes) sRes.innerText = res; 
     let sHj = document.getElementById("stat-hoje"); if(sHj) sHj.innerText = hoje;
-}
-
-function pesquisarOcorrencias() { mostrarOcorrencias(document.getElementById("pesquisaOcorrencia").value); }
-
-function gerarRelatorioOcorrencias() { 
-    alert("Para gerar o relatório completo com todos os dados da Nuvem, utilize a aba de Relatórios do system!");
 }
