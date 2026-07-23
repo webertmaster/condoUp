@@ -22,11 +22,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. SE ESTIVER DENTRO DO SISTEMA, APLICA AS REGRAS DE HIERARQUIA
     if (isLogado && !paginaAtual.includes('login.html')) {
-        // Garantir que as variáveis de sincronia do ponto leiam as chaves corretas
         sincronizarChavesPonto();
         aplicarRegrasDeCargo();
         
-        // 🚀 GATILHO DO CRACHÁ: Chama a função para desenhar o badge na tela
+        // GATILHO DO CRACHÁ: Chama a função para desenhar o badge na tela
         renderizarBadgeSeguro();
         
         // Seta o nome do funcionário logado no topo da tela do Dashboard
@@ -34,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const elementoNome = document.getElementById('nomeFuncionarioLogado');
         if (elementoNome && nome) elementoNome.innerText = nome;
 
-        // 👁️ VERIFICAÇÃO DO MODO FANTASMA ATIVO
+        // VERIFICAÇÃO DO MODO FANTASMA ATIVO
         const fantasma = localStorage.getItem("condominio_fantasma");
         if (fantasma) {
             const aviso = document.getElementById('aviso-modo-fantasma');
@@ -48,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// 🚀 PONTE DE SEGURANÇA DO RELÓGIO DE PONTO
+// PONTE DE SEGURANÇA DO RELÓGIO DE PONTO
 // ==========================================
 function sincronizarChavesPonto() {
     const nome = localStorage.getItem("usuario_nome");
@@ -62,45 +61,80 @@ function sincronizarChavesPonto() {
 // MÁGICA DA HIERARQUIA E SEGURANÇA VISUAL
 // ==========================================
 function aplicarRegrasDeCargo() {
-    const cargo = localStorage.getItem("usuario_cargo");
+    const cargo = localStorage.getItem("usuario_cargo") || "";
+    const exigePonto = localStorage.getItem("usuario_batePonto") === 'true'; // Lê se o síndico marcou a caixinha
     
-    // Captura os menus sensíveis normais
+    // Captura os menus e botões sensíveis
     const menuEquipe = document.getElementById('menu-equipe') || document.querySelector('[onclick*="equipe"]'); 
     const menuRelatorios = document.getElementById('menu-relatorios') || document.querySelector('[onclick*="relatorios"]'); 
-    
-    // Captura o Bloco inteiro das GAVETAS DO MASTER (Escondido por padrão no CSS)
+    const menuPonto = document.getElementById('menu-ponto');
     const blocoMasterSaaS = document.getElementById('secao-master-saas');
 
     // 👑 1. REGRAS PARA O MÓDULO ADM INTERNO MASTER (Você/Dono)
     if (cargo === 'ADM' || cargo === 'admin-master') {
-        console.log("👑 Acesso MASTER detectado: Destrancando Gavetas Administrativas.");
+        console.log("👑 Acesso MASTER detectado.");
+        window.isPorteiroLogado = false; // Variável global para outros arquivos lerem
         
-        // Libera tudo
         if (menuEquipe) menuEquipe.style.display = 'block';
         if (menuRelatorios) menuRelatorios.style.display = 'block';
-        
-        // 🔓 DESTRANCA AS GAVETAS DO MASTER
         if (blocoMasterSaaS) blocoMasterSaaS.style.display = 'block';
+        if (menuPonto) menuPonto.style.display = 'none'; // Master não bate ponto
         
+        // Garante que o form de comunicados aparece
+        document.getElementById('btnSalvarComunicado') && (document.getElementById('btnSalvarComunicado').style.display = 'block');
         return;
     }
 
-    // Se NÃO FOR ADM Master, GARANTE que as gavetas continuam trancadas e invisíveis!
-    if (blocoMasterSaaS) {
-        blocoMasterSaaS.style.display = 'none';
-    }
+    // Se NÃO FOR ADM Master, GARANTE que as gavetas do SaaS continuam trancadas
+    if (blocoMasterSaaS) blocoMasterSaaS.style.display = 'none';
 
-    // 🔒 2. REGRAS PARA MÓDULO OPERACIONAL (Porteiro)
-    if (cargo === 'operacional' || cargo === 'Porteiro' || cargo === 'Porteiro Diurno' || cargo === 'Porteiro Noturno') {
+    // 🔒 2. REGRAS PARA MÓDULO OPERACIONAL (Porteiro, Zelador)
+    const isOperacional = cargo.toLowerCase().includes('porteiro') || 
+                          cargo.toLowerCase().includes('funcionário') ||
+                          cargo.toLowerCase().includes('zelador') ||
+                          cargo === 'operacional';
+
+    if (isOperacional) {
+        window.isPorteiroLogado = true; // Avisa o resto do sistema que é Porteiro
+        
         if (menuEquipe) menuEquipe.style.display = 'none';
         if (menuRelatorios) menuRelatorios.style.display = 'none';
-        console.log("🔒 Modo Operacional ativado: Menus administrativos ocultados.");
+        
+        // 🚀 DESTRÓI O FORMULÁRIO DE COMUNICADOS PARA O PORTEIRO
+        const camposComunicado = [
+            'tipoComunicado', 'statusComunicado', 'tituloComunicado', 
+            'dataComunicado', 'horaComunicado', 'localComunicado', 
+            'mensagemComunicado', 'btnSalvarComunicado'
+        ];
+        
+        camposComunicado.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.style.display = 'none';
+                // Se o campo estiver dentro de uma div organizadora (flex), esconde a div também
+                if (el.parentElement && el.parentElement.tagName === 'DIV' && el.parentElement.className !== 'box') {
+                    el.parentElement.style.display = 'none';
+                }
+            }
+        });
+        
+        // Exibe a aba de Ponto APENAS se estiver liberado no cadastro dele
+        if (menuPonto) {
+            menuPonto.style.display = exigePonto ? 'flex' : 'none';
+        }
+        
+        console.log("🔒 Modo Operacional ativado. Formulários bloqueados.");
     } 
     // 🔓 3. REGRAS PARA MÓDULO DE SÍNDICO E GERENTES
-    else if (cargo === 'Síndico' || cargo === 'sindico' || cargo === 'Gerente' || cargo === 'Administrador(a)') {
+    else if (cargo.toLowerCase().includes('síndico') || cargo.toLowerCase().includes('sindico') || cargo.toLowerCase().includes('gerente') || cargo.toLowerCase().includes('administrador')) {
+        window.isPorteiroLogado = false; 
+        
         if (menuEquipe) menuEquipe.style.display = 'block';
         if (menuRelatorios) menuRelatorios.style.display = 'block';
-        console.log("🔓 Modo Gestão Ativado: Visão de relatórios e equipe liberados.");
+        if (menuPonto) menuPonto.style.display = 'none'; // Síndico não bate ponto
+        
+        document.getElementById('btnSalvarComunicado') && (document.getElementById('btnSalvarComunicado').style.display = 'block');
+        console.log("🔓 Modo Gestão Ativado.");
     }
 }
 
@@ -109,11 +143,8 @@ function aplicarRegrasDeCargo() {
 // ==========================================
 function deslogarSistema() {
     if(confirm("Deseja realmente sair do sistema?")) {
-        // Rasga o crachá e limpa a memória por completo
         localStorage.clear();
         sessionStorage.clear();
-
-        // Chuta de volta pro Login
         window.location.href = 'login.html';
     }
 }
@@ -125,20 +156,17 @@ function renderizarBadgeSeguro() {
     const cargo = localStorage.getItem("usuario_cargo") || "Porteiro";
     const badge = document.getElementById('badge-acesso-virtual');
     
-    // Se não achou o espaço do crachá na tela, não faz nada
     if (!badge) return;
 
-    // Faz o crachá aparecer
     badge.style.display = 'inline-flex';
 
-    // Pinta a cor e o ícone de acordo com o nível
     if (cargo === 'ADM' || cargo === 'admin-master') {
         badge.innerHTML = '<i class="fa-solid fa-crown"></i> ADM MASTER';
         badge.style.background = 'rgba(56, 189, 248, 0.15)';
         badge.style.color = '#38bdf8';
         badge.style.border = '1px solid rgba(56, 189, 248, 0.3)';
     } 
-    else if (cargo === 'Síndico' || cargo === 'sindico' || cargo === 'Gerente' || cargo === 'Administrador(a)') {
+    else if (cargo.toLowerCase().includes('síndico') || cargo.toLowerCase().includes('sindico') || cargo.toLowerCase().includes('gerente') || cargo.toLowerCase().includes('administrador')) {
         badge.innerHTML = '<i class="fa-solid fa-user-shield"></i> GESTÃO';
         badge.style.background = 'rgba(16, 185, 129, 0.15)';
         badge.style.color = '#10b981';
@@ -153,7 +181,7 @@ function renderizarBadgeSeguro() {
 }
 
 // ==========================================
-// 👁️ ENCERRAMENTO DO MODO FANTASMA
+// ENCERRAMENTO DO MODO FANTASMA
 // ==========================================
 function sairDoModoFantasma() {
     if(confirm("Deseja encerrar a sessão remota e voltar para o seu Painel Master?")) {
