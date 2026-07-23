@@ -383,16 +383,22 @@ function mostrarEncomendas(){
             `;
         }
 
+        // ==========================================
+        // 🔒 BLINDAGEM DE BOTÕES DE EDIÇÃO/EXCLUSÃO
+        // ==========================================
         let botoesGestaoHtml = '';
-        if (cargo === 'operacional') {
+        if (window.isPorteiroLogado === true) {
+            // Porteiro: Tem botão Editar, mas o Arquivar abre a justificativa
             botoesGestaoHtml = `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
                     <button onclick="imprimirEtiqueta(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"><i class="fa-solid fa-print"></i> Padrão</button>
                     <button onclick="imprimirSoQRCode(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"><i class="fa-solid fa-qrcode"></i> Só QR</button>
-                    <button onclick="prepararEdicaoEncomenda(${index})" style="grid-column: span 2; background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar"><i class="fa-solid fa-pen"></i> Editar Encomenda</button>
+                    <button onclick="prepararEdicaoEncomenda(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar"><i class="fa-solid fa-pen"></i> Editar</button>
+                    <button onclick="excluirEncomenda(${index})" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Encomenda"><i class="fa-solid fa-trash-can"></i> Arquivar</button>
                 </div>
             `;
         } else {
+            // Gestão/Síndico: O excluirEncomenda vai pular a justificativa e apagar direto
             botoesGestaoHtml = `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
                     <button onclick="imprimirEtiqueta(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'"><i class="fa-solid fa-print"></i> Padrão</button>
@@ -493,11 +499,27 @@ function finalizarEntregaNoBanco(i, quemBuscou) {
     .catch((err) => alert("Erro ao dar baixa: " + err));
 }
 
+// ==========================================
+// 🚨 LIXEIRA BLINDADA (NOVO FLUXO)
+// ==========================================
 function excluirEncomenda(i){ 
+    let e = encomendas[i];
+
+    // Se for Porteiro (Operacional), intercepta o clique
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("encomendas", e.id);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada.");
+        }
+        return; 
+    }
+
+    // Se for Gestão/Síndico, arquiva direto e sem perguntar motivo
     if(confirm("🚨 Arquivar Registro: Tem certeza que deseja arquivar esta encomenda? Ela sairá do painel principal, mas continuará salva para os Relatórios.")) { 
-        let e = encomendas[i];
         db.collection("encomendas").doc(e.id).update({
             excluido: true,
+            arquivadoPorGestao: true,
             dataExclusao: Date.now()
         })
         .then(() => console.log("Arquivado com sucesso"))
