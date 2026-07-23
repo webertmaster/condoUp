@@ -1,7 +1,135 @@
 // ==========================================
 // EVO UPI - CONDO UP
-// adm.js - Motor do Painel Master Global
+// adm.js - Motor do Painel Master Global e Permissões
 // ==========================================
+
+// Variáveis Universais para Controle de Permissões
+let perfilUsuarioLogado = "Desconhecido"; // Ex: Porteiro, Síndico, Master
+let isMasterSupremo = false;
+
+// ============================================================================
+// 🔒 MÓDULO DE PERMISSÕES E AUDITORIA (RESTRIÇÕES PARA PORTARIA)
+// ============================================================================
+
+// Esta função é chamada logo após o login no auth.js para aplicar as regras visuais
+function aplicarPermissoesPorCargo(dadosUsuario) {
+    perfilUsuarioLogado = dadosUsuario.cargo || "Desconhecido";
+    
+    // Verifica se é porteiro ou zelador (Cargos operacionais)
+    const isOperacional = perfilUsuarioLogado.toLowerCase().includes('porteiro') || 
+                          perfilUsuarioLogado.toLowerCase().includes('funcionário') ||
+                          perfilUsuarioLogado.toLowerCase().includes('zelador');
+    
+    // Verifica se é Master ou Gestão
+    isMasterSupremo = perfilUsuarioLogado.toLowerCase().includes('master') || 
+                      perfilUsuarioLogado.toLowerCase().includes('adm') ||
+                      perfilUsuarioLogado.toLowerCase().includes('síndico') ||
+                      perfilUsuarioLogado.toLowerCase().includes('administradora');
+
+    if (isOperacional) {
+        // Regra 1: Esconde o botão de CRIAR COMUNICADOS. Ele só visualiza.
+        const btnNovoComunicado = document.getElementById('btnSalvarComunicado');
+        if (btnNovoComunicado) btnNovoComunicado.style.display = 'none';
+        
+        // Esconde os campos de digitação de comunicado também para deixar a tela limpa
+        document.getElementById('tituloComunicado') && (document.getElementById('tituloComunicado').style.display = 'none');
+        document.getElementById('mensagemComunicado') && (document.getElementById('mensagemComunicado').style.display = 'none');
+        document.getElementById('localComunicado') && (document.getElementById('localComunicado').style.display = 'none');
+        
+        // Regra 2: Verifica se a aba de Ponto deve aparecer para este funcionário
+        const menuPonto = document.getElementById('menu-ponto');
+        if (menuPonto) {
+            // Se o master não marcou "batePonto" lá no cadastro, esconde a aba
+            if (dadosUsuario.batePonto === true) {
+                menuPonto.style.display = 'flex';
+            } else {
+                menuPonto.style.display = 'none';
+            }
+        }
+    } else if (isMasterSupremo) {
+        // Se for o gestor/síndico, garante que tudo de gerencial apareça e esconde a aba Ponto (gestor não bate ponto aqui)
+        const btnNovoComunicado = document.getElementById('btnSalvarComunicado');
+        if (btnNovoComunicado) btnNovoComunicado.style.display = 'flex';
+        
+        const menuPonto = document.getElementById('menu-ponto');
+        if (menuPonto) menuPonto.style.display = 'none';
+    }
+}
+
+// -------------------------------------------------------------
+// 🗑️ MOTOR INTELIGENTE DE EXCLUSÃO / ARQUIVAMENTO
+// As outras abas (encomendas.js, moradores.js) vão usar essa função
+// -------------------------------------------------------------
+function solicitarArquivamentoRestrito(colecao, idDoDocumento) {
+    if (isMasterSupremo) {
+        // Se for chefe, apaga direto e sem choro!
+        if (confirm("Tem certeza que deseja excluir/arquivar este registro definitivamente?")) {
+            executarArquivamentoNoBanco(colecao, idDoDocumento, "Exclusão Direta pela Gestão", "");
+        }
+    } else {
+        // Se for porteiro/funcionário, abre o MODAL DE JUSTIFICATIVA!
+        document.getElementById('justificativaItemId').value = idDoDocumento;
+        document.getElementById('justificativaColecao').value = colecao;
+        document.getElementById('modalJustificativaArquivamento').style.display = 'flex';
+    }
+}
+
+// Botão "Arquivar" dentro do Modal de Justificativa
+async function confirmarArquivamentoComJustificativa() {
+    const id = document.getElementById('justificativaItemId').value;
+    const colecao = document.getElementById('justificativaColecao').value;
+    const motivo = document.getElementById('motivoArquivamento').value;
+    const detalhes = document.getElementById('detalhesArquivamento').value;
+    const condId = localStorage.getItem("condominioId");
+
+    const btn = document.querySelector('button[onclick="confirmarArquivamentoComJustificativa()"]');
+    const textoBotaoOriginal = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Arquivando...';
+    btn.disabled = true;
+
+    try {
+        // 1. Salva a auditoria (Fofoca para a gestão saber quem apagou)
+        await db.collection("auditoria_arquivamentos").add({
+            condominioId: condId,
+            colecaoAfetada: colecao,
+            documentoId: id,
+            motivoPrincipal: motivo,
+            detalhes: detalhes,
+            quemApagou: document.getElementById('nomeFuncionarioLogado').innerText,
+            dataHora: new Date().toISOString()
+        });
+
+        // 2. Executa a exclusão lógica no banco (coloca uma tag de excluido=true ou deleta)
+        await executarArquivamentoNoBanco(colecao, id, motivo, detalhes);
+        
+        document.getElementById('modalJustificativaArquivamento').style.display = 'none';
+        document.getElementById('detalhesArquivamento').value = ''; // Limpa pra próxima
+        alert("✅ Registro arquivado com sucesso e notificado à gestão!");
+
+    } catch (error) {
+        console.error("Erro ao arquivar com justificativa:", error);
+        alert("❌ Ocorreu um erro ao tentar arquivar o registro.");
+    } finally {
+        btn.innerHTML = textoBotaoOriginal;
+        btn.disabled = false;
+    }
+}
+
+// Função que efetivamente faz o "Delete" ou "Update excluido:true" lá no Firebase
+async function executarArquivamentoNoBanco(colecao, id, motivo, detalhes) {
+    try {
+        // Nós usamos "Exclusão Lógica" (update excluido:true) para não perder histórico
+        await db.collection(colecao).doc(id).update({
+            excluido: true,
+            arquivadoEm: new Date().toISOString(),
+            motivoArquivamento: motivo
+        });
+    } catch (error) {
+        // Se a coleção não aceitar update, a gente força o Delete
+        await db.collection(colecao).doc(id).delete();
+    }
+}
+
 
 // ==========================================
 // 🏢 PARTE 1: GESTÃO DE CONDOMÍNIOS
@@ -12,15 +140,29 @@ async function salvarNovoCondominioSaaS() {
     const idInput = document.getElementById('novo-cond-id');
     const aptosInput = document.getElementById('novo-cond-aptos');
     const valorInput = document.getElementById('novo-cond-valor');
+    const periodoInput = document.getElementById('novo-cond-periodo');
+    const logoInput = document.getElementById('novo-cond-logo');
 
     const nome = nomeInput.value.trim();
     const condominioId = idInput.value.trim().toLowerCase().replace(/\s+/g, '_');
     const aptos = parseInt(aptosInput.value) || 0;
     const valorPlano = parseFloat(valorInput.value) || 0;
+    const contratoMeses = parseInt(periodoInput.value) || 12;
 
     if (!nome || !condominioId) {
         alert("⚠️ Preencha o Nome e o ID Único do condomínio!");
         return;
+    }
+
+    // Função interna pra ler o arquivo de imagem e transformar em Base64
+    let logoBase64 = null;
+    if (logoInput && logoInput.files.length > 0) {
+        const file = logoInput.files[0];
+        logoBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
     }
 
     try {
@@ -35,6 +177,8 @@ async function salvarNovoCondominioSaaS() {
             condominioId: condominioId,
             aptos: aptos,
             valorPlano: valorPlano,
+            contratoMeses: contratoMeses,
+            logoSistema: logoBase64,
             dataCadastro: new Date().toISOString(),
             ativo: true
         });
@@ -45,6 +189,7 @@ async function salvarNovoCondominioSaaS() {
         idInput.value = '';
         aptosInput.value = '';
         valorInput.value = '';
+        if(logoInput) logoInput.value = '';
         document.getElementById('box-cad-condominio').style.display = 'none';
 
     } catch (error) {
@@ -105,6 +250,40 @@ function carregarCondominiosSaaS() {
             const valorFormatado = (cond.valorPlano || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const aptosFormatado = cond.aptos ? `${cond.aptos} aptos` : 'N/D';
 
+            // 🔥 NOVO LAYOUT DE BOTÕES
+            const botoesAcao = `
+                <div style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
+                    <!-- Acesso / Editar / Link -->
+                    <button onclick="entrarComoCondominio('${id}', '${nomeCond}')" style="background: #10b981; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Acessar Sistema"><i class="fa-solid fa-right-to-bracket"></i></button>
+                    <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Plano"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="gerarQrCodeConvite('${id}')" style="background: #8b5cf6; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="QR Code Convite"><i class="fa-solid fa-qrcode"></i></button>
+                    
+                    <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></div> <!-- Divisor -->
+
+                    <!-- Toggle Ativar/Desativar -->
+                    <button onclick="alternarStatusCondominio('${id}', ${isAtivo}, '${nomeCond}')" style="background: ${isAtivo ? '#10b981' : '#64748b'}; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="${isAtivo ? 'Desativar/Bloquear' : 'Ativar/Desbloquear'}">
+                        <i class="fa-solid ${isAtivo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                    </button>
+                    
+                    <!-- Excluir Vermelho -->
+                    <button onclick="excluirCondominioMestre('${id}', '${nomeCond}')" style="background: #ef4444; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Excluir Definitivamente">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                    
+                    <!-- Botão Azul de AÇÕES (Dropdown Hover) -->
+                    <div style="position: relative;" onmouseover="this.querySelector('.dropdown-acoes').style.display='block'" onmouseout="this.querySelector('.dropdown-acoes').style.display='none'">
+                        <button style="background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                            Ações <i class="fa-solid fa-caret-down"></i>
+                        </button>
+                        <div class="dropdown-acoes" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 8px; min-width: 170px; z-index: 100; overflow: hidden; padding: 5px 0;">
+                            <a href="#" onclick="event.preventDefault(); abrirRenovacao('${id}', '${nomeCond}')" style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; color: #1e293b; text-decoration: none; font-size: 13px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+                                <i class="fa-solid fa-file-contract" style="color: #8b5cf6;"></i> Renovar Contrato
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
             listaHtml.innerHTML += `
                 <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
                     <td style="padding: 15px 20px;">
@@ -116,18 +295,8 @@ function carregarCondominiosSaaS() {
                         <span style="font-size: 12px;"><i class="fa-solid fa-door-closed" style="color: #94a3b8;"></i> ${aptosFormatado}</span>
                     </td>
                     <td style="padding: 15px 20px;">${statusBadge}</td>
-                    <td style="padding: 15px 20px; text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; gap: 5px;">
-                            <button onclick="entrarComoCondominio('${id}', '${nomeCond}')" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: bold;" title="Acessar Sistema">
-                                <i class="fa-solid fa-right-to-bracket"></i>
-                            </button>
-                            <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;" title="Editar Plano">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            <button onclick="gerarQrCodeConvite('${id}')" style="background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;" title="QR Code e Link de Convite">
-                                <i class="fa-solid fa-qrcode"></i>
-                            </button>
-                        </div>
+                    <td style="padding: 15px 20px; text-align: right; overflow: visible;">
+                        ${botoesAcao}
                     </td>
                 </tr>
             `;
@@ -164,18 +333,15 @@ function entrarComoCondominio(condId, nome) {
 }
 
 // 🛠️ EDICAO SaaS: FUNÇÃO QUE ABRE O MODAL PREENCHIDO
-function abrirModalEditarSaaS(id, nome, aptos, valor, ativo) {
+function abrirModalEditarSaaS(id, nome, aptos, valor, ativo, contratoMeses) {
     document.getElementById('edit-cond-id').value = id;
     document.getElementById('edit-cond-nome').value = nome;
     document.getElementById('edit-cond-aptos').value = aptos;
     document.getElementById('edit-cond-valor').value = valor;
     document.getElementById('edit-cond-status').value = ativo ? "true" : "false";
+    if(document.getElementById('edit-cond-periodo')) document.getElementById('edit-cond-periodo').value = contratoMeses || 12;
     
     document.getElementById('modalEditarCondominio').style.display = 'flex';
-}
-
-function fecharModalEditarSaaS() {
-    document.getElementById('modalEditarCondominio').style.display = 'none';
 }
 
 async function salvarEdicaoCondominioSaaS() {
@@ -184,23 +350,35 @@ async function salvarEdicaoCondominioSaaS() {
     const aptos = parseInt(document.getElementById('edit-cond-aptos').value) || 0;
     const valorPlano = parseFloat(document.getElementById('edit-cond-valor').value) || 0;
     const statusAtivo = document.getElementById('edit-cond-status').value === "true";
+    const contratoMeses = parseInt(document.getElementById('edit-cond-periodo').value) || 12;
+    const logoInput = document.getElementById('edit-cond-logo');
 
     if (!nome) {
         alert("⚠️ O nome do condomínio não pode ficar vazio!");
         return;
     }
 
-    try {
-        await db.collection("condominios").doc(id).update({
-            nome: nome,
-            aptos: aptos,
-            valorPlano: valorPlano,
-            ativo: statusAtivo
-        });
+    let dadosUpdate = {
+        nome: nome,
+        aptos: aptos,
+        valorPlano: valorPlano,
+        ativo: statusAtivo,
+        contratoMeses: contratoMeses
+    };
 
+    if (logoInput && logoInput.files.length > 0) {
+        const file = logoInput.files[0];
+        dadosUpdate.logoSistema = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    try {
+        await db.collection("condominios").doc(id).update(dadosUpdate);
         alert("✅ Dados do condomínio atualizados com sucesso!");
         fecharModalEditarSaaS();
-
     } catch (error) {
         console.error("Erro ao atualizar condomínio:", error);
         alert("❌ Erro ao atualizar os dados no banco.");
@@ -212,15 +390,22 @@ async function salvarEdicaoCondominioSaaS() {
 // ==========================================
 
 function carregarListaCondominios() {
-    const select = document.getElementById('admFuncCondominio');
-    if (!select) return;
+    const selectCriar = document.getElementById('admFuncCondominio');
+    const selectFiltro = document.getElementById('filtroCondominioGeral');
+    const selectEdit = document.getElementById('editUserCondominio');
 
     db.collection("condominios").onSnapshot((snapshot) => {
-        select.innerHTML = '<option value="" disabled selected>Selecione o Condomínio...</option>';
+        if(selectCriar) selectCriar.innerHTML = '<option value="" disabled selected>Selecione o Condomínio...</option>';
+        if(selectFiltro) selectFiltro.innerHTML = '<option value="">🏢 Todos os Condomínios</option>';
+        if(selectEdit) selectEdit.innerHTML = '<option value="" disabled>Selecione...</option>';
+
         snapshot.forEach((doc) => {
             let c = doc.data();
             if(c.condominioId && c.nome) {
-                select.innerHTML += `<option value="${c.condominioId}" style="text-transform: capitalize;">${c.nome}</option>`;
+                const opt = `<option value="${c.condominioId}" style="text-transform: capitalize;">${c.nome}</option>`;
+                if(selectCriar) selectCriar.innerHTML += opt;
+                if(selectFiltro) selectFiltro.innerHTML += opt;
+                if(selectEdit) selectEdit.innerHTML += opt;
             }
         });
     });
@@ -231,16 +416,13 @@ function carregarListaCondominios() {
 // ---------------------------------------------------------
 async function dispararEmail(destinatarioEmail, destinatarioNome, assunto, conteudoHTML) {
     
-    // 1. Busca a configuração salva na sua aba de "Configurações"
     const configDoc = await db.collection("configuracoes").doc("smtp").get();
     
-    // 2. Trava de segurança: Se a aba estiver vazia, cancela
     if (!configDoc.exists) {
         alert("❌ Erro de Sistema: Configure o SMTP na aba de Configurações do painel Master antes de enviar e-mails!");
         return false;
     }
 
-    // 3. Puxa os dados direto do banco
     const config = configDoc.data(); 
     const CHAVE_API_BREVO = config.pass; 
     const REMETENTE_EMAIL = config.user; 
@@ -277,7 +459,6 @@ async function dispararEmail(destinatarioEmail, destinatarioNome, assunto, conte
         return false;
     }
 }
-// ---------------------------------------------------------
 
 // ---------------------------------------------------------
 // NOVA FUNÇÃO: CRIA USUÁRIO NO FIREBASE E MANDA O E-MAIL
@@ -299,19 +480,16 @@ async function criarUsuarioPeloADM() {
         return;
     }
 
-    // Mudando o botão para o modo "Carregando"
     const btn = document.querySelector('button[onclick="criarUsuarioPeloADM()"]');
     const textoOriginal = btn.innerHTML;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando e Enviando E-mail...';
     btn.disabled = true;
 
     try {
-        // 1. Cria o usuário usando SecondaryApp (Para não deslogar o Admin)
         const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
         const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senha);
         const uid = userCredential.user.uid;
 
-        // 2. Salva no banco de dados (Firestore)
         await db.collection("usuarios").doc(uid).set({
             nome: nome,
             email: email,
@@ -320,11 +498,9 @@ async function criarUsuarioPeloADM() {
             criadoEm: new Date().toISOString()
         });
 
-        // 3. Desloga do SecondaryApp e limpa ele
         await secondaryApp.auth().signOut();
         await secondaryApp.delete();
 
-        // 4. Monta o E-mail Premium
         const htmlDoEmail = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                 <div style="background-color: #0F172A; padding: 25px; text-align: center;">
@@ -341,16 +517,14 @@ async function criarUsuarioPeloADM() {
                     
                     <p style="font-size: 15px;">Acesse o painel pelo link abaixo para iniciar o seu trabalho:</p>
                     <div style="text-align: center; margin-top: 25px;">
-                        <a href="https://app.condoup.com.br" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
+                        <a href="https://condoup.evoupi.com.br/" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
                     </div>
                     
                     <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 30px 0;">
                     <p style="margin: 0; font-size: 12px; color: #94a3b8; text-align: center;">Por segurança, recomendamos que você altere sua senha no primeiro acesso através da aba "Meu Perfil".</p>
                 </div>
-            </div>
-        `;
+            </div>`;
 
-        // 5. Dispara o E-mail!
         const emailEnviado = await dispararEmail(email, nome, "Seus dados de acesso - CondoUp", htmlDoEmail);
 
         if(emailEnviado) {
@@ -359,7 +533,6 @@ async function criarUsuarioPeloADM() {
             alert(`⚠️ O Login foi criado, mas houve falha ao enviar o e-mail via Brevo.`);
         }
 
-        // 6. Limpa as caixas da tela
         document.getElementById('admFuncNome').value = '';
         document.getElementById('admFuncEmail').value = '';
         document.getElementById('admFuncSenha').value = '';
@@ -367,11 +540,8 @@ async function criarUsuarioPeloADM() {
     } catch (error) {
         console.error("Erro no processo:", error);
         alert("❌ Erro ao criar login: " + error.message);
-        
-        // Tenta limpar o secondaryApp se der erro no meio do caminho
         try { if(firebase.apps.length > 1) { await firebase.app("SecondaryApp").delete(); } } catch(e) {}
     } finally {
-        // Volta o botão ao normal
         btn.innerHTML = textoOriginal;
         btn.disabled = false;
     }
@@ -453,25 +623,21 @@ function gerarQrCodeConvite(condominioId) {
         return;
     }
 
-    // 🔥 AQUI ESTÁ A MÁGICA: Fixamos o seu domínio oficial!
     const baseUrl = "https://condoup.evoupi.com.br"; 
     const linkOficial = `${baseUrl}/cadastro-morador.html?cond=${condominioId}`;
 
-    // Atualiza o input com o link
     document.getElementById('input-link-convite').value = linkOficial;
 
-    // Gera o QR Code dinâmico usando uma API gratuita rápida
     const urlQrCode = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkOficial)}&margin=10`;
     document.getElementById('img-qrcode-convite').src = urlQrCode;
 
-    // Abre o Modal na tela
     document.getElementById('modalQRCodeConvite').style.display = 'flex';
 }
 
 function copiarLinkConvite() {
     const inputLink = document.getElementById('input-link-convite');
     inputLink.select();
-    inputLink.setSelectionRange(0, 99999); // Ajuste para funcionar 100% no celular
+    inputLink.setSelectionRange(0, 99999); 
 
     navigator.clipboard.writeText(inputLink.value).then(() => {
         alert("✅ Link copiado com sucesso! Agora é só colar no WhatsApp do morador.");
@@ -481,7 +647,152 @@ function copiarLinkConvite() {
 }
 
 // ==========================================
-// 🚀 INICIALIZAÇÃO BLINDADA
+// 🛠️ FUNÇÕES DOS NOVOS BOTÕES (Toggle, Excluir, Renovar)
+// ==========================================
+
+async function alternarStatusCondominio(id, statusAtual, nome) {
+    const acao = statusAtual ? "BLOQUEAR / SUSPENDER" : "ATIVAR / DESBLOQUEAR";
+    if(!confirm(`Deseja ${acao} o condomínio "${nome}"?\n\nIsso altera o status de acesso deles.`)) return;
+    
+    try {
+        await db.collection("condominios").doc(id).update({ ativo: !statusAtual });
+    } catch(e) { alert("Erro ao alterar status: " + e); }
+}
+
+async function excluirCondominioMestre(id, nome) {
+    if(!confirm(`🚨 ALERTA VERMELHO 🚨\n\nVocê está prestes a EXCLUIR DEFINITIVAMENTE o condomínio "${nome}".\nTodos os logins ligados a ele perderão o acesso.\n\nDeseja mesmo destruir este cliente?`)) return;
+    
+    try {
+        await db.collection("condominios").doc(id).delete();
+        alert("✅ Condomínio excluído com sucesso.");
+    } catch(e) { alert("Erro ao excluir: " + e); }
+}
+
+function abrirRenovacao(id, nome) {
+    let modal = document.getElementById('modalRenovacaoDinamico');
+    if(!modal) {
+        document.body.insertAdjacentHTML('beforeend', `
+        <div id="modalRenovacaoDinamico" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+            <div class="modal-content" style="max-width: 400px; width: 90%; background: #fff; border-top: 5px solid #3b82f6; border-radius: 12px; padding: 25px;">
+                <h3 style="margin: 0 0 15px 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-file-signature" style="color: #3b82f6;"></i> Renovar Contrato</h3>
+                <p id="nomeCondRenovacao" style="color: #64748b; font-size: 14px; margin-bottom: 20px; font-weight: bold;"></p>
+                <input type="hidden" id="idCondRenovacao">
+                
+                <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Período de Renovação</label>
+                <select id="periodoRenovacao" style="width: 100%; margin-bottom: 20px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
+                    <option value="1">1 Ano (12 meses)</option>
+                    <option value="2">2 Anos (24 meses)</option>
+                    <option value="3">3 Anos (36 meses)</option>
+                </select>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="document.getElementById('modalRenovacaoDinamico').style.display='none'" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
+                    <button onclick="confirmarRenovacaoMestre()" style="background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Confirmar</button>
+                </div>
+            </div>
+        </div>`);
+        modal = document.getElementById('modalRenovacaoDinamico');
+    }
+    
+    document.getElementById('idCondRenovacao').value = id;
+    document.getElementById('nomeCondRenovacao').innerText = "Cliente: " + nome;
+    modal.style.display = 'flex';
+}
+
+async function confirmarRenovacaoMestre() {
+    const id = document.getElementById('idCondRenovacao').value;
+    const anos = parseInt(document.getElementById('periodoRenovacao').value);
+    
+    try {
+        await db.collection("condominios").doc(id).update({
+            contratoRenovadoEm: new Date().toISOString(),
+            contratoAnosValidade: anos
+        });
+        alert(`✅ Sucesso! Contrato renovado por mais ${anos} ano(s)!`);
+        document.getElementById('modalRenovacaoDinamico').style.display = 'none';
+    } catch(e) { alert("Erro ao renovar: " + e); }
+}
+
+
+// ==========================================
+// 🛡️ GUARDA-COSTAS (SISTEMA DE BLOQUEIO DE INADIMPLENTES)
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    // Dá um tempinho para o sistema carregar o localStorage após o login
+    setTimeout(() => {
+        const meuCond = localStorage.getItem("condominioId");
+        if (!meuCond || typeof db === 'undefined') return;
+
+        const isFantasma = localStorage.getItem("condominio_fantasma") !== null;
+        
+        // Verifica se a aba Master está visível na tela (Se estiver, ele é o Dono do Sistema)
+        const menuMaster = document.getElementById('secao-master-saas');
+        const isMaster = menuMaster && menuMaster.style.display !== 'none';
+
+        // Se for o Dono da plataforma e NÃO estiver no modo fantasma, ele NUNCA é bloqueado!
+        if (isMaster && !isFantasma) return; 
+
+        // Acorda o vigilante que fica olhando para a nuvem 24 horas
+        db.collection("condominios").doc(meuCond).onSnapshot((doc) => {
+            if (doc.exists) {
+                const dados = doc.data();
+                // Se a chavinha de ATIVO for para FALSE, levanta o escudo!
+                if (dados.ativo === false) {
+                    bloquearTelaCondoUp(isFantasma);
+                } else {
+                    desbloquearTelaCondoUp();
+                }
+            }
+        });
+    }, 2000); 
+});
+
+function bloquearTelaCondoUp(isFantasma) {
+    // 1. Esconde a interface inteira do sistema
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar) sidebar.style.display = 'none';
+    if (content) content.style.display = 'none';
+
+    // 2. Cria a tela do Cadeado se ela não existir
+    let tela = document.getElementById('tela-inadimplencia-condoup');
+    if (!tela) {
+        tela = document.createElement('div');
+        tela.id = 'tela-inadimplencia-condoup';
+        tela.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-align:center; padding: 20px;';
+        document.body.appendChild(tela);
+    }
+
+    let btnHTML = `<button onclick="deslogarSistema()" style="background: #ef4444; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</button>`;
+    
+    if (isFantasma) {
+        btnHTML = `<button onclick="sairDoModoFantasma()" style="background: #3b82f6; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);"><i class="fa-solid fa-ghost"></i> Voltar para o Painel Master</button>`;
+    }
+
+    tela.innerHTML = `
+        <i class="fa-solid fa-lock" style="font-size: 90px; color: #ef4444; margin-bottom: 25px; filter: drop-shadow(0 0 20px rgba(239,68,68,0.5));"></i>
+        <h1 style="font-size: 36px; margin-bottom: 15px; color: #f8fafc; letter-spacing: 1px;">Acesso Suspenso</h1>
+        <p style="font-size: 16px; color: #94a3b8; max-width: 500px; line-height: 1.6; margin-bottom: 35px;">
+            O sistema de portaria e gestão deste condomínio encontra-se temporariamente indisponível.<br><br>
+            Por favor, entre em contato com a administração da <strong>Condo Up</strong> para verificar a situação do seu plano.
+        </p>
+        ${btnHTML}
+    `;
+    tela.style.display = 'flex';
+}
+
+function desbloquearTelaCondoUp() {
+    const tela = document.getElementById('tela-inadimplencia-condoup');
+    if (tela) tela.style.display = 'none';
+
+    const sidebar = document.querySelector('.sidebar');
+    const content = document.querySelector('.content');
+    if (sidebar) sidebar.style.display = '';
+    if (content) content.style.display = '';
+}
+
+// ==========================================
+// 🚀 INICIALIZAÇÃO BLINDADA DO PAINEL MASTER
 // ==========================================
 const ligarMotorADM = setInterval(() => {
     const listaNaTela = document.getElementById('lista-condominios-saas');
@@ -490,6 +801,154 @@ const ligarMotorADM = setInterval(() => {
         console.log("🚀 Motor ADM Ligado! Puxando dados em tempo real...");
         carregarCondominiosSaaS();
         carregarListaCondominios();
+        
+        if (typeof carregarUsuariosGeral === 'function') carregarUsuariosGeral(); 
+        
         clearInterval(ligarMotorADM); 
     }
 }, 500);
+
+// ==========================================
+// 👥 CONTROLE GERAL DE USUÁRIOS
+// ==========================================
+
+function carregarUsuariosGeral() {
+    const listaHtml = document.getElementById('lista-usuarios-geral');
+    if (!listaHtml) return;
+
+    db.collection("usuarios").onSnapshot((snapshot) => {
+        listaHtml.innerHTML = '';
+        
+        if(snapshot.empty) {
+            listaHtml.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Nenhum usuário encontrado.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const user = doc.data();
+            const id = doc.id;
+            
+            const nome = user.nome || "Sem Nome";
+            const email = user.email || "Sem E-mail";
+            const cargo = user.cargo || "Sem Cargo";
+            const condId = user.condominioId || "";
+            
+            let condominioVisu = condId ? condId.replace(/_/g, ' ') : "Acesso Global / Master";
+            
+            const badgeCargo = (cargo === 'Master' || cargo === 'ADM' || cargo === 'admin-master')
+                ? `<span style="background: #1e293b; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-crown"></i> MESTRE</span>`
+                : `<span style="background: #e0e7ff; color: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">${cargo}</span>`;
+
+            listaHtml.innerHTML += `
+                <tr class="linha-usuario-geral" data-condominio="${condId}" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+                    <td style="padding: 15px 20px;">
+                        <strong style="display: block; color: #0f172a;">${nome}</strong>
+                        <span style="font-size: 12px; color: #64748b;">${email}</span>
+                    </td>
+                    <td style="padding: 15px 20px; color: #475569; text-transform: capitalize;">
+                        <i class="fa-solid fa-building" style="color: #cbd5e1; margin-right: 5px;"></i> ${condominioVisu}
+                    </td>
+                    <td style="padding: 15px 20px;">${badgeCargo}</td>
+                    <td style="padding: 15px 20px; text-align: right;">
+                        <div style="display: flex; justify-content: flex-end; gap: 5px;">
+                            <button onclick="abrirModalEditarUsuarioGeral('${id}', '${nome}', '${email}', '${cargo}', '${condId}')" style="background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Perfil / Recuperar Senha">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            <button onclick="excluirUsuarioMestre('${id}', '${nome}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Remover Acesso Permanente">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        filtrarUsuariosGeral();
+    });
+}
+
+// 🔥 Filtro Inteligente (Busca de Texto + Dropdown do Condomínio)
+function filtrarUsuariosGeral() {
+    const termo = document.getElementById('pesquisaUserGeral').value.toLowerCase();
+    const filtroCond = document.getElementById('filtroCondominioGeral').value;
+    const linhas = document.querySelectorAll('.linha-usuario-geral');
+    
+    linhas.forEach(linha => {
+        const texto = linha.innerText.toLowerCase();
+        const condLinha = linha.getAttribute('data-condominio');
+        
+        const bateuTexto = texto.includes(termo);
+        const bateuCond = (filtroCond === "") || (condLinha === filtroCond);
+
+        if (bateuTexto && bateuCond) {
+            linha.style.display = '';
+        } else {
+            linha.style.display = 'none';
+        }
+    });
+}
+
+async function excluirUsuarioMestre(uid, nome) {
+    if(!confirm(`🚨 ALERTA 🚨\n\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o acesso de ${nome}?`)) return;
+    try {
+        await db.collection("usuarios").doc(uid).delete();
+        alert("✅ Usuário removido com sucesso!");
+    } catch(e) { alert("❌ Erro: " + e); }
+}
+
+// ==========================================
+// ✏️ FUNÇÕES DO MODAL DE EDIÇÃO
+// ==========================================
+function abrirModalEditarUsuarioGeral(uid, nome, email, cargo, condId) {
+    document.getElementById('editUserId').value = uid;
+    document.getElementById('editUserNome').value = nome;
+    document.getElementById('editUserEmail').value = email;
+    
+    const selectCargo = document.getElementById('editUserCargo');
+    if(Array.from(selectCargo.options).some(opt => opt.value === cargo)) {
+        selectCargo.value = cargo;
+    }
+    
+    document.getElementById('editUserCondominio').value = condId || "";
+
+    document.getElementById('modalEditarUsuarioGeral').style.display = 'flex';
+}
+
+function fecharModalEditarUsuarioGeral() {
+    document.getElementById('modalEditarUsuarioGeral').style.display = 'none';
+}
+
+async function salvarEdicaoUsuarioGeral() {
+    const uid = document.getElementById('editUserId').value;
+    const nome = document.getElementById('editUserNome').value.trim();
+    const cargo = document.getElementById('editUserCargo').value;
+    const condId = document.getElementById('editUserCondominio').value;
+
+    if (!nome) { alert("O nome não pode ficar vazio!"); return; }
+
+    try {
+        await db.collection("usuarios").doc(uid).update({
+            nome: nome,
+            cargo: cargo,
+            condominioId: condId
+        });
+        alert("✅ Perfil atualizado com sucesso!");
+        fecharModalEditarUsuarioGeral();
+    } catch(e) { alert("Erro ao atualizar: " + e); }
+}
+
+// 📧 Envio automático do Firebase para Recuperação de Senha
+function enviarRedefinicaoSenhaGeral() {
+    const email = document.getElementById('editUserEmail').value;
+    if(!email) return;
+    
+    if(confirm(`Deseja enviar um e-mail de redefinição de senha para ${email}?`)) {
+        firebase.auth().sendPasswordResetEmail(email)
+            .then(() => {
+                alert(`✅ Sucesso! O link de redefinição foi enviado direto para a caixa de entrada de ${email}.`);
+            })
+            .catch((error) => {
+                alert(`❌ Falha ao enviar o e-mail: ${error.message}`);
+            });
+    }
+}
