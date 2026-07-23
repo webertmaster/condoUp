@@ -628,7 +628,7 @@
             }, 1000);
         }
 
-        // MOTOR DE LOGIN PRINCIPAL
+        // 🚀 MOTOR DE LOGIN PRINCIPAL (GUARDA DE TRÂNSITO)
         function fazerLogin() {
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value.trim();
@@ -661,13 +661,27 @@
                         if (doc.exists) {
                             const dados = doc.data();
                             
+                            // Salva as credenciais básicas
                             localStorage.setItem("condoup_logado", "true");
                             localStorage.setItem("usuario_uid", uid);
-                            localStorage.setItem("usuario_nome", dados.nome);
-                            localStorage.setItem("usuario_cargo", dados.cargo);
-                            localStorage.setItem("condominioId", dados.condominioId);
+                            localStorage.setItem("usuario_nome", dados.nome || "Usuário");
+                            localStorage.setItem("usuario_cargo", dados.cargo || "");
+                            localStorage.setItem("condominioId", dados.condominioId || "");
                             
-                            window.location.href = "index.html";
+                            // 🚀 Guarda a obrigação do Ponto na memória!
+                            localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
+                            
+                            // 🚀 DESVIO INTELIGENTE DE ROTAS
+                            const cargoLogado = (dados.cargo || "").toLowerCase();
+                            
+                            if (cargoLogado === "morador") {
+                                console.log("Logado como Morador. Redirecionando para morador.html");
+                                window.location.href = "morador.html"; 
+                            } else {
+                                console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                                window.location.href = "index.html"; 
+                            }
+                            
                         } else {
                             alert("❌ Usuário não encontrado no banco de dados.");
                             auth.signOut();
@@ -688,7 +702,7 @@
         function recuperarSenha() {
             const email = prompt("🔒 Digite o seu e-mail de acesso para receber o link de redefinição:");
             
-            if (!email) return; // Se cancelar, não faz nada
+            if (!email) return;
 
             firebase.auth().sendPasswordResetEmail(email)
                 .then(() => {
