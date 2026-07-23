@@ -24,10 +24,8 @@ function iniciarPontoDigital() {
         return;
     }
 
-    // O Radar: Fica procurando o nome real do usuário a cada meio segundo
     let tentativas = 0;
     const buscadorDeLogin = setInterval(() => {
-        // Tenta pegar da tela inicial ou da memória
         let nomeDash = document.getElementById('nomeFuncionarioLogado');
         let nomeTela = nomeDash ? nomeDash.innerText.trim() : "";
         let nomeMemoria = localStorage.getItem('usuario_logado_nome') || localStorage.getItem('nomeUsuario') || "";
@@ -35,9 +33,8 @@ function iniciarPontoDigital() {
         let nomeReal = nomeTela !== "Usuário" ? nomeTela : nomeMemoria;
         let cargoReal = localStorage.getItem('usuario_cargo') || localStorage.getItem('cargoUsuario') || "Porteiro";
 
-        // Se achou um nome válido (e que não seja a palavra 'carregando')
         if (nomeReal && nomeReal !== "Usuário" && !nomeReal.toLowerCase().includes("carregando")) {
-            clearInterval(buscadorDeLogin); // Desliga o radar, achamos!
+            clearInterval(buscadorDeLogin); 
             
             usuarioNomeAtual = nomeReal;
             usuarioCargoAtual = cargoReal;
@@ -46,12 +43,11 @@ function iniciarPontoDigital() {
             if(nomeEl) nomeEl.innerText = usuarioNomeAtual;
             if(statusText) statusText.innerText = "Sincronizando com a nuvem...";
 
-            // Liga o Firebase só agora que sabemos quem é
             conectarFirebasePonto(meuCondominio);
         }
         
         tentativas++;
-        if (tentativas > 20) { // Se passar 10 segundos e não achar, avisa do erro
+        if (tentativas > 20) { 
             clearInterval(buscadorDeLogin);
             if(statusText) statusText.innerHTML = '<span style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Tempo esgotado ao buscar login. Recarregue a página.</span>';
             const areaBotoes = document.getElementById('areaBotoesPonto');
@@ -62,7 +58,7 @@ function iniciarPontoDigital() {
 
 function conectarFirebasePonto(condominio) {
     if(typeof db !== 'undefined') {
-        if (listenerPontoAtivo) listenerPontoAtivo(); // Limpa escuta anterior se houver
+        if (listenerPontoAtivo) listenerPontoAtivo(); 
         
         listenerPontoAtivo = db.collection("ponto").where("condominioId", "==", condominio).onSnapshot((snapshot) => {
             pontosGlobais = [];
@@ -76,7 +72,7 @@ function conectarFirebasePonto(condominio) {
 
             verificarStatusBotoes();
             mostrarPontos();
-            inicializarTelaPontoGestor(condominio); // Chama a nova função de inicialização do gestor
+            inicializarTelaPontoGestor(condominio); 
             atualizarFiltrosRelatorio();
             if(typeof atualizarDashboard === 'function') atualizarDashboard();
         }, (error) => {
@@ -94,11 +90,9 @@ function verificarStatusBotoes() {
     const statusText = document.getElementById('statusAtualPonto');
     if(!areaBotoes) return;
 
-    // Pega a data exata local (evita bug de fuso horário UTC)
     const agora = new Date();
     const dataHoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
     
-    // Filtra só os pontos DE HOJE e DO USUÁRIO LOGADO
     const pontosHoje = pontosGlobais.filter(p => p.nome === usuarioNomeAtual && p.data === dataHoje);
 
     let temEntrada = pontosHoje.some(p => p.tipo === 'Entrada');
@@ -170,7 +164,6 @@ function registrarPonto(tipo) {
     db.collection("ponto").add(registro).then(() => {
         const primeiroNome = usuarioNomeAtual.split(' ')[0];
         
-        // Atualiza o status atual do ponto do usuário na coleção 'usuarios' ou 'equipe'
         atualizarStatusUsuario(usuarioNomeAtual, tipo, meuCondominio).then(() => {
             alert(`✅ Ponto Batido com Sucesso!\n\n${tipo} registrado para ${primeiroNome}.\n⏰ Horário: ${registro.hora}`);
             if(obsInput) obsInput.value = '';
@@ -178,18 +171,16 @@ function registrarPonto(tipo) {
         
     }).catch((err) => {
         alert("Erro ao registrar ponto: " + err);
-        verificarStatusBotoes(); // Volta o botão ao normal em caso de erro
+        verificarStatusBotoes(); 
     });
 }
 
-// Função para atualizar o status do funcionário para o painel de gestão
 function atualizarStatusUsuario(nome, tipoPonto, condominioId) {
     return new Promise((resolve, reject) => {
         let status = "Fora";
         if(tipoPonto === "Entrada" || tipoPonto === "Retorno Almoço") status = "Trabalhando";
         if(tipoPonto === "Pausa Almoço") status = "Almoço";
 
-        // Tenta achar na tabela de usuários primeiro
         db.collection("usuarios")
           .where("nome", "==", nome)
           .where("condominioId", "==", condominioId)
@@ -199,7 +190,7 @@ function atualizarStatusUsuario(nome, tipoPonto, condominioId) {
                   const docId = snapshot.docs[0].id;
                   db.collection("usuarios").doc(docId).update({ statusAtualPonto: status }).then(resolve).catch(reject);
               } else {
-                  resolve(); // Resolve mesmo se não achar, para não travar o fluxo do alerta
+                  resolve(); 
               }
           }).catch(reject);
     });
@@ -230,10 +221,7 @@ function inicializarTelaPontoGestor(condominioLogado) {
 }
 
 function ouvirStatusEquipeEmTempoReal(condominioId) {
-    if (!condominioId) {
-        console.error("⚠️ Erro: condominioId não encontrado para puxar a equipe.");
-        return;
-    }
+    if (!condominioId) return;
 
     db.collection("usuarios")
     .where("condominioId", "==", condominioId)
@@ -247,17 +235,28 @@ function ouvirStatusEquipeEmTempoReal(condominioId) {
         snapshot.forEach((doc) => {
             let funcionario = doc.data();
             
-            // Ignora cargos de gestão na contagem
-            const cargosExcluidos = ["Síndico", "sindico", "ADM", "Gerente", "Administrador(a)"];
-            if (!cargosExcluidos.includes(funcionario.cargo)) {
-                let status = funcionario.statusAtualPonto || "Fora"; 
-                let dadosFunc = { nome: funcionario.nome || "Sem Nome", cargo: funcionario.cargo || "Funcionário" };
+            // 🔥 SOLUÇÃO DOS BUGS: A CEGUEIRA SELETIVA
+            
+            // 1. Ignora quem tem o cargo "Morador" (Impede que moradores apareçam na lista de ponto)
+            if (funcionario.cargo === "Morador") return;
 
-                if (status === "Trabalhando" || status === "Em Serviço") equipeServico.push(dadosFunc);
-                else if (status === "Almoço" || status === "Almoco") equipeAlmoco.push(dadosFunc);
-                else if (status === "Intervalo") equipeIntervalo.push(dadosFunc);
-                else equipeFora.push(dadosFunc);
+            // 2. Ignora quem está com a tag exigePonto como "false"
+            if (funcionario.exigePonto === false) return;
+            
+            // Tratativa para funcionários antigos que não tem a tag exigePonto salva ainda
+            if (funcionario.exigePonto === undefined) {
+                const cargosGestao = ["Síndico", "sindico", "ADM", "Gerente", "Administrador(a)"];
+                if (cargosGestao.includes(funcionario.cargo)) return; // Se for Síndico antigo, ignora por padrão
             }
+
+            let status = funcionario.statusAtualPonto || "Fora"; 
+            let dadosFunc = { nome: funcionario.nome || "Sem Nome", cargo: funcionario.cargo || "Funcionário" };
+
+            if (status === "Trabalhando" || status === "Em Serviço") equipeServico.push(dadosFunc);
+            else if (status === "Almoço" || status === "Almoco") equipeAlmoco.push(dadosFunc);
+            else if (status === "Intervalo") equipeIntervalo.push(dadosFunc);
+            else equipeFora.push(dadosFunc);
+            
         });
 
         // Atualiza a tela
