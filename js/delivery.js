@@ -71,7 +71,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const inputAptoDelivery = document.getElementById('delApto');
     if (inputAptoDelivery) {
-        inputAptoDelivery.addEventListener('change', function() { // <-- ATUALIZADO PARA CHANGE
+        inputAptoDelivery.addEventListener('change', function() { 
             const aptoDigitado = this.value.trim();
             const boxCodigo = document.getElementById('boxCodigoOculto');
             const textoCodigo = document.getElementById('delCodigoFixo');
@@ -94,8 +94,17 @@ window.addEventListener('DOMContentLoaded', () => {
                       let dadosMorador = querySnapshot.docs[0].data();
                       if(inputMorador) inputMorador.value = dadosMorador.nome;
 
-                      if (dadosMorador.codigoLembrado) {
-                          if(textoCodigo) textoCodigo.innerHTML = `${dadosMorador.codigoLembrado} <span style="font-size: 11px; font-weight: normal; color: #64748b;">(Último usado)</span>`;
+                      // 🧠 MÁGICA DOS MÚLTIPLOS CÓDIGOS (HISTÓRICO DE CÓDIGOS)
+                      let codigos = dadosMorador.codigosLembrados || [];
+                      // Proteção: Se ele tem um código velho salvo do jeito antigo, joga pro array novo
+                      if (dadosMorador.codigoLembrado && codigos.length === 0) {
+                          codigos.push(dadosMorador.codigoLembrado);
+                      }
+
+                      if (codigos.length > 0) {
+                          // Junta os códigos bonitinho: 1234 | 9999 | 5555
+                          let textoHtml = codigos.join(' <span style="color:#cbd5e1; margin: 0 5px;">|</span> ');
+                          if(textoCodigo) textoCodigo.innerHTML = `${textoHtml} <span style="font-size: 11px; font-weight: normal; color: #64748b; margin-left: 10px;">(Últimos usados)</span>`;
                           if(boxCodigo) boxCodigo.style.display = 'flex';
                       } else {
                           let telefoneMorador = dadosMorador.telefone || dadosMorador.celular || "";
@@ -152,12 +161,36 @@ function salvarDelivery() {
     db.collection("delivery").add(dadosDelivery).then((docRef) => {
         if (codigoInformado) {
             db.collection("moradores").where("condominioId", "==", meuCondominio).where("apto", "==", apto).where("excluido", "==", false).get().then(snap => {
-                  if(!snap.empty) db.collection("moradores").doc(snap.docs[0].id).update({ codigoLembrado: codigoInformado });
+                  if(!snap.empty) {
+                      let moradorDoc = snap.docs[0];
+                      let dadosM = moradorDoc.data();
+                      let codigos = dadosM.codigosLembrados || [];
+                      
+                      // Proteção do modelo antigo
+                      if (dadosM.codigoLembrado && codigos.length === 0) codigos.push(dadosM.codigoLembrado);
+                      
+                      // Se o código digitado for novo, adiciona na lista
+                      if (!codigos.includes(codigoInformado)) {
+                          codigos.push(codigoInformado);
+                          // Mantém no máximo os últimos 3 códigos
+                          if (codigos.length > 3) codigos.shift(); 
+                          
+                          db.collection("moradores").doc(moradorDoc.id).update({ codigosLembrados: codigos });
+                      }
+                  }
               });
         }
         document.getElementById('delMorador').value = '';
         document.getElementById('delApto').value = ''; // Reseta o Select pro "Selecione..."
         document.getElementById('delPlataforma').value = '';
+        
+        // Limpa o logo visual do input
+        const logoImg = document.getElementById('selectedDeliveryLogo');
+        if(logoImg) {
+            logoImg.src = '';
+            logoImg.style.display = 'none';
+        }
+
         if(inputCodigo) inputCodigo.value = '';
         if(inputEntregador) inputEntregador.value = '';
         if(inputRG) inputRG.value = '';
@@ -185,9 +218,27 @@ function finalizarDelivery(idFirebase) {
     }
 }
 
+// ==========================================
+// 🚨 LIXEIRA BLINDADA (NOVO FLUXO)
+// ==========================================
 function arquivarDelivery(idFirebase) {
-    if(confirm("Remover este pedido da tela principal?")) {
-        db.collection("delivery").doc(idFirebase).update({ excluido: true }).catch(err => alert("Erro ao arquivar: " + err));
+    // Se for Porteiro (Operacional), intercepta o clique do "X"
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("delivery", idFirebase);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada.");
+        }
+        return; 
+    }
+
+    // Se for Gestão/Síndico, arquiva direto da tela para o relatório do banco
+    if(confirm("Remover este pedido da tela principal? Ele continuará salvo nos relatórios.")) {
+        db.collection("delivery").doc(idFirebase).update({ 
+            excluido: true,
+            arquivadoPorGestao: true,
+            dataExclusao: Date.now()
+        }).catch(err => alert("Erro ao arquivar: " + err));
     }
 }
 
@@ -207,10 +258,19 @@ function memorizarCodigo(idFirebase, apto) {
       .where("excluido", "==", false)
       .get().then(snap => {
           if(!snap.empty) {
-              db.collection("moradores").doc(snap.docs[0].id).update({
-                  codigoLembrado: codigoDigitado
-              });
-              alert("🧠 Código salvo! Nas próximas vezes que você digitar esse apartamento, eu vou puxar esse código automaticamente!");
+              let moradorDoc = snap.docs[0];
+              let dadosM = moradorDoc.data();
+              let codigos = dadosM.codigosLembrados || [];
+              
+              if (dadosM.codigoLembrado && codigos.length === 0) codigos.push(dadosM.codigoLembrado);
+              
+              if (!codigos.includes(codigoDigitado)) {
+                  codigos.push(codigoDigitado);
+                  if (codigos.length > 3) codigos.shift(); 
+                  
+                  db.collection("moradores").doc(moradorDoc.id).update({ codigosLembrados: codigos });
+              }
+              alert("🧠 Código salvo! Nas próximas vezes que você digitar esse apartamento, eu vou sugerir os últimos códigos usados!");
           }
       }).catch(err => console.log(err));
 }
@@ -392,3 +452,124 @@ function gerarRelatorioDelivery(btn) {
             btn.style.pointerEvents = 'auto';
         });
 }
+
+// ==========================================
+// 🎨 MÁGICA VISUAL DO LOGOTIPO NO DELIVERY E CORREÇÃO DA SETA
+// ==========================================
+function toggleDeliveryDropdown() {
+    const dropdown = document.getElementById('deliveryAppDropdown');
+    const arrow = document.querySelector('.dropdown-arrow-delivery');
+    
+    // Se está escondido, mostra. Se não, esconde.
+    if (!dropdown || dropdown.style.display === 'none' || dropdown.style.display === '') {
+        mostrarDeliveryDropdown();
+    } else {
+        dropdown.style.display = 'none';
+        if(arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+}
+
+function mostrarDeliveryDropdown() {
+    const dropdown = document.getElementById('deliveryAppDropdown');
+    const arrow = document.querySelector('.dropdown-arrow-delivery');
+    
+    if (dropdown) dropdown.style.display = 'block';
+    if(arrow) arrow.style.transform = 'rotate(180deg)';
+    
+    filtrarDeliveryDropdown();
+}
+
+function filtrarDeliveryDropdown() {
+    const input = document.getElementById('delPlataforma');
+    if (!input) return;
+    
+    const searchTerm = input.value.toLowerCase();
+    const categorias = document.querySelectorAll('#deliveryAppDropdown .del-cat');
+    const items = document.querySelectorAll('#deliveryAppDropdown .dropdown-item-del:not(.personalizada)');
+    
+    items.forEach(item => {
+        const texto = item.textContent.toLowerCase();
+        if (texto.includes(searchTerm) || searchTerm === '') {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Esconde categorias vazias
+    categorias.forEach(categoria => {
+        let proximoItem = categoria.nextElementSibling;
+        let temItemVisivel = false;
+        
+        while (proximoItem && !proximoItem.classList.contains('del-cat') && !proximoItem.classList.contains('personalizada')) {
+            if (proximoItem.style.display !== 'none') {
+                temItemVisivel = true;
+                break;
+            }
+            proximoItem = proximoItem.nextElementSibling;
+        }
+        categoria.style.display = temItemVisivel ? 'block' : 'none';
+    });
+
+    // Preview do logo enquanto digita
+    if (searchTerm.length >= 2) {
+        const logoImg = document.getElementById('selectedDeliveryLogo');
+        if (logoImg) {
+            let urlLogo = `https://www.google.com/s2/favicons?domain=${searchTerm.replace(/[^a-z0-9]/g, '')}.com.br&sz=64`;
+            
+            // Atalhos rápidos
+            if (searchTerm.includes("if")) urlLogo = "https://logodownload.org/wp-content/uploads/2017/05/ifood-logo-0.png";
+            if (searchTerm.includes("ra")) urlLogo = "https://logospng.org/download/rappi/logo-rappi-512.png";
+            
+            logoImg.src = urlLogo;
+            logoImg.style.display = 'block';
+        }
+    }
+}
+
+function selecionarAppDelivery(nome) {
+    const input = document.getElementById('delPlataforma');
+    const logoImg = document.getElementById('selectedDeliveryLogo');
+    
+    if (input) input.value = nome;
+    
+    // Esconde o menu e vira a seta de volta
+    const dropdown = document.getElementById('deliveryAppDropdown');
+    const arrow = document.querySelector('.dropdown-arrow-delivery');
+    if (dropdown) dropdown.style.display = 'none';
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
+
+    if (logoImg) {
+        // Tenta puxar a logo da internet
+        let urlLogo = `https://www.google.com/s2/favicons?domain=${nome.toLowerCase().replace(/[^a-z0-9]/g, '')}.com.br&sz=64`;
+        
+        // Tratamentos especiais de Logos Oficiais
+        if (nome.toLowerCase().includes("ifood")) urlLogo = "https://logodownload.org/wp-content/uploads/2017/05/ifood-logo-0.png";
+        if (nome.toLowerCase().includes("rappi")) urlLogo = "https://logospng.org/download/rappi/logo-rappi-512.png";
+        if (nome.toLowerCase().includes("zé")) urlLogo = "https://logospng.org/download/ze-delivery/ze-delivery-1024.png";
+        if (nome.toLowerCase().includes("uber")) urlLogo = "https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png";
+        
+        logoImg.src = urlLogo;
+        logoImg.style.display = 'block';
+    }
+}
+
+function buscarOutraEmpresaDelivery() {
+    const nome = prompt("Digite o nome do Aplicativo, Restaurante ou Farmácia:");
+    if (nome && nome.trim() !== "") {
+        selecionarAppDelivery(nome);
+    }
+}
+
+// Para fechar o menu quando clicar em qualquer lugar fora dele (Essa função precisa estar aqui embaixo)
+document.addEventListener('click', function(event) {
+    const container = document.querySelector('#delivery .transportadora-search-container');
+    const dropdown = document.getElementById('deliveryAppDropdown');
+    const arrow = document.querySelector('.dropdown-arrow-delivery');
+    
+    // Se o clique for FORA da caixa de busca do delivery, esconde o menu
+    if (container && dropdown && !container.contains(event.target)) {
+        dropdown.style.display = 'none';
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+});
