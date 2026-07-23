@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONNECTA PRO (NUVEM FIREBASE)
+// ZERO LABS - CONDO UP (NUVEM FIREBASE)
 // moradores.js - Gestão Premium de Moradores (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -208,7 +208,8 @@ function abrirModalMorador(apto, moradores) {
     const conteudo = document.getElementById('conteudoModalMorador');
     const veiculos = typeof veiculosGlobais !== 'undefined' ? veiculosGlobais : (JSON.parse(localStorage.getItem('veiculos')) || []);
     
-    const cargo = localStorage.getItem("usuario_cargo");
+    // Agora o JavaScript sabe se é porteiro pela variável que criamos no auth.js!
+    const isOperacional = window.isPorteiroLogado === true; 
     
     let html = `<h3 style="margin-bottom: 20px; color: #3b82f6; text-align: center; font-size: 24px;"><i class="fa-regular fa-building" style="margin-right: 8px; color: #64748b;"></i>Apto ${apto}</h3>`;
     
@@ -242,33 +243,24 @@ function abrirModalMorador(apto, moradores) {
             veiculosHtml = `<p style="margin-bottom: 12px; font-size: 14px;"><i class="fa-solid fa-car-side" style="color: #94a3b8; width: 20px; text-align: center; margin-right: 5px;"></i><strong>Veículos:</strong> <span style="color: #94a3b8; font-style: italic;">Nenhum veículo encontrado</span></p>`;
         }
 
-        // Formatação dos telefones
         let telefonesText = '<span style="color: #94a3b8;">Nenhum</span>';
         if (m.telefones && m.telefones.length > 0) {
             telefonesText = m.telefones.join(' | ');
         }
 
-        let botoesHtml = '';
-        if (cargo === 'operacional') {
-            botoesHtml = `
-                <div style="display: grid; grid-template-columns: 1fr; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                    <button onclick="editarMoradorModal('${m.id}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Morador">
-                        <i class="fa-solid fa-pen"></i> Editar Morador
-                    </button>
-                </div>
-            `;
-        } else {
-            botoesHtml = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
-                    <button onclick="editarMoradorModal('${m.id}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Morador">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                    <button onclick="excluirMorador('${m.id}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Morador">
-                        <i class="fa-solid fa-trash-can"></i> Arquivar
-                    </button>
-                </div>
-            `;
-        }
+        // ==========================================
+        // 🔒 BLINDAGEM DE BOTÕES - MODAL DE MORADOR
+        // ==========================================
+        let botoesHtml = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                <button onclick="editarMoradorModal('${m.id}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Morador">
+                    <i class="fa-solid fa-pen"></i> Editar
+                </button>
+                <button onclick="excluirMorador('${m.id}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Morador">
+                    <i class="fa-solid fa-trash-can"></i> Arquivar
+                </button>
+            </div>
+        `;
 
         html += `
             <div style="background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
@@ -356,14 +348,52 @@ function fecharModalMorador() {
     document.getElementById('modalMorador').style.display = 'none';
 }
 
-function excluirMorador(id) {
-    if(confirm('🚨 Arquivar Registro: Tem certeza que deseja arquivar este morador? Ele sairá da tela principal, mas será mantido nos Relatórios de Auditoria.')) {
-        db.collection("moradores").doc(id).update({
-            excluido: true,
-            dataExclusao: Date.now()
-        })
-        .then(() => fecharModalMorador())
-        .catch((err) => alert("Erro ao arquivar na nuvem: " + err));
+// ==========================================
+// 🚨 LIXEIRA BLINDADA: NOVA FUNÇÃO DE EXCLUIR
+// ==========================================
+async function excluirMorador(id) {
+    // 1. Fecha o modal da ficha para a pessoa ver o aviso
+    fecharModalMorador();
+    
+    // 2. Se for Porteiro (Operacional), joga ele no novo fluxo de Arquivamento (do adm.js)
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("moradores", id);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada. Recarregue a página.");
+        }
+        return; // Para a execução aqui, ele não deleta direto
+    }
+
+    // 3. Se for Gestão/Síndico, o fluxo original continua brutal (Apaga de vez)
+    if(!confirm('🚨 EXCLUSÃO DEFINITIVA: Você está acessando como GESTÃO.\n\nTem certeza que deseja apagar este morador?\nIsso removerá a ficha e CORTARÁ O ACESSO dele ao aplicativo imediatamente!')) return;
+
+    try {
+        const m = moradoresGlobais.find(mor => mor.id === id);
+        if(!m) return;
+
+        // Apaga a ficha da tela de Moradores
+        await db.collection("moradores").doc(id).delete();
+
+        // Procura a conta de login dele (na coleção usuarios) e DELETA também!
+        const snapUsuarios = await db.collection("usuarios")
+            .where("condominioId", "==", m.condominioId)
+            .where("nome", "==", m.nome)
+            .get();
+
+        if (!snapUsuarios.empty) {
+            const batch = db.batch();
+            snapUsuarios.forEach(doc => {
+                batch.delete(doc.ref); // Apaga o perfil de acesso e derruba o login
+            });
+            await batch.commit();
+        }
+
+        alert("✅ Morador e acesso ao aplicativo excluídos definitivamente com sucesso!");
+
+    } catch (error) {
+        console.error("Erro ao excluir morador:", error);
+        alert("❌ Erro ao tentar excluir do banco de dados: " + error.message);
     }
 }
 
@@ -531,7 +561,8 @@ async function aprovarMorador(docId, btnElement) {
                     <p>O seu cadastro foi <b>aprovado</b> pela administração do condomínio. Abaixo estão os seus dados oficiais para acessar o aplicativo da portaria:</p>
                     
                     <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px dashed #cbd5e1;">
-                        <p style="margin: 5px 0;"><b>📱 Aplicativo:</b> app.condoup.com.br</p>
+                        <!-- 🚀 LINK DO E-MAIL ATUALIZADO AQUI -->
+                        <p style="margin: 5px 0;"><b>📱 Aplicativo:</b> <a href="https://condoup.evoupi.com.br/" style="color: #3b82f6; text-decoration: none;">condoup.evoupi.com.br/</a></p>
                         <p style="margin: 5px 0;"><b>📧 E-mail (Login):</b> ${emailLogin}</p>
                         <p style="margin: 5px 0;"><b>🔑 Senha provisória:</b> ${senhaGerada}</p>
                     </div>
@@ -552,7 +583,8 @@ async function aprovarMorador(docId, btnElement) {
         let numeroLimpo = dados.celular.replace(/\D/g, '');
         if (numeroLimpo.length === 10 || numeroLimpo.length === 11) { numeroLimpo = '55' + numeroLimpo; }
 
-        const textoMsg = `Olá, ${dados.nome}! 🎉\n\nSeu acesso ao app da portaria foi *aprovado*.\n\n📱 *Link:* app.condoup.com.br\n📧 *Login:* ${emailLogin}\n🔑 *Senha:* ${senhaGerada}\n\n_Recomendamos alterar sua senha no primeiro acesso!_`;
+        // 🚀 LINK DO WHATSAPP ATUALIZADO AQUI
+        const textoMsg = `Olá, ${dados.nome}! 🎉\n\nSeu acesso ao app da portaria foi *aprovado*.\n\n📱 *Link:* condoup.evoupi.com.br\n📧 *Login:* ${emailLogin}\n🔑 *Senha:* ${senhaGerada}\n\n_Recomendamos alterar sua senha no primeiro acesso!_`;
         const linkWhatsApp = `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(textoMsg)}`;
 
         window.open(linkWhatsApp, '_blank');
