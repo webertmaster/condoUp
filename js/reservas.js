@@ -149,6 +149,14 @@ function salvarReserva() {
     if (idReservaEditando) {
         // MODO EDIÇÃO
         db.collection("reservas").doc(idReservaEditando).update(dadosReserva).then(() => {
+            
+            // 🔔 GATILHO SÍNDICO: Avisa a gestão sobre alteração
+            db.collection("notificacoes").add({
+                titulo: "📝 Reserva Alterada",
+                mensagem: `A reserva de ${tipo} do Apto ${apto} para o dia ${data.split('-').reverse().join('/')} foi alterada.`,
+                tipo: "reserva", lida: false, condominioId: meuCondominio, timestamp: new Date().getTime()
+            }).catch(e => console.error(e));
+
             idReservaEditando = null;
             const btnAgendar = document.querySelector("button[onclick='salvarReserva()']");
             if (btnAgendar) {
@@ -179,6 +187,14 @@ function salvarReserva() {
         }
 
         db.collection("reservas").add(dadosReserva).then(() => {
+
+            // 🔔 GATILHO SÍNDICO: Avisa a gestão sobre nova reserva
+            db.collection("notificacoes").add({
+                titulo: "📅 Nova Reserva Agendada",
+                mensagem: `${tipo} reservada para o dia ${data.split('-').reverse().join('/')} (Apto ${apto}).`,
+                tipo: "reserva", lida: false, condominioId: meuCondominio, timestamp: new Date().getTime()
+            }).catch(e => console.error(e));
+
             document.getElementById('dataReserva').value = '';
             document.getElementById('horaReserva').value = '';
             document.getElementById('responsavel').value = '';
@@ -212,41 +228,77 @@ function carregarReservaParaEdicao(index) {
 }
 
 // ==========================================
-// 3. RENDERIZAR RESERVAS NA TELA
+// 3. RENDERIZAR RESERVAS NA TELA E DASHBOARD
 // ==========================================
 function atualizarListaReservas() {
     const lista = document.getElementById('listaReservas');
     const telaReservas = document.getElementById('reservas');
+    
+    // Filtra apenas as reservas que não foram excluídas
+    const ativas = reservasGlobais.filter(r => !r.excluido);
+    
+    // ===============================================
+    // 🚀 GATILHO DA DASHBOARD: MODO CAÇADOR (BLINDADO)
+    // ===============================================
+    setTimeout(() => {
+        // 1. Crava a data no fuso do Brasil (evita virar o dia depois das 21h)
+        const agora = new Date();
+        const ano = agora.getFullYear();
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
+        const dia = String(agora.getDate()).padStart(2, '0');
+        const hojeBr = `${ano}-${mes}-${dia}`;
+        
+        let qtdHoje = ativas.filter(r => r.data === hojeBr).length;
+        
+        // 2. Tenta os IDs padrões
+        let dashReservas = document.getElementById("dash-reservas") || document.getElementById("count-reservas");
+        
+        // 3. Modo Caçador: Busca a caixinha pelo texto da tela!
+        if (!dashReservas) {
+            let textos = Array.from(document.querySelectorAll('*')).filter(el => el.textContent.trim() === 'Reservas Hoje');
+            if (textos.length > 0) {
+                let pai = textos[0].parentElement;
+                // Acha o <h2> ou <h3> que está guardando o número "0" lá em cima
+                dashReservas = pai.querySelector('h2, h3, h1'); 
+            }
+        }
+
+        // 4. Injeta o número na veia!
+        if (dashReservas) {
+            dashReservas.innerText = qtdHoje;
+            dashReservas.style.color = qtdHoje > 0 ? "#10b981" : ""; // Fica verde se tiver reserva!
+        }
+    }, 800); // 800ms garante que ele reescreve o painel DEPOIS que tudo já carregou
+
+    // Se a aba de reservas da portaria não estiver aberta, para por aqui
     if (!lista || (telaReservas && telaReservas.style.display === 'none')) return;
 
     lista.innerHTML = '';
-
-    // Filtra as ativas para ver se a lista está vazia
-    const ativas = reservasGlobais.filter(r => !r.excluido);
 
     if (ativas.length === 0) {
         lista.innerHTML = '<div style="text-align: center; padding: 40px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; color: #64748b;"><i class="fa-regular fa-calendar-xmark" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i><p>Nenhuma reserva agendada no momento.</p></div>';
         return;
     }
 
-    const hojeObj = new Date();
-    hojeObj.setHours(0,0,0,0);
-    const hojeStr = hojeObj.toISOString().split('T')[0];
+    // Calcula as datas corrigidas para o painel do porteiro também
+    const agoraLocal = new Date();
+    const hojeStrLocal = `${agoraLocal.getFullYear()}-${String(agoraLocal.getMonth() + 1).padStart(2, '0')}-${String(agoraLocal.getDate()).padStart(2, '0')}`;
+    const hojeLocalTimestamp = new Date(hojeStrLocal + "T00:00:00").getTime();
 
     const grid = document.createElement('div');
     grid.style.display = 'grid';
     grid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(320px, 1fr))';
     grid.style.gap = '20px';
 
-    // LÊ O CRACHÁ PARA RENDERIZAR OS BOTÕES CORRETAMENTE
     const cargo = localStorage.getItem("usuario_cargo");
 
     reservasGlobais.forEach((res, index) => {
-        if (res.excluido === true) return; // SOFT DELETE: Oculta da tela da portaria
+        if (res.excluido === true) return; 
 
-        const dataReservaObj = new Date(res.data + "T00:00:00");
-        const isPassado = dataReservaObj < hojeObj;
-        const isHoje = res.data === hojeStr;
+        // Tira a prova real da data local
+        const dataReservaTimestamp = new Date(res.data + "T00:00:00").getTime();
+        const isPassado = dataReservaTimestamp < hojeLocalTimestamp;
+        const isHoje = res.data === hojeStrLocal;
         
         const dataFormatada = res.data.split('-').reverse().join('/');
         
@@ -269,16 +321,19 @@ function atualizarListaReservas() {
         const qtdConvidados = res.convidados ? res.convidados.length : 0;
         let infoApto = res.apto ? `<span style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">Apto: ${res.apto}</span>` : '';
 
-        // BLINDAGEM DOS BOTÕES DE GESTÃO (EDITAR/ARQUIVAR)
+        // 🔒 BLINDAGEM DOS BOTÕES DE GESTÃO (EDITAR/ARQUIVAR)
         let botoesGestaoHtml = '';
-        if (cargo === 'operacional') {
+        if (window.isPorteiroLogado === true) {
             botoesGestaoHtml = `
-                <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
                     <button onclick="avisarReserva(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                         <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Avisar
                     </button>
                     <button onclick="carregarReservaParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Agendamento">
-                        <i class="fa-solid fa-pen"></i>
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                    <button onclick="excluirReserva('${res.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Reserva">
+                        <i class="fa-solid fa-trash-can"></i> Arquivar
                     </button>
                 </div>
             `;
@@ -297,7 +352,6 @@ function atualizarListaReservas() {
                 </div>
             `;
         }
-
 
         const card = document.createElement('div');
         card.className = 'card';
@@ -350,12 +404,45 @@ function avisarReserva(index) {
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`);
 }
 
+// ==========================================
+// 🚨 LIXEIRA BLINDADA (NOVO FLUXO DE RESERVA)
+// ==========================================
 function excluirReserva(idFirebase) {
+    const meuCondominio = localStorage.getItem("condominioId");
+
+    // 1. Se for Porteiro (Operacional), joga para a Justificativa!
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("reservas", idFirebase);
+            
+            // 🔔 GATILHO SÍNDICO: Avisa a gestão que o porteiro quer arquivar
+            db.collection("notificacoes").add({
+                titulo: "⚠️ Arquivamento Solicitado",
+                mensagem: `O porteiro solicitou o arquivamento de uma reserva de área comum.`,
+                tipo: "reserva", lida: false, condominioId: meuCondominio, timestamp: new Date().getTime()
+            }).catch(e => console.error(e));
+
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada.");
+        }
+        return; 
+    }
+
+    // 2. Se for Gestão/Síndico, arquiva direto e avisa os síndicos (caso tenha mais de um)
     if(confirm('🚨 Arquivar Registro: Tem certeza que deseja arquivar esta reserva? Ela sairá do painel, mas continuará salva para consulta.')) {
         db.collection("reservas").doc(idFirebase).update({
             excluido: true,
+            arquivadoPorGestao: true,
             dataExclusao: Date.now()
         }).then(() => {
+            
+            // 🔔 GATILHO SÍNDICO: Registra a exclusão da reserva
+            db.collection("notificacoes").add({
+                titulo: "🗑️ Reserva Cancelada/Arquivada",
+                mensagem: `Uma reserva foi removida do calendário pela Gestão.`,
+                tipo: "reserva", lida: false, condominioId: meuCondominio, timestamp: new Date().getTime()
+            }).catch(e => console.error(e));
+
             alert("Registro arquivado com sucesso!");
         }).catch((err) => {
             alert("Erro ao arquivar registro: " + err);
