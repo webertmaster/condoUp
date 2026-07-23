@@ -126,6 +126,32 @@ function atualizarDashboard() {
         console.log("⏳ Aguardando Firebase para atualizar a Dashboard...");
         return;
     }
+
+    // 🔥 ATUALIZA A LOGO E O NOME EM TEMPO REAL
+    db.collection("condominios").doc(meuCondominio).get().then(doc => {
+        if (doc.exists) {
+            const dados = doc.data();
+            
+            // 1. Atualiza a Foto (Logo)
+            if (dados.logoSistema) {
+                const imgLogoElement = document.querySelector('.logo img');
+                if (imgLogoElement) {
+                    imgLogoElement.src = dados.logoSistema;
+                    imgLogoElement.style.objectFit = "contain"; 
+                    imgLogoElement.style.background = "transparent";
+                }
+            }
+
+            // 2. Atualiza o Nome do Condomínio embaixo da foto
+            if (dados.nome) {
+                const textoLogoElement = document.querySelector('.logo h2');
+                if (textoLogoElement) {
+                    // Troca o "CONDO UP" pelo nome do cliente em maiúsculo
+                    textoLogoElement.innerText = dados.nome.toUpperCase(); 
+                }
+            }
+        }
+    }).catch(err => console.log("Erro na logo/nome:", err));
     
     db.collection("encomendas").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
         let pendentes = 0;
@@ -250,9 +276,7 @@ async function ativarNotificacoesPush() {
     }
 
     try {
-        // 🚀 AQUI ESTÁ A MUDANÇA: v=100 para forçar o celular a baixar a logo!
-        const registration = await navigator.serviceWorker.register('./sw.js?v=110');
-        
+        const registration = await navigator.serviceWorker.register('./sw.js?v=122');
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
         }
@@ -311,3 +335,64 @@ window.addEventListener('load', () => {
 
     setTimeout(ativarNotificacoesPush, 1000);
 });
+
+// ==========================================
+// 🎨 SISTEMA WHITE LABEL - CARREGAR LOGO
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const meuCond = localStorage.getItem("condominioId");
+        
+        if (meuCond && typeof db !== 'undefined') {
+            db.collection("condominios").doc(meuCond).get().then(doc => {
+                if (doc.exists && doc.data().logoSistema) {
+                    const imgLogoElement = document.querySelector('.logo img');
+                    
+                    if (imgLogoElement) {
+                        imgLogoElement.src = doc.data().logoSistema;
+                        imgLogoElement.style.objectFit = "contain"; 
+                        imgLogoElement.style.background = "transparent";
+                    }
+                }
+            }).catch(err => {
+                console.log("Erro ao puxar a logo do cliente:", err);
+            });
+        }
+    }, 500);
+});
+
+// ==========================================
+// 🗜️ COMPRESSOR DE IMAGEM PARA O FIREBASE
+// ==========================================
+async function comprimirLogo(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 300; // Tamanho ideal para logo
+                const MAX_HEIGHT = 300;
+                let width = img.width;
+                let height = img.height;
+
+                // Redimensiona mantendo a proporção
+                if (width > height) {
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                } else {
+                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                }
+
+                canvas.width = width; 
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Transforma na imagem leve e entrega pro banco em Base64
+                resolve(canvas.toDataURL('image/png')); 
+            };
+        };
+    });
+}
