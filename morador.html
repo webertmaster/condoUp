@@ -1,1268 +1,661 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Meu Condomínio - App</title> 
-    
-    <!-- Ícones FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        /* Fonte Moderna Idêntica à da Imagem */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+// ==========================================
+// ZERO LABS - CONDO UP (NUVEM FIREBASE)
+// moradores.js - Gestão Premium de Moradores (MULTI-TENANT ATIVO)
+// ==========================================
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent;}
-        body { background-color: #fafbfc; color: #0f172a; padding-bottom: 90px; }
+let idMoradorEditandoFirebase = null; 
+let moradoresGlobais = []; 
 
-        /* =========================================
-           CABEÇALHO SUPERIOR (HEADER)
-           ========================================= */
-        .header-modern {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 20px 10px 20px;
-            background: transparent;
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .logo-box {
-            width: 55px; height: 55px;
-            background: white;
-            border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            border: 1px solid #f1f5f9;
-        }
-        
-        .logo-box img { max-width: 40px; max-height: 40px; object-fit: contain; border-radius: 8px;}
-        
-        .user-info { display: flex; flex-direction: column; }
-        .user-info p { font-size: 13px; color: #64748b; margin-bottom: 0px;}
-        .user-info h2 { font-size: 19px; font-weight: 800; color: #0f172a; margin: 2px 0; letter-spacing: -0.5px;}
-        .user-info span { font-size: 12px; color: #64748b; font-weight: 500;}
-        
-        .bell-btn {
-            width: 48px; height: 48px;
-            border-radius: 50%;
-            background: #f1f5f9;
-            border: none;
-            color: #0f172a;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-            position: relative;
-            cursor: pointer;
-        }
-        .badge-sino {
-            position: absolute;
-            top: 10px; right: 12px;
-            width: 8px; height: 8px;
-            background: #ef4444;
-            border-radius: 50%;
-            display: none; 
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            padding: 8px;
-        }
+// App Secundário para criar acessos sem deslogar o Síndico
+const secondaryConfig = {
+    apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
+    authDomain: "portaria-pro-ebc5c.firebaseapp.com",
+    projectId: "portaria-pro-ebc5c",
+    storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
+    messagingSenderId: "948781126590",
+    appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
+};
 
-        /* =========================================
-           BANNER AZUL DEGRADÊ
-           ========================================= */
-        .main-banner {
-            margin: 15px 20px 25px 20px;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%);
-            border-radius: 20px;
-            padding: 25px 20px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.25);
-        }
-        
-        .main-banner::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0; bottom: 0; left: 0;
-            background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=600&auto=format&fit=crop');
-            background-size: cover;
-            background-position: right center;
-            opacity: 0.4;
-            mix-blend-mode: overlay;
-            -webkit-mask-image: linear-gradient(to right, transparent 10%, black 60%);
-            mask-image: linear-gradient(to right, transparent 10%, black 60%);
-        }
-        
-        .banner-content { position: relative; z-index: 2; }
-        .banner-content p.bem-vindo { font-size: 14px; opacity: 0.9; margin-bottom: 4px; font-weight: 500;}
-        .banner-content h2 { font-size: 24px; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px; text-transform: uppercase;}
-        .banner-content p.subtitle { font-size: 13px; opacity: 0.9; line-height: 1.4; max-width: 65%; font-weight: 400;}
+let secondaryApp;
+try {
+  secondaryApp = firebase.app("SecondaryApp");
+} catch(e) {
+  secondaryApp = firebase.initializeApp(secondaryConfig, "SecondaryApp");
+}
+const secondaryAuth = secondaryApp.auth();
 
-        /* =========================================
-           ESTRUTURA DAS TELAS E SEÇÕES
-           ========================================= */
-        .tela { display: none; animation: fadeIn 0.3s ease; }
-        .tela.ativa { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+// ==========================================
+// 1. ESCUTADORES EM TEMPO REAL
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    const meuCondominio = localStorage.getItem("condominioId");
 
-        .section-header { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 20px; margin-bottom: 15px;}
-        .section-header h3 { font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;}
-        .section-header a { font-size: 13px; font-weight: 600; color: #3b82f6; text-decoration: none;}
+    if (!meuCondominio) {
+        console.error("Erro Crítico: Condomínio não identificado no navegador!");
+        return; 
+    }
 
-        /* =========================================
-           CARD DE ALERTA (HOME)
-           ========================================= */
-        .card-alerta {
-            margin: 0 20px 20px 20px;
-            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-            color: white;
-            padding: 18px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 10px 20px rgba(234, 88, 12, 0.25);
-            cursor: pointer;
-        }
-        .card-alerta i { font-size: 24px; }
-        .card-alerta div { flex: 1; margin-left: 15px; }
-        .card-alerta h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-        .card-alerta p { font-size: 13px; opacity: 0.9; line-height: 1.4; }
-
-        /* =========================================
-           GRID DE ACESSO RÁPIDO
-           ========================================= */
-        .grid-atalhos {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            padding: 0 20px;
-            margin-bottom: 30px;
-        }
-        .atalho-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px 12px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            border: 1px solid #f8fafc;
-            text-decoration: none;
-        }
-        
-        .icon-circle {
-            width: 48px; height: 48px; flex-shrink: 0;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-        }
-        
-        .bg-blue { background: #eff6ff; color: #2563eb; }
-        .bg-purple { background: #f3e8ff; color: #9333ea; }
-        .bg-orange { background: #fff7ed; color: #ea580c; }
-        .bg-red { background: #fef2f2; color: #dc2626; }
-        
-        .atalho-text h4 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px;}
-        .atalho-text p { font-size: 11px; color: #64748b; line-height: 1.3;}
-
-        /* =========================================
-           ÚLTIMOS COMUNICADOS E PROMO BANNER
-           ========================================= */
-        .comunicados-container { padding: 0 20px; margin-bottom: 25px;}
-        .comunicado-card {
-            background: white;
-            border-radius: 16px;
-            padding: 18px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-            border: 1px solid #f8fafc;
-        }
-        .com-icon { width: 50px; height: 50px; border-radius: 50%; background: #2563eb; color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;}
-        .com-text { flex: 1; }
-        .com-text h4 { font-size: 14px; font-weight: 700; color: #0f172a; margin-bottom: 4px;}
-        .com-text p { font-size: 12px; color: #64748b; line-height: 1.4; margin-bottom: 6px;}
-        .com-text span { font-size: 11px; color: #94a3b8; font-weight: 500;}
-        .com-arrow { color: #cbd5e1; font-size: 14px;}
-
-        .promo-banner {
-            margin: 0 20px 30px 20px;
-            background: #f2f9ff;
-            border-radius: 16px;
-            padding: 22px 20px;
-            display: flex;
-            align-items: center;
-            gap: 18px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
-        }
-        
-        .promo-icon { 
-            font-size: 48px; 
-            color: #93c5fd; 
-            flex-shrink: 0; 
-            transform: rotate(-12deg); 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .promo-text h4 { font-size: 15px; font-weight: 800; color: #001e36; margin-bottom: 4px; letter-spacing: -0.2px;}
-        .promo-text p { font-size: 13px; color: #5a6b82; line-height: 1.4;}
-
-        /* =========================================
-           TELAS SECUNDÁRIAS (PACOTES, RESERVAS, PERFIL)
-           ========================================= */
-        .page-content { padding: 10px 20px; }
-        .empty-state { background: white; border-radius: 20px; padding: 40px 20px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #f8fafc; }
-        .btn-acao { background: #3b82f6; color: white; border: none; padding: 14px 20px; border-radius: 12px; font-weight: 600; width: 100%; cursor: pointer; font-size: 14px; transition: 0.2s; }
-        .btn-acao:active { transform: scale(0.98); }
-
-        /* =========================================
-           MENU INFERIOR (BOTTOM NAV)
-           ========================================= */
-        .bottom-nav { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); 
-            border-top: 1px solid #f1f5f9; display: flex; justify-content: space-around; 
-            padding: 12px 10px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); 
-            z-index: 1000;
-        }
-        .nav-item { 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; 
-            color: #94a3b8; font-size: 11px; font-weight: 600; text-decoration: none; width: 25%; cursor: pointer; 
-        }
-        .nav-item i { font-size: 22px; transition: 0.2s; }
-        .nav-item.ativo { color: #2563eb; }
-        .nav-item.ativo i { transform: translateY(-2px); font-weight: 900;}
-    </style>
-</head>
-<body>
-
-    <header class="header-modern">
-        <div class="header-left">
-            <div class="logo-box">
-                <img src="img/icon-512.png.png" alt="Logo" id="app-logo">
-            </div>
-            <div class="user-info">
-                <p>Olá,</p>
-                <h2 id="nome-morador">Carregando...</h2>
-                <span id="apto-morador">Apto N/A</span>
-            </div>
-        </div>
-        <button class="bell-btn" onclick="mudarAba('tela-pacotes', document.getElementById('menu-pacotes'))">
-            <i class="fa-regular fa-bell"></i>
-            <div class="badge-sino" id="badge-notif">0</div>
-        </button>
-    </header>
-
-    <div class="content-wrapper">
-        
-        <!-- TELA 1: INÍCIO -->
-        <div id="tela-inicio" class="tela ativa">
-            
-            <div class="main-banner">
-                <div class="banner-content">
-                    <p class="bem-vindo">Bem-vindo(a) ao condomínio,</p>
-                    <h2 id="app-nome-condominio">CARREGANDO...</h2>
-                    <p class="subtitle">Tudo do seu condomínio<br>na palma da sua mão.</p>
-                </div>
-            </div>
-
-            <!-- ALERTA DE DELIVERY (Inicia oculto) -->
-            <div class="card-alerta" id="alerta-entrega" style="display: none;" onclick="mudarAba('tela-pacotes', document.getElementById('menu-pacotes'))">
-                <i class="fa-solid fa-motorcycle"></i>
-                <div>
-                    <h3 id="alerta-titulo">Entrega na Portaria</h3>
-                    <p id="alerta-desc">Um entregador está aguardando.</p>
-                </div>
-                <i class="fa-solid fa-chevron-right" style="font-size: 14px;"></i>
-            </div>
-
-            <div class="section-header">
-                <h3>Acesso rápido</h3>
-            </div>
-            <div class="grid-atalhos">
-                <a href="#" class="atalho-card">
-                    <div class="icon-circle bg-blue"><i class="fa-solid fa-qrcode"></i></div>
-                    <div class="atalho-text">
-                        <h4>Chave de Acesso</h4>
-                        <p>Liberar entrada</p>
-                    </div>
-                </a>
-                
-                <a href="javascript:void(0);" class="atalho-card" onclick="mudarAba('tela-autorizacoes', document.getElementById('menu-inicio'))">
-                    <div class="icon-circle bg-purple"><i class="fa-solid fa-user-shield"></i></div>
-                    <div class="atalho-text">
-                        <h4>Autorizar Acesso</h4>
-                        <p>Visitas e prestadores</p>
-                    </div>
-                </a>
-                
-                <a href="javascript:void(0);" class="atalho-card" onclick="mudarAba('tela-reservas', document.getElementById('menu-reservas'))">
-                    <div class="icon-circle bg-orange"><i class="fa-solid fa-calendar-check"></i></div>
-                    <div class="atalho-text">
-                        <h4>Reservar Área</h4>
-                        <p>Salão, churrasqueira...</p>
-                    </div>
-                </a>
-                
-                <!-- 👇 AQUI ESTÁ O BOTÃO DA OCORRÊNCIA CORRIGIDO 👇 -->
-                <a href="javascript:void(0);" class="atalho-card" onclick="mudarAba('tela-ocorrencias', document.getElementById('menu-inicio'))">
-                    <div class="icon-circle bg-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                    <div class="atalho-text">
-                        <h4>Ocorrência</h4>
-                        <p>Registre ocorrência</p>
-                    </div>
-                </a>
-            </div>
-
-            <div class="section-header">
-                <h3>Últimos comunicados</h3>
-                <a href="#">Ver todos</a>
-            </div>
-            <div class="comunicados-container">
-                <div class="comunicado-card">
-                    <div class="com-icon"><i class="fa-solid fa-bullhorn"></i></div>
-                    <div class="com-text">
-                        <h4>Comunicado importante</h4>
-                        <p>Nenhum comunicado no momento.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="promo-banner">
-                <div class="promo-icon">
-                    <i class="fa-solid fa-mobile-screen-button"></i>
-                </div>
-                <div class="promo-text">
-                    <h4>Facilidade na palma da mão</h4>
-                    <p>Acompanhe reservas, visitas e comunicados em tempo real.</p>
-                </div>
-            </div>
-            
-        </div>
-
-        <!-- TELA 2: PACOTES -->
-        <div id="tela-pacotes" class="tela page-content">
-            <div class="section-header" style="margin-top: 10px;">
-                <h3>Minhas Encomendas</h3>
-            </div>
-            
-            <div id="lista-encomendas">
-                <div class="empty-state">
-                    <i class="fa-solid fa-box-open" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                    <p style="color: #64748b; font-size: 15px; font-weight: 500;">Nenhum pacote na portaria.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- TELA 3: RESERVAS -->
-        <div id="tela-reservas" class="tela page-content">
-            <div class="section-header" style="margin-top: 10px;">
-                <h3>Minhas Reservas</h3>
-                <button onclick="abrirFormNovaReserva()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(59,130,246,0.3);"><i class="fa-solid fa-plus"></i> Nova</button>
-            </div>
-
-            <div id="lista-minhas-reservas">
-                <div class="empty-state">
-                    <i class="fa-regular fa-calendar-xmark" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                    <p style="font-size: 15px; color: #64748b; font-weight: 500; margin-bottom: 25px;">Nenhuma reserva agendada.</p>
-                    <button class="btn-acao" onclick="abrirFormNovaReserva()">Agendar Agora</button>
-                </div>
-            </div>
-
-            <div id="form-nova-reserva" style="display: none; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f8fafc;">
-                <h4 style="margin-bottom: 15px; color: #0f172a; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-calendar-plus" style="color: #3b82f6;"></i> Agendar Área Comum
-                </h4>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Selecione o Espaço</label>
-                <select id="reservaAppTipo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 15px; font-size: 14px; outline: none; -webkit-appearance: none;">
-                    <option value="" disabled selected>Escolha o local...</option>
-                    <option value="Churrasqueira">🍖 Churrasqueira</option>
-                    <option value="Salão de Festa">🎉 Salão de Festa</option>
-                    <option value="Combo">✨ Combo (Salão + Churras)</option>
-                    <option value="Quadra Poliesportiva">⚽ Quadra Poliesportiva</option>
-                    <option value="Piscina">🏊 Piscina / Espaço Gourmet</option>
-                </select>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Data</label>
-                        <input type="date" id="reservaAppData" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: white;">
-                    </div>
-                    <div>
-                        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Hora Início</label>
-                        <input type="time" id="reservaAppHora" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: white;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">
-                        <i class="fa-solid fa-signature" style="color: #3b82f6;"></i> Assinatura de Responsabilidade
-                    </label>
-                    <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; text-align: center; padding: 10px;">
-                        <canvas id="canvasReservaApp" width="300" height="120" style="background: transparent; cursor: crosshair; touch-action: none; width: 100%; border-bottom: 1px solid #e2e8f0;"></canvas>
-                    </div>
-                    <button type="button" onclick="limparAssinaturaReservaApp()" style="margin-top: 10px; background: #f1f5f9; color: #64748b; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; transition: 0.2s; font-size: 13px; font-weight: bold; cursor: pointer;">
-                        <i class="fa-solid fa-eraser"></i> Limpar Assinatura
-                    </button>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="fecharFormNovaReserva()" style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">Cancelar</button>
-                    <button onclick="salvarNovaReservaApp()" style="flex: 2; background: #3b82f6; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);">
-                        <i class="fa-solid fa-check"></i> Confirmar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- TELA 5: AUTORIZAÇÕES DE ACESSO -->
-        <div id="tela-autorizacoes" class="tela page-content">
-            <div class="section-header" style="margin-top: 10px; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <h3 style="margin: 0;">Autorizações de Acesso</h3>
-                </div>
-                <button onclick="abrirFormNovaAutorizacao()" style="background: #a855f7; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(168, 85, 247, 0.3);"><i class="fa-solid fa-plus"></i> Nova</button>
-            </div>
-
-            <div id="lista-minhas-autorizacoes">
-                <div class="empty-state">
-                    <i class="fa-solid fa-user-shield" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                    <p style="font-size: 15px; color: #64748b; font-weight: 500; margin-bottom: 25px;">Nenhum acesso liberado.</p>
-                    <button class="btn-acao" onclick="abrirFormNovaAutorizacao()" style="background: #a855f7;">Liberar Alguém</button>
-                </div>
-            </div>
-
-            <div id="form-nova-autorizacao" style="display: none; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f8fafc;">
-                <h4 style="margin-bottom: 15px; color: #0f172a; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-unlock-keyhole" style="color: #a855f7;"></i> Liberar Entrada
-                </h4>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Tipo de Acesso</label>
-                <select id="autAppTipo" onchange="verificarTipoAcesso()" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 15px; font-size: 14px; outline: none; -webkit-appearance: none;">
-                    <option value="Visitante Social">👥 Visitante Social (Amigo/Parente)</option>
-                    <option value="Prestador de Serviço">🛠️ Prestador de Serviço (Técnico/Obra)</option>
-                </select>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Nome Completo</label>
-                <input type="text" id="autAppNome" placeholder="Nome de quem vai entrar..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 15px; font-size: 14px; outline: none; box-sizing: border-box;">
-
-                <div id="boxAutEmpresa" style="display: none;">
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Empresa / Profissão</label>
-                    <input type="text" id="autAppEmpresa" placeholder="Ex: Claro, Encanador, Diarista..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 15px; font-size: 14px; outline: none; box-sizing: border-box;">
-                </div>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Data Liberada</label>
-                <input type="date" id="autAppData" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 20px; font-size: 14px; outline: none; box-sizing: border-box;">
-
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="fecharFormNovaAutorizacao()" style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">Cancelar</button>
-                    <button onclick="salvarNovaAutorizacaoApp()" style="flex: 2; background: #a855f7; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(168, 85, 247, 0.3);">
-                        <i class="fa-solid fa-qrcode"></i> Gerar Código
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- ========================================== -->
-        <!-- TELA 6: OCORRÊNCIAS                        -->
-        <!-- ========================================== -->
-        <div id="tela-ocorrencias" class="tela page-content" style="display: none;">
-            <div class="section-header" style="margin-top: 10px;">
-                <h3>Livro de Ocorrências</h3>
-                <button onclick="abrirFormNovaOcorrencia()" style="background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-plus"></i> Nova</button>
-            </div>
-
-            <div id="lista-minhas-ocorrencias">
-                <div class="empty-state">
-                    <i class="fa-solid fa-clipboard-list" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                    <p style="font-size: 15px; color: #64748b; font-weight: 500; margin-bottom: 25px;">Nenhuma ocorrência registrada.</p>
-                    <button class="btn-acao" onclick="abrirFormNovaOcorrencia()" style="background: #ef4444;">Registrar Nova</button>
-                </div>
-            </div>
-
-            <!-- FORMULÁRIO DE OCORRÊNCIA -->
-            <div id="form-nova-ocorrencia" style="display: none; background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f8fafc;">
-                <h4 style="margin-bottom: 15px; color: #0f172a; font-size: 16px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Registrar Ocorrência
-                </h4>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Categoria do Problema</label>
-                <select id="ocorrenciaAppTipo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 15px; font-size: 14px; outline: none; -webkit-appearance: none;">
-                    <option value="Barulho / Perturbação">🔊 Barulho / Perturbação</option>
-                    <option value="Limpeza / Lixo">🧹 Limpeza / Lixo</option>
-                    <option value="Manutenção (Lâmpada, Elevador...)">🛠️ Manutenção (Lâmpadas, Portões...)</option>
-                    <option value="Segurança / Portaria">🛡️ Segurança / Portaria</option>
-                    <option value="Outros">Outros...</option>
-                </select>
-
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Descreva o que aconteceu</label>
-                <textarea id="ocorrenciaAppDescricao" placeholder="Ex: Estão fazendo muito barulho no salão de festas após o horário permitido..." rows="4" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 20px; font-size: 14px; outline: none; box-sizing: border-box; resize: none; font-family: inherit;"></textarea>
-
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="fecharFormNovaOcorrencia()" style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px;">Cancelar</button>
-                    <button onclick="salvarNovaOcorrenciaApp()" style="flex: 2; background: #ef4444; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
-                        <i class="fa-solid fa-paper-plane"></i> Enviar
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- ========================================== -->
-
-        <!-- TELA 4: PERFIL -->
-        <div id="tela-perfil" class="tela page-content">
-            <div class="section-header" style="margin-top: 10px;">
-                <h3>Meu Perfil</h3>
-            </div>
-            <div class="empty-state">
-                <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 50%; margin: 0 auto 15px auto; display: flex; align-items: center; justify-content: center; font-size: 35px; color: #94a3b8;">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                
-                <h2 style="font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 5px;" id="perfil-nome">Carregando...</h2>
-                <p style="color: #64748b; font-size: 14px; margin-bottom: 30px; font-weight: 500;">Apto <span id="perfil-apto">...</span> • <span id="perfil-email">...</span></p>
-                
-                <button onclick="sairDoApp()" style="background: #fef2f2; color: #ef4444; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 15px; width: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sair do Aplicativo
-                </button>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- BOTTOM NAVIGATION -->
-    <nav class="bottom-nav">
-        <a class="nav-item ativo" id="menu-inicio" onclick="mudarAba('tela-inicio', this)">
-            <i class="fa-solid fa-house"></i>
-            <span>Início</span>
-        </a>
-        <a class="nav-item" id="menu-pacotes" onclick="mudarAba('tela-pacotes', this)">
-            <i class="fa-solid fa-box"></i>
-            <span>Pacotes</span>
-        </a>
-        <a class="nav-item" id="menu-reservas" onclick="mudarAba('tela-reservas', this)">
-            <i class="fa-solid fa-calendar-days"></i>
-            <span>Reservas</span>
-        </a>
-        <a class="nav-item" id="menu-perfil" onclick="mudarAba('tela-perfil', this)">
-            <i class="fa-solid fa-user"></i>
-            <span>Perfil</span>
-        </a>
-    </nav>
-
-    <!-- SCRIPT DE NAVEGAÇÃO -->
-    <script>
-        function mudarAba(idTela, elementoBotao) {
-            document.querySelectorAll('.tela').forEach(tela => tela.classList.remove('ativa'));
-            document.getElementById(idTela).classList.add('ativa');
-            
-            document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => btn.classList.remove('ativo'));
-            if(elementoBotao) elementoBotao.classList.add('ativo');
-        }
-    </script>
-
-    <!-- 🚀 SCRIPTS DO FIREBASE -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    
-    <script>
-        // INICIALIZAÇÃO DO FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
-            authDomain: "portaria-pro-ebc5c.firebaseapp.com",
-            projectId: "portaria-pro-ebc5c",
-            storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
-            messagingSenderId: "948781126590",
-            appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
-        };
-        
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.firestore();
-
-        // Variáveis Globais de Memória do App
-        let moradorNomeGlobal = "";
-        let moradorAptoGlobal = ""; 
-        let moradorCondominioGlobal = ""; 
-        let pacotesPendentes = [];
-        let deliveriesPendentes = [];
-        let minhasReservasApp = [];
-        let minhasAutorizacoesApp = [];
-
-        window.addEventListener('DOMContentLoaded', () => {
-            firebase.auth().onAuthStateChanged((user) => {
-                if (user) {
-                    db.collection("usuarios").doc(user.uid).get().then((doc) => {
-                        if (doc.exists) {
-                            const dados = doc.data();
-                            moradorNomeGlobal = dados.nome || "Usuário";
-                            const apto = dados.apartamento || "N/A";
-                            moradorAptoGlobal = apto;
-                            moradorCondominioGlobal = dados.condominioId;
-                            
-                            if(document.getElementById('nome-morador')) document.getElementById('nome-morador').innerText = moradorNomeGlobal; 
-                            if(document.getElementById('apto-morador')) document.getElementById('apto-morador').innerText = "Apto " + apto;
-                            
-                            if(document.getElementById('perfil-nome')){
-                                document.getElementById('perfil-nome').innerText = moradorNomeGlobal;
-                                document.getElementById('perfil-apto').innerText = apto;
-                                document.getElementById('perfil-email').innerText = dados.emailPessoal || dados.emailAcesso || user.email;
-                            }
-                            
-                            if(dados.condominioId) {
-                                db.collection("condominios").doc(dados.condominioId).get().then(condDoc => {
-                                    if(condDoc.exists) {
-                                        const condDados = condDoc.data();
-                                        if(document.getElementById('app-nome-condominio')) document.getElementById('app-nome-condominio').innerText = condDados.nome;
-                                        if(condDados.logoSistema && document.getElementById('app-logo')) {
-                                            document.getElementById('app-logo').src = condDados.logoSistema;
-                                        }
-                                    } else {
-                                        if(document.getElementById('app-nome-condominio')) document.getElementById('app-nome-condominio').innerText = "CONDOMÍNIO";
-                                    }
-                                });
-                                
-                                // AQUI ESTAVA FALTANDO LIGAR O RADAR DE AUTORIZAÇÕES! CORRIGIDO:
-                                if(apto !== "N/A") {
-                                    escutarEncomendas(dados.condominioId, apto);
-                                    escutarDeliveries(dados.condominioId, apto);
-                                    escutarComunicadosGlobais(dados.condominioId);
-                                    escutarMinhasReservas(dados.condominioId, apto);
-                                    escutarMinhasAutorizacoes(dados.condominioId, apto); // LIGOU!
-                                    escutarMinhasOcorrencias(dados.condominioId, apto);
-                                }
-                            }
-                        } else {
-                            alert("⚠️ Conta sem dados no sistema. Procure a administração!");
-                            sairDoApp();
-                        }
-                    });
-                } else {
-                    window.location.href = "login.html";
-                }
+    if (typeof db !== 'undefined') {
+        // Escuta os Moradores
+        db.collection("moradores").where("condominioId", "==", meuCondominio).onSnapshot((snapshot) => {
+            moradoresGlobais = [];
+            snapshot.forEach((doc) => {
+                let morador = doc.data();
+                morador.id = doc.id; 
+                moradoresGlobais.push(morador);
             });
+            
+            moradoresGlobais.sort((a, b) => a.apto.localeCompare(b.apto, undefined, {numeric: true}));
+            localStorage.setItem('moradores', JSON.stringify(moradoresGlobais));
+            
+            atualizarListaMoradores();
+            if(typeof atualizarDashboard === 'function') atualizarDashboard();
         });
 
-        // ==========================================
-        // MÓDULO 1: RADAR DE ENCOMENDAS (CAIXAS)
-        // ==========================================
-        function escutarEncomendas(condominioId, apartamento) {
-            db.collection("encomendas")
-              .where("condominioId", "==", condominioId)
-              .where("apto", "==", apartamento)
-              .where("status", "==", "Pendente")
-              .onSnapshot((snapshot) => {
-                  pacotesPendentes = [];
-                  snapshot.forEach((doc) => {
-                      let item = doc.data();
-                      // 🚫 TRAVA DO FANTASMA: Se foi excluído na portaria, o app finge que não viu!
-                      if (item.excluido === true) return; 
-                      
-                      item.idFirebase = doc.id;
-                      item.isDelivery = false; 
-                      pacotesPendentes.push(item);
-                  });
-                  renderizarPacotesMistos();
-              });
-        }
+        // Inicia o Radar de Cadastros Pendentes
+        setTimeout(iniciarRadarDeCadastros, 1500);
 
-        // ==========================================
-        // MÓDULO 2: RADAR DE DELIVERY
-        // ==========================================
-        function escutarDeliveries(condominioId, apartamento) {
-            db.collection("delivery")
-              .where("condominioId", "==", condominioId)
-              .where("apto", "==", apartamento)
-              .where("status", "==", "Aguardando Morador")
-              .onSnapshot((snapshot) => {
-                  deliveriesPendentes = [];
-                  snapshot.forEach((doc) => {
-                      let item = doc.data();
-                      // 🚫 TRAVA DO FANTASMA: Se foi excluído na portaria, o app finge que não viu!
-                      if (item.excluido === true) return; 
-                      
-                      item.idFirebase = doc.id;
-                      item.isDelivery = true; 
-                      deliveriesPendentes.push(item);
-                  });
-                  renderizarPacotesMistos();
-              });
-        }
+    } else {
+        console.error("Firebase DB não encontrado. Verifique o index.html");
+    }
+});
 
-        // ==========================================
-        // MOTOR DE RENDERIZAÇÃO PACOTES/DELIVERY
-        // ==========================================
-        function renderizarPacotesMistos() {
-            const listaPacotes = document.getElementById('lista-encomendas');
-            const alertaEntrega = document.getElementById('alerta-entrega');
-            const badgeSino = document.getElementById('badge-notif');
+// ==========================================
+// 2. FUNÇÕES DE TELEFONE DINÂMICO
+// ==========================================
+function adicionarCampoTelefone(containerId) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.style.display = 'flex';
+    div.style.gap = '10px';
+    div.style.alignItems = 'center';
+    
+    div.innerHTML = `
+        <input class="telefone-input" type="tel" placeholder="Outro WhatsApp / Telefone" style="flex: 1; width: 100%; margin: 0;">
+        <button type="button" class="btn" onclick="this.parentElement.remove()" style="background: #ef4444; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 16px; transition: 0.2s;" title="Remover telefone"><i class="fa-solid fa-minus"></i></button>
+    `;
+    container.appendChild(div);
+}
 
-            let todosOsItens = [...pacotesPendentes, ...deliveriesPendentes];
-            
-            todosOsItens.sort((a, b) => {
-                let dataA = a.timestamp || new Date(a.dataCadastro).getTime() || 0;
-                let dataB = b.timestamp || new Date(b.dataCadastro).getTime() || 0;
-                return dataB - dataA;
-            });
+// ==========================================
+// 3. ADICIONAR / ATUALIZAR NA NUVEM (CADASTRO MANUAL)
+// ==========================================
+function addMorador() {
+    const nome = document.getElementById('nome').value.trim();
+    const apto = document.getElementById('apto').value.trim();
+    const secretaria = document.getElementById('secretaria').value.trim();
+    const visitantes = document.getElementById('visitantes').value.trim();
 
-            if(todosOsItens.length === 0) {
-                listaPacotes.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-box-open" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                        <p style="color: #64748b; font-size: 15px; font-weight: 500;">Nenhum pacote ou delivery na portaria.</p>
-                    </div>
-                `;
-                alertaEntrega.style.display = 'none';
-                badgeSino.style.display = 'none';
-                return;
-            }
+    // Captura os telefones (Array)
+    const inputsTelefones = document.querySelectorAll('.telefone-input');
+    const listaTelefones = Array.from(inputsTelefones).map(input => input.value.trim()).filter(valor => valor !== "");
 
-            let htmlPacotes = '';
-            let temDeliveryUrgente = false;
-            let nomeEmpresaDelivery = "";
+    if (!nome || !apto) {
+        alert('⚠️ Nome e Apartamento são obrigatórios!');
+        return;
+    }
 
-            todosOsItens.forEach(item => {
-                const corBorda = item.isDelivery ? '#ef4444' : '#f59e0b';
-                const iconeTipo = item.isDelivery ? '<i class="fa-solid fa-motorcycle"></i>' : '<i class="fa-solid fa-box"></i>';
-                const textoTipo = item.isDelivery ? 'Delivery' : 'Encomenda';
-                const empresa = item.plataforma || item.transportadora || 'Portaria';
+    const btnSalvar = document.getElementById('btnSalvarMorador');
+    let textoOriginal = idMoradorEditandoFirebase ? "Cadastrar Morador" : (btnSalvar ? btnSalvar.innerText : "Salvar");
+    
+    if (btnSalvar) {
+        btnSalvar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando na Nuvem...';
+        btnSalvar.style.pointerEvents = 'none';
+    }
 
-                if(item.isDelivery) {
-                    temDeliveryUrgente = true;
-                    nomeEmpresaDelivery = empresa;
-                }
+    const meuCondominio = localStorage.getItem("condominioId");
 
-                htmlPacotes += `
-                    <div style="background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #f8fafc; border-left: 4px solid ${corBorda}; position: relative;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <div style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: ${corBorda}; display: flex; align-items: center; gap: 6px;">
-                                ${iconeTipo} ${textoTipo}
-                            </div>
-                            <div style="font-size: 11px; color: #94a3b8; font-weight: 600; background: #f1f5f9; padding: 2px 8px; border-radius: 10px;">Na Portaria</div>
-                        </div>
-                        <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 5px; text-transform: capitalize;">${empresa}</div>
-                        <p style="font-size: 12px; color: #64748b; margin-bottom: 15px;">Recebido e aguardando a sua retirada.</p>
-                        
-                        <div style="display: flex; gap: 10px;">
-                            <button onclick="confirmarRecebimentoApp('${item.idFirebase}', ${item.isDelivery})" style="background: #10b981; color: white; width: 100%; border: none; padding: 12px; border-radius: 12px; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25); transition: 0.2s;">
-                                <i class="fa-solid fa-check-double"></i> Confirmar Retirada
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
+    const dadosMorador = {
+        nome: nome,
+        apto: apto,
+        telefones: listaTelefones,
+        secretaria: secretaria,
+        visitantes: visitantes,
+        dataCadastro: new Date().toISOString(),
+        condominioId: meuCondominio 
+    };
 
-            listaPacotes.innerHTML = htmlPacotes;
-            badgeSino.innerText = todosOsItens.length;
-            badgeSino.style.display = 'flex';
+    if (idMoradorEditandoFirebase) {
+        db.collection("moradores").doc(idMoradorEditandoFirebase).update(dadosMorador)
+            .then(() => {
+                alert('✅ Registro de morador atualizado com sucesso na nuvem!');
+                finalizarAcaoMorador(btnSalvar, textoOriginal);
+                idMoradorEditandoFirebase = null;
+            })
+            .catch(err => alert('Erro ao atualizar: ' + err));
+    } else {
+        dadosMorador.excluido = false;
+        db.collection("moradores").add(dadosMorador)
+            .then(() => {
+                alert('✅ Morador cadastrado com sucesso na nuvem!');
+                finalizarAcaoMorador(btnSalvar, textoOriginal);
+            })
+            .catch(err => alert('Erro ao salvar: ' + err));
+    }
+}
 
-            if(temDeliveryUrgente) {
-                document.getElementById('alerta-titulo').innerText = 'Delivery na Portaria!';
-                document.getElementById('alerta-desc').innerText = `O entregador do(a) ${nomeEmpresaDelivery} chegou.`;
-                alertaEntrega.style.display = 'flex';
-            } else {
-                alertaEntrega.style.display = 'none';
-            }
-        }
+function finalizarAcaoMorador(btnNode, textoFinal) {
+    if(btnNode) {
+        btnNode.innerHTML = `<i class="fa-solid fa-plus"></i> ${textoFinal}`;
+        btnNode.style.background = "#3b82f6"; 
+        btnNode.style.pointerEvents = 'auto';
+    }
+    document.getElementById('nome').value = '';
+    document.getElementById('apto').value = '';
+    document.getElementById('secretaria').value = '';
+    document.getElementById('visitantes').value = '';
+    
+    // Reseta telefones para o padrão (apenas 1)
+    const container = document.getElementById('container-telefones');
+    container.innerHTML = `
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input class="telefone-input" type="tel" placeholder="WhatsApp / Telefone principal" style="flex: 1; width: 100%; margin: 0;">
+            <button type="button" class="btn" onclick="adicionarCampoTelefone('container-telefones')" style="background: #10b981; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 16px; transition: 0.2s;" title="Adicionar outro telefone"><i class="fa-solid fa-plus"></i></button>
+        </div>`;
+}
 
-        function confirmarRecebimentoApp(idDoc, isDelivery) {
-            if(confirm("Confirma que você já está com o pacote em mãos? A portaria será avisada imediatamente.")) {
-                const colecao = isDelivery ? "delivery" : "encomendas";
-                const agora = new Date();
-                
-                db.collection(colecao).doc(idDoc).update({
-                    status: "Entregue",
-                    quemRetirou: `${moradorNomeGlobal} (Pelo App)`,
-                    dataEntrega: agora.toLocaleDateString('pt-BR'),
-                    horaEntrega: agora.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})
-                }).then(() => {
-                    alert("✅ Recebimento confirmado! O sistema da portaria já foi atualizado.");
-                }).catch(e => alert("Erro ao confirmar: " + e.message));
-            }
-        }
+// ==========================================
+// 4. RENDERIZAR LISTA DIRETO DA NUVEM
+// ==========================================
+function atualizarListaMoradores(termoPesquisa = '') {
+    const lista = document.getElementById('listaMoradores');
+    if (!lista) return;
 
-        // ==========================================
-        // MÓDULO 4: COMUNICADOS GLOBAIS
-        // ==========================================
-        function escutarComunicadosGlobais(condominioId) {
-            db.collection("comunicados")
-              .where("condominioId", "==", condominioId)
-              .where("excluido", "==", false)
-              .onSnapshot((snapshot) => {
-                  const container = document.querySelector('.comunicados-container');
-                  
-                  if(snapshot.empty) {
-                      container.innerHTML = '<p style="font-size: 13px; color: #94a3b8; text-align: center; font-style: italic;">Nenhum comunicado ativo no momento.</p>';
-                      return;
-                  }
-                  
-                  let comunicados = [];
-                  snapshot.forEach(doc => {
-                      let c = doc.data();
-                      c.id = doc.id;
-                      comunicados.push(c);
-                  });
-                  
-                  comunicados.sort((a,b) => {
-                      let dataA = a.dataRegistro ? new Date(a.dataRegistro).getTime() : 0;
-                      let dataB = b.dataRegistro ? new Date(b.dataRegistro).getTime() : 0;
-                      return dataB - dataA;
-                  });
-                  
-                  let htmlComunicados = '';
-                  comunicados.slice(0, 3).forEach(c => {
-                      let icone = 'fa-bullhorn';
-                      let corBgr = '#eff6ff';
-                      let corIcon = '#3b82f6';
+    const moradoresAtivos = moradoresGlobais.filter(m => !m.excluido);
+    lista.innerHTML = '';
 
-                      if (c.tipo && c.tipo.includes('Manutenção')) { icone = 'fa-wrench'; corBgr = '#fffbeb'; corIcon = '#f59e0b'; }
-                      if (c.tipo && c.tipo.includes('Ocorrência')) { icone = 'fa-triangle-exclamation'; corBgr = '#fef2f2'; corIcon = '#ef4444'; }
-                      if (c.tipo && c.tipo.includes('Assembleia')) { icone = 'fa-users-rectangle'; corBgr = '#f3e8ff'; corIcon = '#8b5cf6'; }
-                      
-                      let dataFormatada = c.dataRegistro ? new Date(c.dataRegistro).toLocaleDateString('pt-BR') : '';
+    if (moradoresAtivos.length === 0) {
+        lista.innerHTML = '<div style="text-align: center; grid-column: 1 / -1; padding: 40px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; color: #64748b;"><i class="fa-solid fa-house-chimney-user" style="font-size: 30px; margin-bottom: 10px; opacity: 0.5;"></i><p>Nenhum morador ativo cadastrado.</p></div>';
+        return;
+    }
 
-                      htmlComunicados += `
-                      <div class="comunicado-card" style="margin-bottom: 10px;">
-                          <div class="com-icon" style="background: ${corBgr}; color: ${corIcon};"><i class="fa-solid ${icone}"></i></div>
-                          <div class="com-text" style="overflow: hidden;">
-                              <h4 style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.titulo}</h4>
-                              <p style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.mensagem}</p>
-                              <span>${dataFormatada} • ${c.tipo.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uFFFD/g, '').trim()}</span>
-                          </div>
-                      </div>
-                      `;
-                  });
-                  container.innerHTML = htmlComunicados;
-              });
-        }
+    const aptos = {};
+    moradoresAtivos.forEach(m => {
+        if (!aptos[m.apto]) aptos[m.apto] = [];
+        aptos[m.apto].push(m);
+    });
+
+    const grid = document.createElement('div');
+    grid.className = 'apto-grid';
+
+    Object.keys(aptos).sort().forEach(numeroApto => {
+        const moradoresDoApto = aptos[numeroApto];
         
-        // ==========================================
-        // MÓDULO 5: RESERVAS COM ASSINATURA
-        // ==========================================
-        let reservaAppCanvas = null;
-        let moradorAssinouReserva = false;
+        const atendePesquisa = moradoresDoApto.some(m => 
+            m.nome.toLowerCase().includes(termoPesquisa.toLowerCase()) || 
+            m.apto.toLowerCase().includes(termoPesquisa.toLowerCase())
+        );
 
-        function configurarCanvasReservaApp(canvasId) {
-            let canvas = document.getElementById(canvasId);
-            if(!canvas) return null; 
-            let ctx = canvas.getContext("2d");
-            let desenhando = false;
-            
-            function resizeCanvas() {
-                const rect = canvas.parentElement.getBoundingClientRect();
-                canvas.width = rect.width - 20; 
-            }
-            window.addEventListener('resize', resizeCanvas);
-            setTimeout(resizeCanvas, 100);
-
-            function getMousePos(e) {
-                const rect = canvas.getBoundingClientRect();
-                if(e.touches) {
-                    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
-                }
-                return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-            }
-            
-            canvas.addEventListener("mousedown", (e) => { desenhando = true; moradorAssinouReserva = true; ctx.beginPath(); let pos = getMousePos(e); ctx.moveTo(pos.x, pos.y); });
-            canvas.addEventListener("mouseup", () => { desenhando = false; });
-            canvas.addEventListener("mousemove", (e) => { 
-                if(!desenhando) return; 
-                let pos = getMousePos(e);
-                ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.strokeStyle = "#0f172a"; 
-                ctx.lineTo(pos.x, pos.y); ctx.stroke(); 
-            });
-            
-            canvas.addEventListener("touchstart", (e) => { e.preventDefault(); desenhando = true; moradorAssinouReserva = true; let pos = getMousePos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); }, {passive: false});
-            canvas.addEventListener("touchmove", (e) => { 
-                if(!desenhando) return; 
-                e.preventDefault(); 
-                let pos = getMousePos(e);
-                ctx.lineWidth = 3; ctx.lineCap = "round"; ctx.strokeStyle = "#0f172a"; 
-                ctx.lineTo(pos.x, pos.y); ctx.stroke(); 
-            }, {passive: false});
-            canvas.addEventListener("touchend", () => { desenhando = false; });
-            
-            return { canvas, ctx, resizeCanvas };
+        if (termoPesquisa === '' || atendePesquisa) {
+            const btn = document.createElement('button');
+            btn.className = 'apto-btn';
+            btn.textContent = numeroApto;
+            btn.onclick = () => abrirModalMorador(numeroApto, moradoresDoApto);
+            grid.appendChild(btn);
         }
+    });
 
-        function limparAssinaturaReservaApp() {
-            if(reservaAppCanvas && reservaAppCanvas.canvas) {
-                reservaAppCanvas.ctx.clearRect(0, 0, reservaAppCanvas.canvas.width, reservaAppCanvas.canvas.height);
-                moradorAssinouReserva = false;
-            }
-        }
+    lista.appendChild(grid);
+}
 
-        function escutarMinhasReservas(condominioId, apartamento) {
-            db.collection("reservas")
-              .where("condominioId", "==", condominioId)
-              .where("apto", "==", apartamento)
-              .onSnapshot((snapshot) => {
-                  minhasReservasApp = [];
-                  snapshot.forEach((doc) => {
-                      let r = doc.data();
-                      r.idFirebase = doc.id;
-                      minhasReservasApp.push(r);
-                  });
+function pesquisarMoradores() {
+    const termo = document.getElementById('pesquisaMorador').value;
+    atualizarListaMoradores(termo);
+}
 
-                  minhasReservasApp.sort((a, b) => new Date(b.data) - new Date(a.data));
-                  renderizarMinhasReservas();
-              });
-        }
+function abrirModalMorador(apto, moradores) {
+    const modal = document.getElementById('modalMorador');
+    const conteudo = document.getElementById('conteudoModalMorador');
+    const veiculos = typeof veiculosGlobais !== 'undefined' ? veiculosGlobais : (JSON.parse(localStorage.getItem('veiculos')) || []);
+    
+    // Agora o JavaScript sabe se é porteiro pela variável que criamos no auth.js!
+    const isOperacional = window.isPorteiroLogado === true; 
+    
+    let html = `<h3 style="margin-bottom: 20px; color: #3b82f6; text-align: center; font-size: 24px;"><i class="fa-regular fa-building" style="margin-right: 8px; color: #64748b;"></i>Apto ${apto}</h3>`;
+    
+    moradores.forEach(m => {
+        const carrosDoMorador = veiculos.filter(v => 
+            !v.excluido && (
+                v.morador.toLowerCase().trim() === m.nome.toLowerCase().trim() ||
+                v.morador.toLowerCase().trim() === m.apto.toLowerCase().trim()
+            )
+        );
 
-        function renderizarMinhasReservas() {
-            const lista = document.getElementById('lista-minhas-reservas');
-            if(!lista) return;
-
-            const ativas = minhasReservasApp.filter(r => !r.excluido);
-
-            if(ativas.length === 0) {
-                lista.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-regular fa-calendar-xmark" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                        <p style="font-size: 15px; color: #64748b; font-weight: 500; margin-bottom: 25px;">Nenhuma reserva agendada.</p>
-                        <button class="btn-acao" onclick="abrirFormNovaReserva()">Agendar Agora</button>
+        let veiculosHtml = '';
+        if (carrosDoMorador.length > 0) {
+            veiculosHtml = `<p style="margin-bottom: 6px; font-size: 14px;"><i class="fa-solid fa-car-side" style="color: #f59e0b; width: 20px; text-align: center; margin-right: 5px;"></i><strong>Veículos vinculados:</strong></p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">`;
+            
+            carrosDoMorador.forEach(v => {
+                veiculosHtml += `
+                    <div onclick="redirecionarParaVeiculo('${v.id || v.idFirebase}')" style="cursor: pointer; background: white; border: 2px solid #1e293b; border-radius: 6px; text-align: center; font-weight: bold; width: 95px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.08); transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" title="Clique para ver a ficha completa deste carro">
+                        <div style="background: #003399; color: white; font-size: 6px; display: flex; justify-content: space-between; padding: 1px 4px; letter-spacing: 0.5px;">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Mercosur_flag.svg/120px-Mercosur_flag.svg.png" style="height: 5px; opacity: 0.9;">
+                            <span>BRASIL</span>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flag_of_Brazil.svg/120px-Flag_of_Brazil.svg.png" style="height: 5px; opacity: 0.9;">
+                        </div>
+                        <div style="font-size: 12px; padding: 2px 0; letter-spacing: 0.5px; color: #1e293b; background: white;">${v.placa}</div>
                     </div>
                 `;
-                return;
-            }
+            });
+            veiculosHtml += `</div>`;
+        } else {
+            veiculosHtml = `<p style="margin-bottom: 12px; font-size: 14px;"><i class="fa-solid fa-car-side" style="color: #94a3b8; width: 20px; text-align: center; margin-right: 5px;"></i><strong>Veículos:</strong> <span style="color: #94a3b8; font-style: italic;">Nenhum veículo encontrado</span></p>`;
+        }
 
-            let html = '';
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
+        let telefonesText = '<span style="color: #94a3b8;">Nenhum</span>';
+        if (m.telefones && m.telefones.length > 0) {
+            telefonesText = m.telefones.join(' | ');
+        }
 
-            ativas.forEach(r => {
-                const dataReserva = new Date(r.data + "T00:00:00");
-                dataReserva.setHours(0,0,0,0);
+        // ==========================================
+        // 🔒 BLINDAGEM DE BOTÕES - MODAL DE MORADOR
+        // ==========================================
+        let botoesHtml = `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+                <button onclick="editarMoradorModal('${m.id}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Morador">
+                    <i class="fa-solid fa-pen"></i> Editar
+                </button>
+                <button onclick="excluirMorador('${m.id}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Morador">
+                    <i class="fa-solid fa-trash-can"></i> Arquivar
+                </button>
+            </div>
+        `;
 
-                const isPassado = dataReserva < hoje;
-                const isHoje = dataReserva.getTime() === hoje.getTime();
-                const dataF = r.data.split('-').reverse().join('/');
+        html += `
+            <div style="background: white; padding: 18px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.01);">
+                <p style="margin-bottom: 8px; font-size: 14px;">
+                    <i class="fa-solid fa-user-tie" style="color: #3b82f6; width: 20px; text-align: center; margin-right: 5px;"></i>
+                    <strong>Responsável:</strong> <span style="color: #0f172a; font-weight: 600;">${m.nome}</span>
+                </p>
+                <p style="margin-bottom: 8px; font-size: 14px;">
+                    <i class="fa-brands fa-whatsapp" style="color: #10b981; width: 20px; text-align: center; margin-right: 5px;"></i>
+                    <strong>Contatos:</strong> ${telefonesText}
+                </p>
+                <p style="margin-bottom: 8px; font-size: 14px;">
+                    <i class="fa-solid fa-broom" style="color: #8b5cf6; width: 20px; text-align: center; margin-right: 5px;"></i>
+                    <strong>Secretária:</strong> ${m.secretaria || '<span style="color: #94a3b8;">Nenhuma</span>'}
+                </p>
+                <p style="margin-bottom: 12px; font-size: 14px;">
+                    <i class="fa-solid fa-users" style="color: #10b981; width: 20px; text-align: center; margin-right: 5px;"></i>
+                    <strong>Autorizados:</strong> ${m.visitantes || '<span style="color: #94a3b8;">Nenhum</span>'}
+                </p>
                 
-                let badge = '';
-                if (isPassado) {
-                    badge = `<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Finalizada</span>`;
-                } else if (isHoje) {
-                    badge = `<span style="background:#10b981; color:white; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Hoje!</span>`;
-                } else {
-                    badge = `<span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Agendada</span>`;
-                }
+                ${veiculosHtml}
+                
+                ${botoesHtml}
+            </div>
+        `;
+    });
 
-                html += `
-                    <div style="background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #f8fafc; opacity: ${isPassado ? '0.6' : '1'}; position: relative; overflow: hidden;">
-                        ${isHoje ? '<div style="position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #10b981;"></div>' : ''}
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <h4 style="margin: 0; font-size: 16px; color: #0f172a;"><i class="fa-solid fa-calendar-check" style="color: #3b82f6; margin-right: 6px;"></i> ${r.tipo}</h4>
-                            ${badge}
-                        </div>
-                        <div style="display: flex; gap: 15px; color: #64748b; font-size: 13px; font-weight: 500;">
-                            <span><i class="fa-regular fa-calendar" style="color: #94a3b8;"></i> ${dataF}</span>
-                            <span><i class="fa-regular fa-clock" style="color: #94a3b8;"></i> ${r.hora}</span>
-                        </div>
-                        ${!isPassado ? `<button onclick="cancelarReservaApp('${r.idFirebase}')" style="margin-top: 15px; background: #fef2f2; color: #ef4444; border: 1px dashed #fecaca; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-xmark"></i> Cancelar Reserva</button>` : ''}
-                    </div>
-                `;
-            });
+    conteudo.innerHTML = html;
+    modal.style.display = 'flex';
+}
 
-            lista.innerHTML = html;
-        }
+function editarMoradorModal(id) {
+    const m = moradoresGlobais.find(mor => mor.id === id);
+    if (!m) return;
 
-        function abrirFormNovaReserva() {
-            document.getElementById('lista-minhas-reservas').style.display = 'none';
-            document.getElementById('form-nova-reserva').style.display = 'block';
-            
-            if(!reservaAppCanvas) {
-                reservaAppCanvas = configurarCanvasReservaApp("canvasReservaApp");
+    document.getElementById('nome').value = m.nome;
+    document.getElementById('apto').value = m.apto;
+    document.getElementById('secretaria').value = m.secretaria || '';
+    document.getElementById('visitantes').value = m.visitantes || '';
+
+    // Repovoando os telefones
+    const containerTel = document.getElementById('container-telefones');
+    containerTel.innerHTML = '';
+    if (m.telefones && m.telefones.length > 0) {
+        m.telefones.forEach((tel, idx) => {
+            if (idx === 0) {
+                containerTel.innerHTML += `
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input class="telefone-input" type="tel" value="${tel}" style="flex: 1; width: 100%; margin: 0;">
+                    <button type="button" class="btn" onclick="adicionarCampoTelefone('container-telefones')" style="background: #10b981; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; transition: 0.2s;"><i class="fa-solid fa-plus"></i></button>
+                </div>`;
             } else {
-                reservaAppCanvas.resizeCanvas();
-                limparAssinaturaReservaApp(); 
-            }
-        }
-
-        function fecharFormNovaReserva() {
-            document.getElementById('form-nova-reserva').style.display = 'none';
-            document.getElementById('lista-minhas-reservas').style.display = 'block';
-            document.getElementById('reservaAppTipo').value = '';
-            document.getElementById('reservaAppData').value = '';
-            document.getElementById('reservaAppHora').value = '';
-            limparAssinaturaReservaApp();
-        }
-
-        function salvarNovaReservaApp() {
-            const tipo = document.getElementById('reservaAppTipo').value;
-            const data = document.getElementById('reservaAppData').value;
-            const hora = document.getElementById('reservaAppHora').value;
-
-            if(!tipo || !data || !hora) {
-                alert("⚠️ Preencha todos os campos (Espaço, Data e Hora)!");
-                return;
-            }
-
-            if (!moradorAssinouReserva) {
-                alert("🖊️ Por favor, faça sua assinatura digital no quadro antes de confirmar a reserva!");
-                return;
-            }
-
-            let assinaturaBase64 = reservaAppCanvas.canvas.toDataURL("image/png");
-
-            db.collection("reservas")
-              .where("condominioId", "==", moradorCondominioGlobal)
-              .where("tipo", "==", tipo)
-              .where("data", "==", data)
-              .where("excluido", "==", false)
-              .get()
-              .then(snap => {
-                  if(!snap.empty) {
-                      alert(`🚨 Poxa! Já existe uma reserva ativa para a(o) ${tipo} neste dia. Por favor, escolha outra data.`);
-                      return;
-                  }
-
-                  const dadosReserva = {
-                      tipo: tipo,
-                      data: data,
-                      hora: hora,
-                      responsavel: moradorNomeGlobal,
-                      apto: moradorAptoGlobal,
-                      timestamp: Date.now(),
-                      condominioId: moradorCondominioGlobal,
-                      convidados: [],
-                      excluido: false,
-                      origem: "App Morador",
-                      assinatura: assinaturaBase64 
-                  };
-
-                  db.collection("reservas").add(dadosReserva).then(() => {
-                      db.collection("notificacoes").add({
-                          titulo: "📱 Nova Reserva pelo App",
-                          mensagem: `O Apto ${moradorAptoGlobal} agendou a(o) ${tipo} para o dia ${data.split('-').reverse().join('/')}.`,
-                          tipo: "reserva",
-                          lida: false,
-                          condominioId: moradorCondominioGlobal,
-                          timestamp: new Date().getTime()
-                      });
-
-                      alert("✅ Reserva solicitada e termo assinado com sucesso!");
-                      fecharFormNovaReserva();
-                  }).catch(e => alert("Erro ao agendar: " + e.message));
-
-              });
-        }
-
-        function cancelarReservaApp(idFirebase) {
-            if(confirm("Deseja realmente cancelar este agendamento?")) {
-                db.collection("reservas").doc(idFirebase).update({
-                    excluido: true,
-                    dataExclusao: Date.now(),
-                    motivoExclusao: "Cancelado pelo App do Morador"
-                }).then(() => {
-                     db.collection("notificacoes").add({
-                          titulo: "🗑️ Reserva Cancelada",
-                          mensagem: `O Apto ${moradorAptoGlobal} cancelou o agendamento pelo App.`,
-                          tipo: "reserva",
-                          lida: false,
-                          condominioId: moradorCondominioGlobal,
-                          timestamp: new Date().getTime()
-                      });
-                });
-            }
-        }
-
-        // ==========================================
-        // MÓDULO 6: AUTORIZAÇÕES DE ACESSO (APP)
-        // ==========================================
-        function verificarTipoAcesso() {
-            const tipo = document.getElementById('autAppTipo').value;
-            const boxEmpresa = document.getElementById('boxAutEmpresa');
-            if(tipo === "Prestador de Serviço") {
-                boxEmpresa.style.display = "block";
-            } else {
-                boxEmpresa.style.display = "none";
-                document.getElementById('autAppEmpresa').value = "";
-            }
-        }
-
-        function abrirFormNovaAutorizacao() {
-            document.getElementById('lista-minhas-autorizacoes').style.display = 'none';
-            document.getElementById('form-nova-autorizacao').style.display = 'block';
-            
-            const hoje = new Date().toISOString().split('T')[0];
-            document.getElementById('autAppData').value = hoje;
-        }
-
-        function fecharFormNovaAutorizacao() {
-            document.getElementById('form-nova-autorizacao').style.display = 'none';
-            document.getElementById('lista-minhas-autorizacoes').style.display = 'block';
-            document.getElementById('autAppNome').value = '';
-            document.getElementById('autAppEmpresa').value = '';
-        }
-
-        function salvarNovaAutorizacaoApp() {
-            const tipo = document.getElementById('autAppTipo').value;
-            const nome = document.getElementById('autAppNome').value.trim();
-            const empresa = document.getElementById('autAppEmpresa').value.trim();
-            const data = document.getElementById('autAppData').value;
-
-            if(!nome || !data) {
-                alert("⚠️ Preencha pelo menos o Nome e a Data!");
-                return;
-            }
-
-            if(tipo === "Prestador de Serviço" && !empresa) {
-                alert("⚠️ Por favor, informe a profissão ou empresa do prestador de serviço.");
-                return;
-            }
-
-            const caracteres = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let codigoGerado = '';
-            for (let i = 0; i < 5; i++) {
-                codigoGerado += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
-            }
-
-            const dadosAut = {
-                tipo: tipo,
-                nome: nome,
-                empresa: empresa || "N/A",
-                data: data,
-                apto: moradorAptoGlobal,
-                codigo: codigoGerado,
-                status: "Aguardando", 
-                timestamp: Date.now(),
-                condominioId: moradorCondominioGlobal,
-                excluido: false
-            };
-
-            db.collection("autorizacoes").add(dadosAut).then(() => {
-                alert(`✅ Acesso autorizado com sucesso! Código gerado: ${codigoGerado}`);
-                fecharFormNovaAutorizacao();
-            }).catch(e => alert("Erro ao gerar autorização: " + e.message));
-        }
-
-        function escutarMinhasAutorizacoes(condominioId, apartamento) {
-            db.collection("autorizacoes")
-              .where("condominioId", "==", condominioId)
-              .where("apto", "==", apartamento)
-              .where("excluido", "==", false)
-              .onSnapshot((snapshot) => {
-                  minhasAutorizacoesApp = [];
-                  snapshot.forEach((doc) => {
-                      let a = doc.data();
-                      a.idFirebase = doc.id;
-                      minhasAutorizacoesApp.push(a);
-                  });
-
-                  minhasAutorizacoesApp.sort((a, b) => b.timestamp - a.timestamp);
-                  renderizarMinhasAutorizacoes();
-              });
-        }
-
-        function renderizarMinhasAutorizacoes() {
-            const lista = document.getElementById('lista-minhas-autorizacoes');
-            if(!lista) return;
-
-            if(minhasAutorizacoesApp.length === 0) {
-                lista.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa-solid fa-user-shield" style="font-size: 50px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                        <p style="font-size: 15px; color: #64748b; font-weight: 500; margin-bottom: 25px;">Nenhum acesso liberado.</p>
-                        <button class="btn-acao" onclick="abrirFormNovaAutorizacao()" style="background: #a855f7;">Liberar Alguém</button>
-                    </div>
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.gap = '10px';
+                div.style.alignItems = 'center';
+                div.innerHTML = `
+                    <input class="telefone-input" type="tel" value="${tel}" style="flex: 1; width: 100%; margin: 0;">
+                    <button type="button" class="btn" onclick="this.parentElement.remove()" style="background: #ef4444; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; transition: 0.2s;"><i class="fa-solid fa-minus"></i></button>
                 `;
-                return;
+                containerTel.appendChild(div);
             }
+        });
+    } else {
+        containerTel.innerHTML = `
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <input class="telefone-input" type="tel" placeholder="WhatsApp / Telefone principal" style="flex: 1; width: 100%; margin: 0;">
+            <button type="button" class="btn" onclick="adicionarCampoTelefone('container-telefones')" style="background: #10b981; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 18px; transition: 0.2s;"><i class="fa-solid fa-plus"></i></button>
+        </div>`;
+    }
 
-            let html = '';
-            const hojeStr = new Date().toISOString().split('T')[0];
+    idMoradorEditandoFirebase = m.id;
+    
+    const btnSalvar = document.getElementById('btnSalvarMorador');
+    if (btnSalvar) {
+        btnSalvar.innerHTML = "<i class='fa-solid fa-floppy-disk'></i> Salvar Alterações";
+        btnSalvar.style.background = "#10b981"; 
+    }
 
-            minhasAutorizacoesApp.forEach(a => {
-                const isPassado = a.data < hojeStr;
-                const isEntrou = a.status === "Entrou";
-                const dataF = a.data.split('-').reverse().join('/');
-                
-                let icone = a.tipo === "Visitante Social" ? 'fa-user-group' : 'fa-helmet-safety';
-                
-                let badge = isEntrou ? `<span style="background:#dcfce7; color:#16a34a; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Entrou na Portaria</span>` 
-                            : (isPassado ? `<span style="background:#f1f5f9; color:#64748b; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Expirada</span>`
-                                         : `<span style="background:#fef9c3; color:#ca8a04; padding:4px 8px; border-radius:10px; font-size:10px; font-weight:bold;">Aguardando Chegada</span>`);
+    fecharModalMorador();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-                let txtWhats = `*Acesso Liberado - Condo Up*%0A%0AOlá ${a.nome}, seu acesso está autorizado para o dia ${dataF}.%0A%0A🔑 *Seu Código:* ${a.codigo}%0A🏢 *Destino:* Apto ${moradorAptoGlobal}%0A%0AAo chegar na portaria, apresente seu RG e informe este código para liberação rápida.`;
+function fecharModalMorador() {
+    document.getElementById('modalMorador').style.display = 'none';
+}
 
-                html += `
-                    <div style="background: white; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #f8fafc; opacity: ${isPassado ? '0.6' : '1'}; position: relative;">
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #a855f7; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid ${icone}"></i> ${a.tipo}
-                            </span>
-                            ${badge}
-                        </div>
+// ==========================================
+// 🚨 LIXEIRA BLINDADA: NOVA FUNÇÃO DE EXCLUIR
+// ==========================================
+async function excluirMorador(id) {
+    // 1. Fecha o modal da ficha para a pessoa ver o aviso
+    fecharModalMorador();
+    
+    // 2. Se for Porteiro (Operacional), joga ele no novo fluxo de Arquivamento (do adm.js)
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("moradores", id);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada. Recarregue a página.");
+        }
+        return; // Para a execução aqui, ele não deleta direto
+    }
 
-                        <div style="font-size: 18px; font-weight: 800; color: #0f172a; margin-bottom: 4px;">${a.nome}</div>
-                        ${a.empresa !== "N/A" ? `<p style="font-size: 12px; color: #64748b; margin-bottom: 10px;">Empresa: ${a.empresa}</p>` : ''}
-                        
-                        <div style="display: flex; gap: 15px; margin-top: 10px; margin-bottom: 15px;">
-                            <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; flex: 1;">
-                                <span style="display:block; font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase;">Data</span>
-                                <span style="font-size: 13px; color: #0f172a; font-weight: 600;">${dataF}</span>
-                            </div>
-                            <div style="background: #fdf4ff; border: 1px dashed #f0abfc; padding: 10px; border-radius: 8px; flex: 1; text-align: center;">
-                                <span style="display:block; font-size: 10px; color: #a855f7; font-weight: bold; text-transform: uppercase;">Código</span>
-                                <span style="font-size: 15px; color: #86198f; font-weight: 900; letter-spacing: 2px;">${a.codigo}</span>
-                            </div>
-                        </div>
+    // 3. Se for Gestão/Síndico, o fluxo original continua brutal (Apaga de vez)
+    if(!confirm('🚨 EXCLUSÃO DEFINITIVA: Você está acessando como GESTÃO.\n\nTem certeza que deseja apagar este morador?\nIsso removerá a ficha e CORTARÁ O ACESSO dele ao aplicativo imediatamente!')) return;
 
-                        ${(!isPassado && !isEntrou) ? `
-                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 8px;">
-                            <a href="https://wa.me/?text=${txtWhats}" target="_blank" style="background: #25D366; color: white; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                                <i class="fa-brands fa-whatsapp"></i> Enviar Código
-                            </a>
-                            <button onclick="revogarAutorizacao('${a.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px dashed #fecaca; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer;">
-                                <i class="fa-solid fa-ban"></i>
-                            </button>
-                        </div>
-                        ` : ''}
-                    </div>
-                `;
+    try {
+        const m = moradoresGlobais.find(mor => mor.id === id);
+        if(!m) return;
+
+        // Apaga a ficha da tela de Moradores
+        await db.collection("moradores").doc(id).delete();
+
+        // Procura a conta de login dele (na coleção usuarios) e DELETA também!
+        const snapUsuarios = await db.collection("usuarios")
+            .where("condominioId", "==", m.condominioId)
+            .where("nome", "==", m.nome)
+            .get();
+
+        if (!snapUsuarios.empty) {
+            const batch = db.batch();
+            snapUsuarios.forEach(doc => {
+                batch.delete(doc.ref); // Apaga o perfil de acesso e derruba o login
             });
-
-            lista.innerHTML = html;
+            await batch.commit();
         }
 
-        function revogarAutorizacao(idFirebase) {
-            if(confirm("Deseja cancelar e revogar o acesso desta pessoa?")) {
-                db.collection("autorizacoes").doc(idFirebase).update({ excluido: true })
-                  .catch(e => alert("Erro ao revogar: " + e.message));
-            }
-        }
+        alert("✅ Morador e acesso ao aplicativo excluídos definitivamente com sucesso!");
 
-        // ==========================================
-        // FUNÇÃO DE DESLOGAR
-        // ==========================================
-        function sairDoApp() {
-            try {
-                firebase.auth().signOut().then(() => {
-                    localStorage.clear();
-                    window.location.href = "login.html";
+    } catch (error) {
+        console.error("Erro ao excluir morador:", error);
+        alert("❌ Erro ao tentar excluir do banco de dados: " + error.message);
+    }
+}
+
+// ==========================================
+// 5. PAINEL DE APROVAÇÃO E GERAÇÃO AUTOMÁTICA
+// ==========================================
+function iniciarRadarDeCadastros() {
+    const condominioIdLogado = localStorage.getItem("condominioId");
+    const badge = document.getElementById('badge-pendentes');
+    
+    if(!badge || !condominioIdLogado) return;
+
+    db.collection("cadastrosPendentes")
+      .where("condominioId", "==", condominioIdLogado)
+      .where("status", "==", "Pendente")
+      .onSnapshot((snapshot) => {
+          if (snapshot.size > 0) {
+              badge.innerText = snapshot.size;
+              badge.style.display = 'block'; 
+          } else {
+              badge.style.display = 'none'; 
+          }
+      });
+}
+
+function abrirModalAprovacao() {
+    document.getElementById('modalAprovacaoMoradores').style.display = 'flex';
+    carregarCadastrosPendentes();
+}
+
+function fecharModalAprovacao() {
+    document.getElementById('modalAprovacaoMoradores').style.display = 'none';
+}
+
+function carregarCadastrosPendentes() {
+    const condominioIdLogado = localStorage.getItem("condominioId");
+    const container = document.getElementById('lista-moradores-pendentes');
+    container.innerHTML = '<p style="color: #94a3b8; text-align: center;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando solicitações...</p>';
+
+    db.collection("cadastrosPendentes")
+      .where("condominioId", "==", condominioIdLogado)
+      .where("status", "==", "Pendente")
+      .get()
+      .then((snapshot) => {
+          container.innerHTML = ''; 
+          if (snapshot.empty) {
+              container.innerHTML = '<div style="text-align: center; color: #64748b; padding: 20px;"><i class="fa-solid fa-check-double" style="font-size: 30px; margin-bottom: 10px;"></i><br>Nenhum cadastro pendente.</div>';
+              return;
+          }
+
+          snapshot.forEach((doc) => {
+              const dados = doc.data();
+              const id = doc.id;
+              
+              const autorizados = dados.autorizados ? `<p style="color: #94a3b8; font-size: 12px; margin: 5px 0 0 0;"><i class="fa-solid fa-users"></i> Autorizados: ${dados.autorizados}</p>` : '';
+              const carrosQtd = (dados.veiculosObj && dados.veiculosObj.length > 0) ? `<p style="color: #f59e0b; font-size: 12px; margin: 5px 0 0 0;"><i class="fa-solid fa-car"></i> Veículos: ${dados.veiculosObj.length}</p>` : '';
+
+              container.innerHTML += `
+                <div style="background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="color: #f8fafc; margin: 0 0 5px 0; font-size: 16px;">${dados.nome}</h4>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;"><i class="fa-solid fa-building"></i> Bloco ${dados.bloco} - Apto ${dados.apto}</p>
+                        <p style="color: #94a3b8; font-size: 13px; margin: 0;"><i class="fa-brands fa-whatsapp"></i> ${dados.celular}</p>
+                        ${autorizados}
+                        ${carrosQtd}
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="recusarMorador('${id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="aprovarMorador('${id}', this)" style="background: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold;"><i class="fa-solid fa-check"></i> Aprovar</button>
+                    </div>
+                </div>
+              `;
+          });
+      })
+      .catch((error) => {
+          console.error("Erro:", error);
+          container.innerHTML = '<p style="color: #ef4444;">Erro ao carregar dados.</p>';
+      });
+}
+
+async function aprovarMorador(docId, btnElement) {
+    const confirmar = confirm(`Deseja aprovar e criar os acessos definitivos?`);
+    if (!confirmar) return;
+
+    if(btnElement) btnElement.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando...';
+
+    try {
+        const condominioIdLogado = localStorage.getItem("condominioId");
+        
+        // 1. Puxa os dados originais do banco
+        const docRef = await db.collection("cadastrosPendentes").doc(docId).get();
+        const dados = docRef.data();
+        
+        let prefixoBloco = (dados.bloco && dados.bloco !== "Não Informado") ? dados.bloco.toLowerCase() : "";
+        const aptoFormatado = prefixoBloco ? `${dados.bloco} ${dados.apto}` : dados.apto;
+        
+        const emailLogin = `${condominioIdLogado.toLowerCase()}_${prefixoBloco}${dados.apto}@condoup.com.br`.replace(/\s+/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const senhaGerada = `CondoUp@${dados.apto}`; 
+
+        // 2. Criação na autenticação
+        const userCredential = await secondaryAuth.createUserWithEmailAndPassword(emailLogin, senhaGerada);
+        const novoUid = userCredential.user.uid;
+
+        // 3. Salva Perfil de Usuário
+        await db.collection("usuarios").doc(novoUid).set({
+            nome: dados.nome,
+            bloco: dados.bloco,
+            apartamento: dados.apto,
+            telefone: dados.celular,
+            emailPessoal: dados.emailPessoal || dados.email || "", // Captura o e-mail real se existir
+            cargo: "Morador",
+            condominioId: condominioIdLogado,
+            emailAcesso: emailLogin,
+            dataCadastro: new Date().toISOString()
+        });
+        
+        // 4. Salva Ficha do Morador
+        await db.collection("moradores").add({
+            nome: dados.nome,
+            apto: aptoFormatado,
+            telefones: [dados.celular],
+            secretaria: dados.secretaria || "",
+            visitantes: dados.autorizados || "",
+            dataCadastro: new Date().toISOString(),
+            condominioId: condominioIdLogado,
+            excluido: false
+        });
+
+       // 5. BATELADA DE VEÍCULOS
+        if (dados.veiculosObj && dados.veiculosObj.length > 0) {
+            const batch = db.batch(); 
+            dados.veiculosObj.forEach(v => {
+                const newVeiculoRef = db.collection("veiculos").doc();
+                batch.set(newVeiculoRef, {
+                    condominioId: condominioIdLogado,
+                    morador: dados.nome,           
+                    nomeMorador: dados.nome,       
+                    placa: v.placa,
+                    modelo: v.modelo,
+                    cor: v.cor,
+                    vaga: aptoFormatado,           
+                    dataCadastro: new Date().toISOString(),
+                    excluido: false
                 });
-            } catch(e) {
-                localStorage.clear();
-                window.location.href = "login.html";
+            });
+            await batch.commit(); 
+        }
+
+        // 6. Atualiza o status do Cadastro Pendente
+        await db.collection("cadastrosPendentes").doc(docId).update({ status: "Aprovado" });
+
+        carregarCadastrosPendentes(); 
+        secondaryAuth.signOut(); 
+
+        // ==========================================
+        // 7. INTEGRAÇÃO BREVO (DISPARO DE E-MAIL)
+        // ==========================================
+        const emailRealDoMorador = dados.emailPessoal || dados.email;
+        if (emailRealDoMorador && emailRealDoMorador.trim() !== "") {
+            const assuntoEmail = "Seus dados de acesso - CondoUp";
+            const htmlDaMensagem = `
+                <div style="font-family: Arial, sans-serif; color: #334155; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                    <h2 style="color: #3b82f6; text-align: center;">Bem-vindo(a) ao CondoUp!</h2>
+                    <p>Olá, <b>${dados.nome}</b>! 🎉</p>
+                    <p>O seu cadastro foi <b>aprovado</b> pela administração do condomínio. Abaixo estão os seus dados oficiais para acessar o aplicativo da portaria:</p>
+                    
+                    <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px dashed #cbd5e1;">
+                        <!-- 🚀 LINK DO E-MAIL ATUALIZADO AQUI -->
+                        <p style="margin: 5px 0;"><b>📱 Aplicativo:</b> <a href="https://condoup.evoupi.com.br/" style="color: #3b82f6; text-decoration: none;">condoup.evoupi.com.br/</a></p>
+                        <p style="margin: 5px 0;"><b>📧 E-mail (Login):</b> ${emailLogin}</p>
+                        <p style="margin: 5px 0;"><b>🔑 Senha provisória:</b> ${senhaGerada}</p>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #64748b;"><i>Recomendamos fortemente que você altere sua senha no seu primeiro acesso, acessando a aba "Meu Perfil" no menu do sistema.</i></p>
+                </div>
+            `;
+            
+            // Chama a função dispararEmail que está lá no adm.js e pega as chaves do cofre
+            if(typeof dispararEmail === 'function') {
+                dispararEmail(emailRealDoMorador, dados.nome, assuntoEmail, htmlDaMensagem);
             }
         }
-    </script>
 
-    <!-- NOSSO NOVO ARQUIVO DE OCORRÊNCIAS -->
-    <script src="js/ocorrenciamorador.js"></script>
+        // ==========================================
+        // 8. ENVIO VIA WHATSAPP (Abre a janela no PC/Celular)
+        // ==========================================
+        let numeroLimpo = dados.celular.replace(/\D/g, '');
+        if (numeroLimpo.length === 10 || numeroLimpo.length === 11) { numeroLimpo = '55' + numeroLimpo; }
 
-</body>
-</html>
+        // 🚀 LINK DO WHATSAPP ATUALIZADO AQUI
+        const textoMsg = `Olá, ${dados.nome}! 🎉\n\nSeu acesso ao app da portaria foi *aprovado*.\n\n📱 *Link:* condoup.evoupi.com.br\n📧 *Login:* ${emailLogin}\n🔑 *Senha:* ${senhaGerada}\n\n_Recomendamos alterar sua senha no primeiro acesso!_`;
+        const linkWhatsApp = `https://wa.me/${numeroLimpo}?text=${encodeURIComponent(textoMsg)}`;
+
+        window.open(linkWhatsApp, '_blank');
+
+    } catch (error) {
+        console.error("Erro:", error);
+        alert("❌ Erro ao criar acessos definitivos. Pode ser erro de conexão.");
+        carregarCadastrosPendentes();
+    }
+}
+
+function recusarMorador(docId) {
+    if (confirm("Tem certeza que deseja recusar e excluir esta solicitação?")) {
+        db.collection("cadastrosPendentes").doc(docId).delete().then(() => {
+            carregarCadastrosPendentes();
+        });
+    }
+}
+
+// ==========================================
+// 6. OUTRAS FUNÇÕES DE SUPORTE
+// ==========================================
+function gerarRelatorioMoradores() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text("Relatório de Moradores e Autorizados", 14, 20);
+    
+    const moradoresAtivos = moradoresGlobais.filter(m => !m.excluido);
+    
+    if (moradoresAtivos.length === 0) {
+        alert("Não há moradores ativos cadastrados para gerar relatório.");
+        return;
+    }
+    
+    const dados = moradoresAtivos.map(m => [
+        m.apto,
+        m.nome,
+        m.secretaria || '-',
+        m.visitantes || '-'
+    ]);
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Apto', 'Nome do Responsável', 'Secretária', 'Visitantes Autorizados']],
+        body: dados,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 23, 42] },
+        styles: { fontSize: 10, cellPadding: 4 }
+    });
+
+    doc.save("Auditoria_Moradores_Ativos.pdf");
+}
+
+function redirecionarParaVeiculo(idCarro) {
+    const veiculos = JSON.parse(localStorage.getItem('veiculos')) || [];
+    const carroClicado = veiculos.find(v => v.id === idCarro || v.idFirebase === idCarro);
+    
+    if (!carroClicado) {
+        alert("Veículo não encontrado na base de dados!");
+        return;
+    }
+
+    fecharModalMorador();
+    if (typeof trocarTela === 'function') trocarTela('veiculos');
+
+    const barraPesquisa = document.getElementById('pesquisaVeiculo');
+    if (barraPesquisa) {
+        barraPesquisa.value = carroClicado.placa;
+        if (typeof mostrarVeiculos === 'function') mostrarVeiculos();
+    }
+}
