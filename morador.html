@@ -1553,6 +1553,52 @@
                 window.location.href = "login.html";
             }
         }
+
+        // ==========================================
+        // 🚀 MÓDULO: NOTIFICAÇÕES PUSH (FCM) - REATIVADO!
+        // ==========================================
+        function ativarNotificacoesPush() {
+            // Verifica se o navegador suporta notificações
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                console.log("Navegador não suporta Push ou Service Worker.");
+                return;
+            }
+
+            const messaging = firebase.messaging();
+            
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('Push: Permissão OK.');
+                    
+                    // 👉 É EXATAMENTE AQUI QUE VOCÊ COLA A CHAVE VAPID:
+                    messaging.getToken({ vapidKey: 'BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE' }).then((currentToken) => {
+                        if (currentToken) {
+                            console.log('Token gerado:', currentToken);
+                            
+                            if (usuarioLogadoId) {
+                                // Atualiza o token no perfil para a portaria/megafone poder enviar pra ele
+                                db.collection('usuarios').doc(usuarioLogadoId).update({
+                                    pushToken: currentToken
+                                }).catch(err => console.log("Erro ao salvar token: ", err));
+                            }
+                        }
+                    }).catch((err) => console.log('Erro ao pegar token:', err));
+                }
+            });
+
+            // Tratamento se o morador estiver com o APP ABERTO na hora do disparo
+            messaging.onMessage((payload) => {
+                console.log('Mensagem chegou com App Aberto: ', payload);
+                alert(`🔔 ${payload.notification.title}\n${payload.notification.body}`);
+            });
+        }
+
+        // Chama a função logo após o morador logar
+        setTimeout(() => {
+            if(usuarioLogadoId) {
+                ativarNotificacoesPush();
+            }
+        }, 2000);
     </script>
 
     <!-- NOSSO NOVO ARQUIVO DE OCORRÊNCIAS -->
