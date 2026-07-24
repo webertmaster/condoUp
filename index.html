@@ -126,6 +126,10 @@
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Portaria Rápida</div>
         <button onclick="trocarTela('encomendas')" id="menu-encomendas"><i class="fa-solid fa-box-open"></i> Encomendas</button>
         <button onclick="trocarTela('delivery')" id="menu-delivery"><i class="fa-solid fa-motorcycle"></i> Delivery Rápido</button>
+        
+        <!-- 👇 AQUI ESTÁ O NOVO BOTÃO INJETADO! 👇 -->
+        <button onclick="trocarTela('autorizacoes')" id="menu-autorizacoes"><i class="fa-solid fa-qrcode"></i> Autorizações App</button>
+        
         <button onclick="trocarTela('ocorrencias')" id="menu-ocorrencias"><i class="fa-solid fa-triangle-exclamation"></i> Ocorrências</button>
 
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Cadastros</div>
@@ -671,6 +675,38 @@
         </div>
         <div id="listaReservas"></div>
     </div>
+    <!-- ========================================== -->
+    <!-- TELA DE AUTORIZAÇÕES DE ACESSO (LEITOR)    -->
+    <!-- ========================================== -->
+    <div id="autorizacoes" class="tela">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <h2 style="margin-bottom: 5px; color: #0f172a;"><i class="fa-solid fa-qrcode" style="color: #a855f7; margin-right: 10px;"></i>Controle de Acessos</h2>
+                <p style="color: #64748b; font-size: 14px;">Valide os códigos gerados pelos moradores pelo App.</p>
+            </div>
+            
+            <!-- NOVOS FILTROS RÁPIDOS: DATA E BUSCA -->
+            <div style="display: flex; gap: 10px;">
+                <!-- Filtro por Data -->
+                <div class="search-box" style="display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 10px;">
+                    <i class="fa-regular fa-calendar" style="color: #94a3b8;"></i>
+                    <input type="date" id="filtroDataPortaria" onchange="filtrarAutorizacoesPortaria()" style="border: none; outline: none; background: transparent; font-size: 14px; color: #475569; cursor: pointer; font-family: inherit;">
+                </div>
+                
+                <!-- Filtro por Texto (Código/Nome) -->
+                <div class="search-box" style="width: 250px; display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 10px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8;"></i>
+                    <input type="text" id="buscaCodigoPortaria" onkeyup="filtrarAutorizacoesPortaria()" placeholder="Buscar código ou nome..." style="border: none; outline: none; background: transparent; width: 100%; font-size: 14px;">
+                </div>
+            </div>
+        </div>
+
+        <!-- AQUI O JAVASCRIPT VAI CUSPIR OS CARDS -->
+        <div id="lista-autorizacoes-portaria">
+            <!-- Carregando... -->
+        </div>
+    </div>
+    <!-- ========================================== -->
     
     <div id="ocorrencias" class="tela">
         
@@ -1702,12 +1738,14 @@
 <script src="js/relatorios.js?v=12"></script>
 <script src="js/limpeza.js?v=11"></script>
 <script src="js/delivery.js?v=13"></script>
+<script src="js/autorizacoes.js"></script>
 <script src="js/perfil.js?v=11"></script>
 <script src="js/ajuda.js?v=11"></script> 
 <script src="js/transportadoras.js?v=1"></script>
 <script src="js/adm.js?v=16"></script>
 <script src="js/financeiro.js?v=1"></script>
 <script src="js/notificacoes.js?v=2"></script>
+
 
 <script>
   if ('serviceWorker' in navigator) {
