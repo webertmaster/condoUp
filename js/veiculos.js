@@ -260,31 +260,21 @@ function abrirModalVeiculo(idFirebase) {
         : `<i class="fa-solid ${marcaInfo.logo}"></i>`;
 
     // ==========================================
-    // VERIFICA O CRACHÁ PARA DESENHAR OS BOTÕES
+    // 🔒 BLINDAGEM DE BOTÕES - MODAL VEÍCULO
     // ==========================================
-    const cargo = localStorage.getItem("usuario_cargo");
+    const isOperacional = window.isPorteiroLogado === true; 
     let botoesAcaoHtml = '';
 
-    if (cargo === 'operacional') {
-        botoesAcaoHtml = `
-            <div style="display: grid; grid-template-columns: 1fr; margin-top: 20px;">
-                <button onclick="editarVeiculoModal('${v.idFirebase}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
-                    <i class="fa-solid fa-pen-to-square"></i> Editar Veículo
-                </button>
-            </div>
-        `;
-    } else {
-        botoesAcaoHtml = `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;">
-                <button onclick="editarVeiculoModal('${v.idFirebase}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
-                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                </button>
-                <button onclick="arquivarVeiculoModal('${v.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
-                    <i class="fa-solid fa-trash-can"></i> Arquivar
-                </button>
-            </div>
-        `;
-    }
+    botoesAcaoHtml = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px;">
+            <button onclick="editarVeiculoModal('${v.idFirebase}')" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'">
+                <i class="fa-solid fa-pen-to-square"></i> Editar
+            </button>
+            <button onclick="arquivarVeiculoModal('${v.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'">
+                <i class="fa-solid fa-trash-can"></i> Arquivar
+            </button>
+        </div>
+    `;
 
     conteudo.innerHTML = `
         <div style="background: ${marcaInfo.cor}; padding: 30px 20px 20px 20px; text-align: center; color: white; position: relative;">
@@ -363,17 +353,31 @@ function editarVeiculoModal(idFirebase) {
 }
 
 // ==========================================
-// 4. ARQUIVAR DA NUVEM (Soft Delete)
+// 4. ARQUIVAR DA NUVEM (LIXEIRA BLINDADA)
 // ==========================================
 function arquivarVeiculoModal(idFirebase) {
-    if(confirm("🚨 Arquivar Registro: Remover este veículo da garagem principal? Ele continuará salvo para auditoria.")) {
+    // 1. Esconde a tela principal do carro
+    fecharModalVeiculo();
+
+    // 2. Se for porteiro, ativa a blindagem de arquivamento (Modal com motivos)
+    if (window.isPorteiroLogado === true) {
+        if(typeof solicitarArquivamentoRestrito === 'function') {
+            solicitarArquivamentoRestrito("veiculos", idFirebase);
+        } else {
+            alert("⚠️ Função de arquivamento restrito não encontrada.");
+        }
+        return;
+    }
+
+    // 3. Se for Gestão/Síndico, o fluxo continua livre
+    if(confirm("🚨 ARQUIVAR VEÍCULO\n\nEste carro será ocultado da garagem principal, mas continuará salvo para auditoria.\nConfirmar arquivamento?")) {
         db.collection("veiculos").doc(idFirebase).update({
             excluido: true,
+            arquivadoPorGestao: true,
             dataExclusao: Date.now()
         })
         .then(() => {
             console.log("Veículo arquivado na nuvem");
-            fecharModalVeiculo();
         })
         .catch(err => alert("Erro ao arquivar: " + err));
     }
