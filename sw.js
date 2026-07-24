@@ -56,7 +56,7 @@ firebase.initializeApp({
 });
 
 // 4. MOTOR DE CACHE (Versão atualizada)
-const CACHE_NAME = 'condo-up-v64';
+const CACHE_NAME = 'condo-up-v66';
 
 self.addEventListener('install', event => {
     self.skipWaiting();
