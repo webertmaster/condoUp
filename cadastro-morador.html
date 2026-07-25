@@ -260,61 +260,43 @@
                 }
             }
 
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando Conta...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando...';
             btn.disabled = true;
 
             try {
-                // 🚀 1. CRIA O USUÁRIO NO FIREBASE AUTH (E já loga ele automaticamente)
-                const userCredential = await firebase.auth().createUserWithEmailAndPassword(emailPessoal, senha);
-                const uid = userCredential.user.uid;
-
-                // 🚀 2. SALVA COMO "Morador" NA TABELA DE USUÁRIOS
-                await db.collection("usuarios").doc(uid).set({
+                // 🚀 1. SALVA NA TABELA DE CADASTROS PENDENTES PARA O SÍNDICO APROVAR
+                await db.collection("cadastrosPendentes").add({
                     nome: nome,
                     email: emailPessoal,
-                    apto: apto,
-                    condominioId: condominioId,
-                    cargo: "Morador", // É AQUI QUE RESOLVEMOS O PROBLEMA DO PORTEIRO!
-                    dataCadastro: new Date().toISOString()
-                });
-
-                // 🚀 3. SALVA O PERFIL DELE NA TABELA DO CONDOMÍNIO (Pro síndico e portaria verem ele)
-                await db.collection("moradores").doc(uid).set({
-                    condominioId: condominioId,
-                    nome: nome,
+                    senha: senha, // Guarda temporariamente para o robô/síndico criar a conta depois
                     apto: apto,
                     bloco: bloco,
-                    celular: listaTelefones.join(' | ') || "Não Informado",
                     secretaria: secretaria,
                     familiares: familiares,
-                    autorizados: visitantes, 
+                    visitantes: visitantes,
+                    celular: listaTelefones.join(' | ') || "Não Informado",
                     veiculosObj: veiculosArray,
-                    excluido: false,
+                    condominioId: condominioId,
+                    cargo: "Morador",
+                    status: "Pendente",
                     dataRegistro: new Date().toISOString()
                 });
 
-                // Oculta formulário e mostra sucesso
+                // Oculta formulário
                 document.getElementById('box-formulario').style.display = 'none';
-                document.getElementById('tela-sucesso').style.display = 'block';
-
-                // Inicia o redirecionamento para o App do Morador
-                let segundos = 3;
-                const relogio = setInterval(() => {
-                    segundos--;
-                    document.getElementById('contador').innerText = segundos;
-                    if (segundos <= 0) {
-                        clearInterval(relogio);
-                        window.location.href = "morador/"; // Joga direto pro App!
-                    }
-                }, 1000);
+                
+                // 🚀 2. MOSTRA UMA MENSAGEM DE "EM ANÁLISE" EM VEZ DE LOGAR
+                const telaSucesso = document.getElementById('tela-sucesso');
+                telaSucesso.style.display = 'block';
+                telaSucesso.innerHTML = `
+                    <div class="icon-success" style="color: #f59e0b;"><i class="fa-solid fa-clock"></i></div>
+                    <h2 style="color: #f8fafc; margin-bottom: 10px;">Cadastro em Análise!</h2>
+                    <p style="color: #94a3b8; font-size: 15px; line-height: 1.5;">Seus dados foram enviados para a administração. Assim que aprovado, você receberá a liberação para acessar o App.</p>
+                `;
 
             } catch (error) {
                 console.error("Erro:", error);
-                if(error.code === 'auth/email-already-in-use') {
-                    alert("❌ Este e-mail já está cadastrado. Tente fazer o login ou usar outro e-mail.");
-                } else {
-                    alert("❌ Erro ao criar conta: " + error.message);
-                }
+                alert("❌ Erro ao enviar cadastro para aprovação: " + error.message);
                 btn.innerHTML = '<i class="fa-solid fa-rocket"></i> Criar Conta e Acessar App';
                 btn.disabled = false;
             }
