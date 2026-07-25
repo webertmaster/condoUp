@@ -620,7 +620,7 @@
                         }
                     });
                 } else {
-                    window.location.href = "login.html";
+                    window.location.href = "../login.html";
                 }
             });
         });
@@ -1553,11 +1553,11 @@
             try {
                 firebase.auth().signOut().then(() => {
                     localStorage.clear();
-                    window.location.href = "login.html";
+                    window.location.href = "../login.html"; // 
                 });
             } catch(e) {
                 localStorage.clear();
-                window.location.href = "login.html";
+                window.location.href = "../login.html"; // 
             }
         }
 
