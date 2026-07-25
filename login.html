@@ -668,6 +668,9 @@
                             localStorage.setItem("usuario_cargo", dados.cargo || "");
                             localStorage.setItem("condominioId", dados.condominioId || "");
                             
+                            // 🚀 ADICIONE ESTA LINHA PARA O APP SABER O APARTAMENTO:
+                            localStorage.setItem("usuario_apto", dados.apto || "");
+                            
                             // 🚀 Guarda a obrigação do Ponto na memória!
                             localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
                             
