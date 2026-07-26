@@ -1553,11 +1553,11 @@
             try {
                 firebase.auth().signOut().then(() => {
                     localStorage.clear();
-                    window.location.href = "../login.html"; // 
+                    window.location.href = "../login.html"; // Redireciona corretamente
                 });
             } catch(e) {
                 localStorage.clear();
-                window.location.href = "../login.html"; // 
+                window.location.href = "../login.html"; // Redireciona corretamente
             }
         }
 
@@ -1598,9 +1598,13 @@
                             console.log('Token gerado:', currentToken);
                             
                             if (usuarioLogadoId) {
-                                // Atualiza o token no perfil para a portaria/megafone poder enviar pra ele
-                                db.collection('usuarios').doc(usuarioLogadoId).update({
-                                    pushToken: currentToken
+                                // 🚀 AGORA ELE SALVA NA GAVETA CERTA E AVISA O APARTAMENTO!
+                                db.collection('tokens_push').doc(usuarioLogadoId).set({
+                                    token: currentToken,
+                                    condominioId: moradorCondominioGlobal,
+                                    cargo: "Morador",
+                                    apto: moradorAptoGlobal, // Fundamental para a portaria achar ele!
+                                    timestamp: new Date().getTime()
                                 }).catch(err => console.log("Erro ao salvar token: ", err));
                             }
                         }
@@ -1615,12 +1619,57 @@
             });
         }
 
-        // Chama a função logo após o morador logar
-        setTimeout(() => {
-            if(usuarioLogadoId) {
-                ativarNotificacoesPush();
+        // ==========================================
+        // 🚀 DISPARO INTELIGENTE (ANDROID VS IOS)
+        // ==========================================
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        if (!isIOS) {
+            // Se for ANDROID ou Windows, mantém automático (dispara após 2 segundos)
+            setTimeout(() => {
+                if(usuarioLogadoId) {
+                    ativarNotificacoesPush();
+                }
+            }, 2000);
+        } else {
+            // Se for iOS, verifica se já tem permissão. Se não tiver, mostra o botão!
+            setTimeout(() => {
+                if(usuarioLogadoId && 'Notification' in window && Notification.permission !== 'granted') {
+                    mostrarBotaoNotificacaoIOS();
+                }
+            }, 1500);
+        }
+
+        function mostrarBotaoNotificacaoIOS() {
+            // Cria um banner elegante e insere na Tela Inicial
+            const banner = document.createElement('div');
+            banner.id = 'banner-ios-push';
+            banner.style.cssText = "margin: 0 20px 20px 20px; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); color: white; padding: 18px; border-radius: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 10px 20px rgba(109, 40, 217, 0.25);";
+            
+            banner.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <i class="fa-solid fa-bell-concierge" style="font-size: 24px;"></i>
+                    <div>
+                        <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 4px;">Ativar Avisos</h3>
+                        <p style="font-size: 12px; opacity: 0.9; line-height: 1.4;">Receba alertas de encomendas no iPhone.</p>
+                    </div>
+                </div>
+                <button id="btn-ativar-ios" style="background: white; color: #6d28d9; border: none; padding: 8px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Ativar</button>
+            `;
+            
+            // Coloca o banner logo acima da seção de Atalhos
+            const telaInicio = document.getElementById('tela-inicio');
+            const atalhosHeader = telaInicio.querySelector('.section-header');
+            if (telaInicio && atalhosHeader) {
+                telaInicio.insertBefore(banner, atalhosHeader);
             }
-        }, 2000);
+
+            // A MÁGICA PARA A APPLE ACEITAR: O clique do morador!
+            document.getElementById('btn-ativar-ios').addEventListener('click', () => {
+                ativarNotificacoesPush(); // Dispara o pedido com a permissão do clique
+                banner.style.display = 'none'; // Esconde o banner para sempre
+            });
+        }
     </script>
 
     <!-- NOSSO NOVO ARQUIVO DE OCORRÊNCIAS -->
