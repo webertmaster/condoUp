@@ -276,7 +276,7 @@ async function ativarNotificacoesPush() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.register('./sw.js?v=133');
+        const registration = await navigator.serviceWorker.register('./sw.js?v=140');
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
         }
@@ -395,4 +395,271 @@ async function comprimirLogo(file) {
             };
         };
     });
+}
+
+// ==========================================
+// ⏰ MOTOR DO BANNER PREMIUM DE VENCIMENTO
+// ==========================================
+async function carregarBannerDeVencimento(diaVencimentoDb) {
+    try {
+        // 1. Puxa o visual do arquivo separado
+        const resposta = await fetch('banner-vencimento.html');
+        const htmlDoBanner = await resposta.text();
+        
+        // 2. Injeta na tela
+        document.getElementById('container-banner-vencimento').innerHTML = htmlDoBanner;
+
+        // 3. Calcula os dias baseados no dia real do cliente no banco
+        if(!diaVencimentoDb) return;
+        
+        const hoje = new Date();
+        let dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimentoDb);
+        
+        if (hoje.getDate() > diaVencimentoDb) {
+            dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+        }
+
+        const diffMs = dataVencimento.getTime() - hoje.getTime();
+        const diffDias = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        // 4. Aplica a inteligência visual
+        const banner = document.getElementById('banner-premium-vencimento');
+        const elContador = document.getElementById('contadorDias');
+        const elProgress = document.getElementById('progressBarFill');
+
+        if (diffDias <= 5 && diffDias >= 0) { 
+            banner.style.display = 'block'; 
+            
+            if (diffDias === 0) {
+                elContador.textContent = 'HOJE';
+                elProgress.style.width = '100%';
+                banner.classList.add('urgente');
+            } else if (diffDias === 1) {
+                elContador.textContent = '1 dia';
+                elProgress.style.width = '92%';
+                banner.classList.add('urgente');
+            } else {
+                elContador.textContent = diffDias + ' dias';
+                const pct = Math.min(95, Math.max(10, ((30 - diffDias) / 30) * 100));
+                elProgress.style.width = pct + '%';
+            }
+        }
+
+    } catch (erro) {
+        console.log('Erro ao carregar o banner premium:', erro);
+    }
+}
+
+// Botão para fechar o aviso na tela
+window.fecharBannerPremium = function() {
+    const banner = document.getElementById('banner-premium-vencimento');
+    if (banner) {
+        banner.classList.add('saindo');
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 450); 
+    }
+}
+
+// 👇 MANTÉM ESSA AQUI! Ela vai conectar com o Asaas em breve!
+function abrirFaturaAsaas() {
+    // Aqui nós vamos injetar a URL da fatura gerada pelo Asaas amanhã junto com o Webhook!
+    alert("Redirecionando para a fatura oficial no Asaas... 💳");
+}
+
+
+// ==========================================
+// 🏢 MÓDULO CRM: GESTÃO DE CONTRATOS E CARNÊ (SAAS)
+// ==========================================
+
+// 1. Puxa os condomínios do Firebase e monta a tabela do CRM
+async function carregarContratosCRM() {
+    const tbody = document.getElementById('lista-contratos-crm');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando clientes no banco de dados...</td></tr>';
+
+    try {
+        // Puxa do Firebase
+        const snapshot = await db.collection('condominios').get();
+        tbody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">Nenhum contrato ativo no momento.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const dados = doc.data();
+            const nome = dados.nome || 'Sem Nome';
+            const aptos = dados.aptos || 0;
+            
+            // 🔥 CORREÇÃO DO VALOR 0,00 AQUI
+            let valorBruto = dados.valor || 0;
+            if (typeof valorBruto === 'string') {
+                valorBruto = valorBruto.replace(',', '.'); // Troca a virgula pra ponto antes de calcular
+            }
+            const valorFormatado = Number(valorBruto).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            
+            const diaVenc = parseInt(dados.vencimento || 10);
+            
+            // Verifica se está ativo ou suspenso
+            const statusAtivo = dados.status !== false && dados.status !== "false";
+            const badgeStatus = statusAtivo 
+                ? `<span style="background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">✅ Ativo</span>`
+                : `<span style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">🔴 Suspenso</span>`;
+
+            // Calcula o próximo vencimento no mês atual
+            const hoje = new Date();
+            let proxVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
+            if(hoje.getDate() > diaVenc) {
+                proxVenc.setMonth(proxVenc.getMonth() + 1);
+            }
+
+            // Cria a linha da tabela
+            const tr = document.createElement('tr');
+            tr.style.cssText = "border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s;";
+            tr.onmouseover = () => tr.style.background = '#f8fafc';
+            tr.onmouseout = () => tr.style.background = 'white';
+            
+            // Quando clicar na linha, abre o Modal passando o ID real do cliente!
+            tr.onclick = () => abrirFichaCliente(doc.id); 
+
+            tr.innerHTML = `
+                <td style="padding: 15px 20px; font-weight: bold; color: #1e293b;"><i class="fa-solid fa-building" style="color: #94a3b8; margin-right: 8px;"></i> ${nome}</td>
+                <td style="padding: 15px 20px; color: #64748b;">${aptos} aptos</td>
+                <td style="padding: 15px 20px; color: #0f172a; font-weight: 600;">R$ ${valorFormatado}</td>
+                <td style="padding: 15px 20px; color: #64748b;">${proxVenc.toLocaleDateString('pt-BR')}</td>
+                <td style="padding: 15px 20px;">${badgeStatus}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar contratos:", erro);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao puxar dados do servidor.</td></tr>';
+    }
+}
+
+// 2. Abre a Ficha e gera o Carnê Inteligente baseado no Cliente Clicado
+async function abrirFichaCliente(idCondominio) {
+    document.getElementById('modalFichaCliente').style.display = 'flex';
+    document.getElementById('ficha-nome-condominio').innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: #8b5cf6;"></i> Puxando contrato...`;
+    
+    const listaParcelas = document.getElementById('lista-parcelas-contrato');
+    listaParcelas.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">Calculando parcelas...</div>';
+
+    try {
+        // Busca os dados APENAS deste cliente lá no Firebase
+        const doc = await db.collection('condominios').doc(idCondominio).get();
+        if (!doc.exists) {
+            alert("Cliente não encontrado no banco!");
+            return;
+        }
+
+        const dados = doc.data();
+        const mesesContrato = parseInt(dados.periodo || 12); 
+        
+        // Formatação de valor segura 
+        let valorBruto = dados.valor || 0;
+        if (typeof valorBruto === 'string') valorBruto = valorBruto.replace(',', '.');
+        const valorFormatado = `R$ ${Number(valorBruto).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        
+        // Puxa as parcelas pagas atualizadas pelo Webhook do Asaas
+        const mesesPagos = dados.mesesPagos || 0; 
+
+        // Preenche o cabeçalho da Ficha com os dados reais
+        document.getElementById('ficha-nome-condominio').innerHTML = `<i class="fa-solid fa-building" style="color: #8b5cf6;"></i> ${dados.nome}`;
+        document.getElementById('ficha-cnpj').innerText = dados.cnpj || "Não cadastrado";
+        document.getElementById('ficha-sindico').innerText = dados.email || "Não cadastrado";
+        document.getElementById('ficha-valor').innerText = valorFormatado;
+        document.getElementById('ficha-plano').innerText = `${dados.aptos || 0} Aptos`;
+        document.getElementById('ficha-dia-vencimento').innerText = `Dia ${dados.vencimento || 10}`;
+        document.getElementById('ficha-meses-contrato').innerText = mesesContrato;
+
+        // Atualiza a Barra de Progresso (Termômetro)
+        const porcentagem = Math.round((mesesPagos / mesesContrato) * 100);
+        document.getElementById('ficha-progresso-texto').innerText = `${mesesPagos} de ${mesesContrato} meses (${porcentagem}%)`;
+        document.getElementById('ficha-progresso-barra').style.width = `${porcentagem}%`;
+
+        // ===============================================
+        // MÁGICA DO CARNÊ: Gerando as parcelas dinâmicas!
+        // ===============================================
+        listaParcelas.innerHTML = ''; 
+        
+        let dataBaseContrato = dados.criadoEm ? new Date(dados.criadoEm) : new Date();
+
+        for (let i = 1; i <= mesesContrato; i++) {
+            let statusHTML = "";
+            
+            // Regra visual de cores
+            if (i <= mesesPagos) {
+                statusHTML = `<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">🟢 PAGO</span>`;
+            } else if (i === mesesPagos + 1) {
+                statusHTML = `<span style="background: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">🟡 EM ABERTO</span>`;
+            } else {
+                statusHTML = `<span style="background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚪ AGUARDANDO</span>`;
+            }
+
+            // 🌟 A MÁGICA DA SINCRONIA COM O ASAAS AQUI:
+            // Tiramos o (i - 1) e deixamos só o 'i'. 
+            // Agora, se i = 1 (primeira parcela), ele avança 1 mês para o futuro (Ex: Agosto)!
+            let mesParcela = new Date(dataBaseContrato.getFullYear(), dataBaseContrato.getMonth() + i, parseInt(dados.vencimento || 10));
+            
+            const linha = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; background: white;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #f1f5f9; color: #475569; font-weight: bold; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px;">
+                            ${i}/${mesesContrato}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: #1e293b; font-size: 14px;">Vencimento: ${mesParcela.toLocaleDateString('pt-BR')}</div>
+                            <div style="color: #64748b; font-size: 12px;">Valor: ${valorFormatado}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${statusHTML}
+                        <button class="btn" title="Copiar Link de Pagamento (Asaas)" style="margin: 0; background: transparent; border: 1px solid #cbd5e1; color: #64748b; padding: 5px 10px; font-size: 12px;" onmouseover="this.style.color='#3b82f6'; this.style.borderColor='#3b82f6';" onmouseout="this.style.color='#64748b'; this.style.borderColor='#cbd5e1';">
+                            <i class="fa-solid fa-link"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            listaParcelas.innerHTML += linha;
+        }
+
+    } catch (erro) {
+        console.error("Erro ao gerar carnê ou buscar cliente:", erro);
+        alert("Falha ao abrir ficha do cliente. Verifique a conexão.");
+    }
+}
+
+// Botão para impressão do carnê - ATIVADO! 🖨️
+function imprimirCarnePDF() {
+    window.print(); 
+}
+
+// 3. Função de Filtragem Visual (Botões Coloridos do CRM)
+function filtrarContratosSaaS(statusEscolhido) {
+    const linhas = document.querySelectorAll('#lista-contratos-crm tr');
+    
+    linhas.forEach(linha => {
+        // Se a linha for a de "Carregando" ou "Nenhum contrato", ignora
+        if(linha.innerText.includes('Buscando') || linha.innerText.includes('Nenhum')) return;
+
+        const textoLinha = linha.innerText.toLowerCase();
+        
+        if (statusEscolhido === 'todos') {
+            linha.style.display = '';
+        } else if (statusEscolhido === 'ativos' && textoLinha.includes('ativo')) {
+            linha.style.display = '';
+        } else if (statusEscolhido === 'suspensos' && textoLinha.includes('suspenso')) {
+            linha.style.display = '';
+        } else {
+            linha.style.display = 'none'; // Esconde quem não bate com o filtro
+        }
+    });
+}
+
+// Botão fake para impressão do carnê
+function imprimirCarnePDF() {
+    alert("Iniciando motor de PDF para gerar o canhoto em meia folha A4...");
 }
