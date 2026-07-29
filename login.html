@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Condo Up</title>
+    
+    <!-- Ícones e Fonte -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #091020 0%, #111827 100%);
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Cartão principal flutuante */
+        .login-container {
+            background: #0f172a;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-area img {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        .logo-area h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #f8fafc;
+        }
+
+        .logo-area p {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        /* Campos de texto estilizados */
+        .form-group {
+            width: 100%;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .form-group i.icon-left {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .form-group i.icon-right {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .form-group i.icon-right:hover {
+            color: #f8fafc;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: #f8fafc;
+            padding: 16px 15px 16px 45px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Checkbox e LGPD */
+        .checkbox-group {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .checkbox-group a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Simulação Visual do Verificador Cloudflare */
+        .cloudflare-box {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            transition: 0.2s;
+        }
+        
+        .cloudflare-box:hover {
+            border-color: #334155;
+        }
+
+        .cloudflare-box .check-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #f8fafc;
+        }
+
+        .cloudflare-box .check-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .cloudflare-box .logo-area-cf {
+            text-align: right;
+        }
+        
+        .cloudflare-box .cf-brand {
+            color: #f59e0b; 
+            font-weight: 900; 
+            font-size: 12px; 
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .cloudflare-box .cf-links {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Botões do Sistema */
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #0d9488 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-tertiary {
+            background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .btn-tertiary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* ========================================= */
+        /* MODAL DE INSTALAÇÃO DO APP (TUTORIAL)     */
+        /* ========================================= */
+        .modal-install {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #091020;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            animation: slideUp 0.4s ease forwards;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .install-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            background: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .install-header button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .install-header h2 {
+            flex: 2;
+            font-size: 20px;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .install-body {
+            padding: 25px 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .badge-otimizado {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .install-desc {
+            color: #94a3b8;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .install-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .card-title i { font-size: 26px; }
+        .card-title span { display: block; font-size: 13px; color: #64748b; font-weight: 400; margin-top: 2px;}
+
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-row:last-child { margin-bottom: 0; }
+
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .step-text {
+            color: #e2e8f0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .highlight { color: #38bdf8; font-weight: 600; }
+        
+        .icon-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0 4px;
+        }
+
+        .install-card.why {
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bolt-icon {
+            background: #f59e0b;
+            color: #111827;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <!-- LOGO E TEXTOS -->
+        <div class="logo-area">
+            <img src="img/icon-512.png.png" alt="Condo Up Logo">
+            <h1>Bem-vindo(a)</h1>
+            <p>Acesse sua conta para gerenciar seu<br>condomínio</p>
+        </div>
+
+        <!-- FORMULÁRIO -->
+        <div class="form-group">
+            <i class="fa-solid fa-envelope icon-left"></i>
+            <input type="email" id="email" placeholder="Seu e-mail">
+        </div>
+
+        <div class="form-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" id="senha" placeholder="Sua senha">
+            <i class="fa-solid fa-eye icon-right" onclick="toggleSenha()" id="eye-icon"></i>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="termos">
+            <label for="termos">
+                Li e aceito os <a href="#">Termos de Uso e Privacidade</a> (LGPD).
+            </label>
+        </div>
+
+        <!-- VERIFICAÇÃO CLOUDFLARE (Visual) -->
+        <div class="cloudflare-box" id="box-cf" style="cursor: pointer;" onclick="verificarSeguranca()">
+            <div class="check-area">
+                <i class="fa-regular fa-square-check" id="check-cf" style="color: #64748b; font-size: 22px; transition: 0.3s;"></i>
+                <span id="txt-cf">Clique para verificar</span>
+            </div>
+            <div class="logo-area-cf">
+                <div class="cf-brand"><i class="fa-solid fa-cloud"></i> CLOUDFLARE</div>
+                <div class="cf-links">Privacidade • Ajuda</div>
+            </div>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <button class="btn-primary" onclick="fazerLogin()">Entrar na Plataforma</button>
+        
+        <button class="btn-secondary" onclick="abrirModalInstall()">
+            <i class="fa-solid fa-download"></i> Como instalar o App
+        </button>
+
+        <button class="btn-tertiary" onclick="recuperarSenha()">
+            Esqueceu sua senha?
+        </button>
+    </div>
+
+    <!-- ================================================= -->
+    <!-- TELA DE TUTORIAL DE INSTALAÇÃO (DESLIZA POR CIMA) -->
+    <!-- ================================================= -->
+    <div id="telaInstall" class="modal-install">
+        <div class="install-header">
+            <button onclick="fecharModalInstall()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            <h2><i class="fa-solid fa-mobile-screen"></i> Instalar App</h2>
+            <div style="flex: 1;"></div> <!-- Espaçador para alinhar ao centro -->
+        </div>
+
+        <div class="install-body">
+            <div style="text-align: center;">
+                <div class="badge-otimizado">
+                    <i class="fa-solid fa-circle-check"></i> WEB APP OTIMIZADO
+                </div>
+                <p class="install-desc">Transforme o sistema em um aplicativo no seu celular para acessar mais rápido e receber avisos importantes.</p>
+            </div>
+
+            <!-- CARD ANDROID -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-android" style="color: #22c55e;"></i>
+                    <div>
+                        Android
+                        <span>Via Google Chrome</span>
+                    </div>
+                </div>
+
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra este site no <span class="highlight">Chrome</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque nos <span class="highlight">três pontos</span> <span class="icon-box"><i class="fa-solid fa-ellipsis-vertical"></i></span> no topo.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Selecione <span class="highlight">"Instalar aplicativo"</span> ou "Adicionar à tela inicial".</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Aguarde a conclusão e o ícone aparecerá no seu menu.</div>
+                </div>
+            </div>
+
+            <!-- CARD iOS -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-apple" style="color: #f8fafc;"></i>
+                    <div>
+                        iPhone / iOS
+                        <span>Via Safari</span>
+                    </div>
+                </div>
+
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra o site pelo navegador <span class="highlight">Safari</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque no botão <span class="highlight">Compartilhar</span> <span class="icon-box"><i class="fa-solid fa-arrow-up-from-bracket"></i></span> (barra inferior).</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Procure e toque em <span class="highlight">"Adicionar à Tela de Início"</span> <span class="icon-box"><i class="fa-solid fa-square-plus"></i></span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Toque em <span class="highlight">Adicionar</span> no canto superior.</div>
+                </div>
+            </div>
+
+            <!-- CARD POR QUE INSTALAR -->
+            <div class="install-card why">
+                <div class="bolt-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3 style="margin-bottom: 10px; color: #f8fafc; font-size: 18px;">Por que instalar?</h3>
+                <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                    Instalando o Web App, você terá acesso instantâneo sem precisar digitar a URL. O sistema funcionará como um aplicativo comum, ocupando quase nada de memória no seu aparelho.
+                </p>
+            </div>
+            
+            <div style="height: 40px;"></div> <!-- Margem extra no final -->
+        </div>
+    </div>
+
+    <!-- SCRIPTS DO FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // CONFIGURAÇÃO DO SEU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
+            authDomain: "portaria-pro-ebc5c.firebaseapp.com",
+            projectId: "portaria-pro-ebc5c",
+            storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
+            messagingSenderId: "948781126590",
+            appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // CONTROLE DO TUTORIAL DE INSTALAÇÃO
+        function abrirModalInstall() {
+            document.getElementById('telaInstall').style.display = 'flex';
+        }
+
+        function fecharModalInstall() {
+            document.getElementById('telaInstall').style.display = 'none';
+        }
+
+        // MOSTRAR/ESCONDER SENHA
+        function toggleSenha() {
+            const input = document.getElementById('senha');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash icon-right';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye icon-right';
+            }
+        }
+
+        // SIMULAÇÃO DO CHECK CLOUDFLARE
+        let segurancaOk = false;
+        function verificarSeguranca() {
+            const icone = document.getElementById('check-cf');
+            const texto = document.getElementById('txt-cf');
+            const caixa = document.getElementById('box-cf');
+            
+            icone.className = 'fa-solid fa-spinner fa-spin';
+            texto.innerText = 'Verificando segurança...';
+            
+            setTimeout(() => {
+                icone.className = 'fa-solid fa-circle-check check-icon';
+                texto.innerText = 'Sucesso!';
+                caixa.style.borderColor = '#10b981';
+                caixa.style.cursor = 'default';
+                segurancaOk = true;
+            }, 1000);
+        }
+
+        // 🚀 MOTOR DE LOGIN PRINCIPAL COM A TRAVA SAAS E PASSE LIVRE DO ADM
+        function fazerLogin() {
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+            const termos = document.getElementById('termos').checked;
+
+            if (!termos) {
+                alert("⚠️ Você precisa aceitar os Termos de Uso e LGPD para entrar.");
+                return;
+            }
+
+            if (!segurancaOk) {
+                alert("⚠️ Por favor, clique na caixa da Cloudflare para confirmar que você não é um robô.");
+                return;
+            }
+
+            if (!email || !senha) {
+                alert("⚠️ Preencha e-mail e senha.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            auth.signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    const uid = userCredential.user.uid;
+                    
+                    db.collection("usuarios").doc(uid).get().then((doc) => {
+                        if (doc.exists) {
+                            const dados = doc.data();
+                            const cargoLogado = (dados.cargo || "").toLowerCase();
+                            
+                            // 🚀 PASSE LIVRE PARA O MESTRE/ADM GLOBAL!
+                            const isMaster = cargoLogado.includes('master') || cargoLogado.includes('adm') || cargoLogado.includes('admin') || cargoLogado.includes('gestor');
+
+                            if (isMaster) {
+                                // Se for o dono do sistema, entra direto sem cobrar condomínio!
+                                localStorage.setItem("condoup_logado", "true");
+                                localStorage.setItem("usuario_uid", uid);
+                                localStorage.setItem("usuario_nome", dados.nome || "Master");
+                                localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                localStorage.setItem("condominioId", dados.condominioId || "");
+                                window.location.href = "index.html"; 
+                                return;
+                            }
+
+                            const condominioId = dados.condominioId;
+
+                            if(!condominioId) {
+                                alert("❌ Erro: Usuário sem condomínio vinculado.");
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                                return;
+                            }
+
+                            // 🚀 AQUI ACONTECE A MÁGICA: CHECAGEM DO STATUS DO CONDOMÍNIO (SAAS)
+                            db.collection("condominios").doc(condominioId).get().then((docCondo) => {
+                                if (docCondo.exists) {
+                                    const dadosCondo = docCondo.data();
+
+                                    // VERIFICA SE O CONDOMÍNIO ESTÁ COM A MENSALIDADE EM DIA
+                                    if (dadosCondo.ativo === true) {
+                                        
+                                        // 🟢 TUDO CERTO! Salva os dados na memória e libera a catraca
+                                        localStorage.setItem("condoup_logado", "true");
+                                        localStorage.setItem("usuario_uid", uid);
+                                        localStorage.setItem("usuario_nome", dados.nome || "Usuário");
+                                        localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                        localStorage.setItem("condominioId", condominioId);
+                                        localStorage.setItem("usuario_apto", dados.apto || "");
+                                        localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
+                                        
+                                        // 🚀 DESVIO INTELIGENTE DE ROTAS
+                                        const cargoMorador = (dados.cargo || "").toLowerCase();
+                                        
+                                        if (cargoMorador === "morador") {
+                                            console.log("Logado como Morador. Redirecionando para a pasta morador/");
+                                            window.location.href = "morador/"; 
+                                        } else {
+                                            console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                                            window.location.href = "index.html"; 
+                                        }
+
+                                    } else {
+                                        // 🚫 BLOQUEADO! O painel Zero Labs marcou como ativo: false
+                                        auth.signOut();
+                                        alert("⚠️ ACESSO SUSPENSO\nO sistema deste condomínio encontra-se inativo no momento. Por favor, entre em contato com a administração.");
+                                        restaurarBotaoDeLogin(btn);
+                                    }
+                                } else {
+                                    alert("❌ Erro: Ficha do condomínio não encontrada no sistema matriz.");
+                                    auth.signOut();
+                                    restaurarBotaoDeLogin(btn);
+                                }
+                            }).catch((err) => {
+                                console.error("Erro ao verificar status do condomínio:", err);
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                            });
+                            
+                        } else {
+                            alert("❌ Usuário não encontrado no banco de dados.");
+                            auth.signOut();
+                            restaurarBotaoDeLogin(btn);
+                        }
+                    }).catch((err) => {
+                        console.error("Erro ao buscar dados do usuário:", err);
+                        auth.signOut();
+                        restaurarBotaoDeLogin(btn);
+                    });
+                })
+                .catch((error) => {
+                    alert("❌ Erro ao entrar: Verifique seu e-mail ou senha.");
+                    console.error(error);
+                    restaurarBotaoDeLogin(btn);
+                });
+        }
+
+        // Função auxiliar para voltar o botão ao normal em caso de erro
+        function restaurarBotaoDeLogin(btn) {
+            btn.innerHTML = 'Entrar na Plataforma';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+
+        // Função para o botão "Esqueci minha senha"
+        function recuperarSenha() {
+            const email = prompt("🔒 Digite o seu e-mail de acesso para receber o link de redefinição:");
+            
+            if (!email) return;
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("✅ Link de redefinição enviado! Verifique a sua caixa de entrada (e o Spam).");
+                })
+                .catch((error) => {
+                    console.error("Erro ao resetar senha:", error);
+                    if (error.code === 'auth/user-not-found') {
+                        alert("❌ Este e-mail não está cadastrado no sistema.");
+                    } else {
+                        alert("❌ Erro ao enviar e-mail: " + error.message);
+                    }
+                });
+        }
+    </script>
+</body>
+</html>
