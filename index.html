@@ -3,1924 +3,778 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Condo Up</title> 
-    <script src="js/auth.js"></script>
-
-    <link rel="manifest" href="manifest.json?v=2">
-    <meta name="theme-color" content="#1e293b">
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script> 
+    <title>Login - Condo Up</title>
     
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Ícones e Fonte -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="css/style.css?v=2">
-    <link rel="stylesheet" href="css/transportadoras.css">
-    
-    <link rel="icon" href="/img/icon-192.png.png" type="image/png">
-    <link rel="apple-touch-icon" href="/img/icon-192.png.png">
-    <link rel="icon" sizes="512x512" href="/img/icon-512.png.png" type="image/png">
-    
     <style>
-        
-        .gaveta-btn {
-            width: 100%; background: transparent; border: none; color: #94a3b8; padding: 12px 15px;
-            text-align: left; font-size: 13px; font-weight: 600; cursor: pointer;
-            display: flex; justify-content: space-between; align-items: center;
-            border-radius: 8px; transition: 0.2s; font-family: inherit; margin-bottom: 2px;
-        }
-        .gaveta-btn:hover { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
-        .gaveta-btn.gaveta-aberta { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; }
-        
-        .gaveta-conteudo {
-            display: none; 
-            flex-direction: column; 
-            border-left: 1px dashed #334155; 
-            margin-left: 15px; 
-            padding-left: 5px; 
-            margin-bottom: 10px; 
-        }
-        .gaveta-conteudo.aberta { display: flex; animation: descerGaveta 0.3s ease-out; }
-        .gaveta-conteudo button {
-            background: none; border: none; color: #64748b; padding: 10px 15px; text-align: left;
-            font-size: 12px; cursor: pointer; border-radius: 6px; transition: 0.2s; font-family: inherit; display: flex; align-items: center; gap: 8px;
-        }
-        .gaveta-conteudo button:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
 
-        @keyframes descerGaveta {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* ANIMAÇÃO E ESTILO DO MODO FANTASMA (PREMIUM RED) */
-        @keyframes pulse-premium {
-            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
-        }
-        
-        .barra-fantasma {
-            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%);
-            color: white; 
-            padding: 12px 20px; 
-            border-radius: 8px; 
-            margin-bottom: 20px; 
-            cursor: pointer;
-            border: 1px solid #991b1b;
-            animation: pulse-premium 2s infinite;
-            transition: transform 0.3s ease;
-        }
-        
-        .barra-fantasma:hover {
-            transform: translateY(-2px);
-            background: linear-gradient(135deg, #991b1b 0%, #ef4444 100%);
-        }
-        
-        .fantasma-conteudo {
+        body {
+            background: linear-gradient(135deg, #091020 0%, #111827 100%);
+            color: #ffffff;
+            height: 100vh;
             display: flex;
             align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Cartão principal flutuante */
+        .login-container {
+            background: #0f172a;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-area img {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            margin-bottom: 10px;
+            object-fit: cover;
+        }
+
+        .logo-area h1 {
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #f8fafc;
+        }
+
+        .logo-area p {
+            font-size: 14px;
+            color: #94a3b8;
+            line-height: 1.4;
+        }
+
+        /* Campos de texto estilizados */
+        .form-group {
+            width: 100%;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .form-group i.icon-left {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .form-group i.icon-right {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .form-group i.icon-right:hover {
+            color: #f8fafc;
+        }
+
+        .form-group input {
+            width: 100%;
+            background: #020617;
+            border: 1px solid #1e293b;
+            color: #f8fafc;
+            padding: 16px 15px 16px 45px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Checkbox e LGPD */
+        .checkbox-group {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 13px;
+            color: #94a3b8;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .checkbox-group a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Simulação Visual do Verificador Cloudflare */
+        .cloudflare-box {
+            width: 100%;
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
             justify-content: space-between;
-            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 25px;
+            transition: 0.2s;
+        }
+        
+        .cloudflare-box:hover {
+            border-color: #334155;
+        }
+
+        .cloudflare-box .check-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #f8fafc;
+        }
+
+        .cloudflare-box .check-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .cloudflare-box .logo-area-cf {
+            text-align: right;
+        }
+        
+        .cloudflare-box .cf-brand {
+            color: #f59e0b; 
+            font-weight: 900; 
+            font-size: 12px; 
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .cloudflare-box .cf-links {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* Botões do Sistema */
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #0d9488 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            margin-bottom: 15px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.03);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .btn-tertiary {
+            background: linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .btn-tertiary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* ========================================= */
+        /* MODAL DE INSTALAÇÃO DO APP (TUTORIAL)     */
+        /* ========================================= */
+        .modal-install {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #091020;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            animation: slideUp 0.4s ease forwards;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .install-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #1e293b;
+            background: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .install-header button {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .install-header h2 {
+            flex: 2;
+            font-size: 20px;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
 
-        /* Ícones Premium - Aba Moradores */
-        .icone-premium-morador {
-            background: linear-gradient(135deg, #3b82f6, #1e40af);
-            color: white; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(59,130,246,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;
+        .install-body {
+            padding: 25px 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
         }
-        .icone-premium-morador:hover { transform: scale(1.15) translateY(-3px); box-shadow: 0 6px 12px rgba(59,130,246,0.5); }
 
-        .icone-premium-predio {
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            color: white; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(139,92,246,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;
+        .badge-otimizado {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
         }
-        .icone-premium-predio:hover { transform: scale(1.15) translateY(-3px); box-shadow: 0 6px 12px rgba(139,92,246,0.5); }
 
-        /* Efeito Pulsante do Contador de Notificações */
-        @keyframes pulse-badge {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        .install-desc {
+            color: #94a3b8;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            text-align: center;
         }
-        .badge-pulse { animation: pulse-badge 2s infinite; }
+
+        .install-card {
+            background: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 25px;
+        }
+
+        .card-title i { font-size: 26px; }
+        .card-title span { display: block; font-size: 13px; color: #64748b; font-weight: 400; margin-top: 2px;}
+
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-row:last-child { margin-bottom: 0; }
+
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .step-text {
+            color: #e2e8f0;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .highlight { color: #38bdf8; font-weight: 600; }
+        
+        .icon-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0 4px;
+        }
+
+        .install-card.why {
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bolt-icon {
+            background: #f59e0b;
+            color: #111827;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
-
 <body>
 
-<div class="sidebar">
-    <div class="logo">
-        <img src="img/icon-512.png.png" alt="Logo Portaria" style="width: 120px; height: 120px; border-radius: 24px; object-fit: cover; margin: auto; display: block; box-shadow: 0 4px 15px rgba(0,0,0,0.15); transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
-        <h2 style="margin-top: 15px; font-size: 20px; font-weight: 600; letter-spacing: 1px; color: #f8fafc;">CONDO UP</h2>
-    </div>
+    <div class="login-container">
+        <!-- LOGO E TEXTOS -->
+        <div class="logo-area">
+            <img src="img/icon-512.png.png" alt="Condo Up Logo">
+            <h1>Bem-vindo(a)</h1>
+            <p>Acesse sua conta para gerenciar seu<br>condomínio</p>
+        </div>
 
-    <div class="menu">
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Dia a Dia</div>
-        <button onclick="trocarTela('dashboard')" id="menu-dashboard" style="background: rgba(59, 130, 246, 0.1); border-left-color: #3b82f6; color: #fff;"><i class="fa-solid fa-house"></i> Início</button>
-        <button onclick="trocarTela('passagem')" id="menu-passagem"><i class="fa-solid fa-clipboard-check"></i> Plantão</button>
-        <button onclick="trocarTela('ponto')" id="menu-ponto"><i class="fa-solid fa-user-clock"></i> Ponto</button>
+        <!-- FORMULÁRIO -->
+        <div class="form-group">
+            <i class="fa-solid fa-envelope icon-left"></i>
+            <input type="email" id="email" placeholder="Seu e-mail">
+        </div>
 
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Portaria Rápida</div>
-        <button onclick="trocarTela('encomendas')" id="menu-encomendas"><i class="fa-solid fa-box-open"></i> Encomendas</button>
-        <button onclick="trocarTela('delivery')" id="menu-delivery"><i class="fa-solid fa-motorcycle"></i> Delivery Rápido</button>
+        <div class="form-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" id="senha" placeholder="Sua senha">
+            <i class="fa-solid fa-eye icon-right" onclick="toggleSenha()" id="eye-icon"></i>
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="termos">
+            <label for="termos">
+                Li e aceito os <a href="#">Termos de Uso e Privacidade</a> (LGPD).
+            </label>
+        </div>
+
+        <!-- VERIFICAÇÃO CLOUDFLARE (Visual) -->
+        <div class="cloudflare-box" id="box-cf" style="cursor: pointer;" onclick="verificarSeguranca()">
+            <div class="check-area">
+                <i class="fa-regular fa-square-check" id="check-cf" style="color: #64748b; font-size: 22px; transition: 0.3s;"></i>
+                <span id="txt-cf">Clique para verificar</span>
+            </div>
+            <div class="logo-area-cf">
+                <div class="cf-brand"><i class="fa-solid fa-cloud"></i> CLOUDFLARE</div>
+                <div class="cf-links">Privacidade • Ajuda</div>
+            </div>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <button class="btn-primary" onclick="fazerLogin()">Entrar na Plataforma</button>
         
-        <!-- 👇 AQUI ESTÁ O NOVO BOTÃO INJETADO! 👇 -->
-        <button onclick="trocarTela('autorizacoes')" id="menu-autorizacoes"><i class="fa-solid fa-qrcode"></i> Autorizações App</button>
-        
-        <button onclick="trocarTela('ocorrencias')" id="menu-ocorrencias"><i class="fa-solid fa-triangle-exclamation"></i> Ocorrências</button>
-
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Cadastros</div>
-        <button onclick="trocarTela('moradores')" id="menu-moradores"><i class="fa-solid fa-users"></i> Moradores</button>
-        <button onclick="trocarTela('veiculos')" id="menu-veiculos"><i class="fa-solid fa-car"></i> Veículos</button>
-        <button onclick="trocarTela('reservas')" id="menu-reservas"><i class="fa-solid fa-calendar-check"></i> Reservas</button>
-
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Administração</div>
-        <button onclick="trocarTela('comunicados')" id="menu-comunicados"><i class="fa-solid fa-bullhorn"></i> Comunicados</button>
-        <button onclick="trocarTela('relatorios')" id="menu-relatorios" style="color: #38bdf8;"><i class="fa-solid fa-chart-line"></i> Relatórios</button>
-        <button onclick="trocarTela('equipe')" id="menu-equipe"><i class="fa-solid fa-id-badge"></i> Equipe</button>
-
-        <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 15px;">Minha Conta</div>
-        <button onclick="trocarTela('perfil')" id="menu-perfil"><i class="fa-solid fa-user-gear"></i> Meu Perfil</button>
-        <button onclick="trocarTela('ajuda')" id="menu-ajuda"><i class="fa-solid fa-headset"></i> Ajuda / Suporte</button>
-
-        <div id="secao-master-saas" style="display: none;">
-            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; padding: 25px 15px 10px 15px; border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 15px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-gem" style="font-size: 13px;"></i> Master CondoUp
-            </div>
-
-            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-condominios')">
-                <span><i class="fa-solid fa-building" style="width: 20px;"></i> Condomínios</span>
-            </button>
-            <div id="gaveta-condominios" class="gaveta-conteudo">
-                <button onclick="trocarTela('adm-condominios')"><i class="fa-solid fa-list" style="width: 15px;"></i> Lista e Cadastros</button>
-                <button onclick="abrirModalMegafone()"><i class="fa-solid fa-bullhorn" style="width: 15px; color: #ef4444;"></i> Megafone Global</button>
-            </div>
-
-            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-funcionarios')">
-    <span><i class="fa-solid fa-user-shield" style="width: 20px;"></i> Funcionários</span>
-</button>
-<div id="gaveta-funcionarios" class="gaveta-conteudo">
-    <button onclick="trocarTela('adm-funcionarios')"><i class="fa-solid fa-key" style="width: 15px;"></i> Criar Acessos</button>
-    <button onclick="trocarTela('adm-controle-geral')"><i class="fa-solid fa-users-gear" style="width: 15px;"></i> Controle Geral</button>
-</div>
-
-            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-contratos')">
-                <span><i class="fa-solid fa-file-signature" style="width: 20px;"></i> Contratos</span>
-            </button>
-            <div id="gaveta-contratos" class="gaveta-conteudo">
-                <button onclick="alert('Gestão de Planos em breve')"><i class="fa-solid fa-layer-group" style="width: 15px;"></i> Planos e Limites</button>
-                <button onclick="alert('Controle de Suspensão em breve')"><i class="fa-solid fa-ban" style="width: 15px;"></i> Suspensões</button>
-            </div>
-
-            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-financeiro')">
-                <span><i class="fa-solid fa-sack-dollar" style="width: 20px;"></i> Financeiro</span>
-            </button>
-            <div id="gaveta-financeiro" class="gaveta-conteudo">
-                <!-- BOTÕES DO FINANCEIRO ATUALIZADOS -->
-                <button onclick="trocarTela('adm-faturas')"><i class="fa-solid fa-file-invoice-dollar" style="width: 15px;"></i> Faturas</button>
-                <button onclick="trocarTela('adm-mrr')"><i class="fa-solid fa-chart-pie" style="width: 15px;"></i> Receita MRR</button>
-            </div>
-
-            <button class="gaveta-btn" onclick="toggleGaveta('gaveta-suporte')">
-                <span><i class="fa-solid fa-headset" style="width: 20px;"></i> Suporte</span>
-            </button>
-            <div id="gaveta-suporte" class="gaveta-conteudo">
-                <button onclick="alert('Central de Tickets em breve')"><i class="fa-solid fa-ticket" style="width: 15px;"></i> Chamados Abertos</button>
-            </div>
-
-            <button class="gaveta-btn" onclick="trocarTela('configuracoes')" id="menu-configuracoes">
-                <span><i class="fa-solid fa-gears" style="width: 20px;"></i> Configurações</span>
-            </button>
-        </div>
-
-        <div style="margin: 20px 15px 10px 15px; border-top: 1px dashed rgba(255,255,255,0.1);"></div>
-        <button onclick="deslogarSistema()" id="menu-sair" style="color: #ef4444;"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</button>
-    </div>
-</div>
-
-<div class="content">
-
-    <div id="aviso-modo-fantasma" class="barra-fantasma" style="display: none;" onclick="sairDoModoFantasma()">
-        <div class="fantasma-conteudo">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="background: rgba(255, 255, 255, 0.2); padding: 6px 10px; border-radius: 6px; font-size: 16px; backdrop-filter: blur(4px);">🕵️‍♂️</span>
-                <span style="font-size: 13px; font-weight: 600; letter-spacing: 0.5px;">
-                    MODO SUPORTE ATIVO: 
-                    <strong id="fantasma-nome" style="text-transform: uppercase; letter-spacing: 1px; color: #fecaca; margin-left: 5px;"></strong>
-                </span>
-            </div>
-            <div style="background: rgba(0, 0, 0, 0.25); padding: 8px 15px; border-radius: 6px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
-                <i class="fa-solid fa-right-from-bracket"></i> Encerrar Sessão Remota
-            </div>
-        </div>
-    </div>
-
-    <div id="dashboard" class="tela ativa">
-        <div class="dash-header" style="position: relative;">
-            <div>
-                <h2 style="display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    Olá, <span id="nomeFuncionarioLogado">Usuário</span>
-                    <span id="badge-acesso-virtual" style="font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; letter-spacing: 0.5px; display: none; align-items: center; gap: 5px;"></span>
-                </h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Portaria PRO</p>
-            </div>
-            <div style="display: flex; gap: 20px; align-items: center;">
-                <h2 id="relogio" style="font-size: 28px; letter-spacing: 2px;">00:00:00</h2>
-                
-                <div style="position: relative; cursor: pointer; display: flex; align-items: center;" onclick="toggleSino()">
-                    <i class="fa-solid fa-bell" style="font-size: 24px; color: #64748b; transition: 0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#64748b'"></i>
-                    <span id="badge-notificacao" style="display: none; position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 50%; border: 2px solid #0f172a;">0</span>
-                </div>
-
-                <button class="btn-dark" onclick="toggleDarkMode()" title="Modo Noturno"><i class="fa-solid fa-moon"></i></button>
-            </div>
-
-            <div id="caixa-notificacoes" style="display: none; position: absolute; top: 80px; right: 0; width: 320px; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); z-index: 1000; border: 1px solid #e2e8f0; overflow: hidden;">
-                <div style="padding: 15px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="margin: 0; color: #1e293b; font-size: 14px;"><i class="fa-solid fa-bell" style="color: #3b82f6; margin-right: 5px;"></i> Atualizações</h4>
-                    <button onclick="marcarNotificacoesLidas()" style="background: none; border: none; color: #3b82f6; font-size: 12px; cursor: pointer; font-weight: bold;">Marcar lidas</button>
-                </div>
-                <div id="lista-mensagens-sino" style="max-height: 350px; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
-                    <p style="text-align: center; color: #94a3b8; font-size: 13px; margin: 20px 0;">Nenhuma notificação recente.</p>
-                </div>
-            </div>
-        </div>
-
-        <h3 style="margin: 25px 0 15px 0; color: #475569; font-size: 16px; text-transform: uppercase;">Visão Geral do Turno</h3>
-        
-       <div class="stats-grid">
-            <div class="stat-card" style="border-bottom: 4px solid #3b82f6;">
-                <i class="fa-solid fa-box-open" style="color: #3b82f6;"></i>
-                <span id="dash-encomendas">0</span>
-                <p>Encomendas Pendentes</p>
-            </div>
-
-            <div class="stat-card" style="border-bottom: 4px solid #f97316;">
-                <i class="fa-solid fa-motorcycle" style="color: #f97316;"></i>
-                <span id="dash-delivery">0</span>
-                <p>Delivery na Portaria</p>
-            </div>
-
-            <div class="stat-card" style="border-bottom: 4px solid #ef4444;">
-                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i>
-                <span id="dash-ocorrencias">0</span>
-                <p>Ocorrências em Aberto</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #10b981;">
-                <i class="fa-solid fa-calendar-check" style="color: #10b981;"></i>
-                <span id="dash-reservas">0</span>
-                <p>Reservas Hoje</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #8b5cf6;">
-                <i class="fa-solid fa-id-badge" style="color: #8b5cf6;"></i>
-                <span id="dash-equipe">0</span>
-                <p>Equipe Cadastrada</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #64748b;">
-                <i class="fa-solid fa-car" style="color: #64748b;"></i>
-                <span id="dash-veiculos">0</span>
-                <p>Veículos Cadastrados</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #0ea5e9;">
-                <i class="fa-solid fa-users" style="color: #0ea5e9;"></i>
-                <span id="dash-moradores">0</span>
-                <p>Moradores Registrados</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #14b8a6;">
-                <i class="fa-solid fa-clipboard-check" style="color: #14b8a6;"></i>
-                <span id="dash-plantao">0</span>
-                <p>Plantões Registrados</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #f59e0b;">
-                <i class="fa-solid fa-user-clock" style="color: #f59e0b;"></i>
-                <span id="dash-ponto">0</span>
-                <p>Pontos Batidos Hoje</p>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #ec4899;">
-                <i class="fa-solid fa-bullhorn" style="color: #ec4899;"></i>
-                <span id="dash-comunicados">0</span>
-                <p>Comunicados Ativos</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="equipe" class="tela">
-        <div class="box">
-            <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-users-gear" style="color: #3b82f6; font-size: 24px;"></i> Gestão de Equipe
-            </h2>
-            
-            <input id="funcNome" placeholder="Nome Completo do Funcionário">
-
-            <input id="funcCpf" placeholder="CPF (000.000.000-00)" oninput="mascararCpf(this)" maxlength="14" style="margin-bottom: 10px;">
-
-            <input type="email" id="funcEmail" placeholder="E-mail do Funcionário (Será o Login dele)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; margin-bottom: 15px;">
-
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 13px; color: #64748b; font-weight: bold;"><i class="fa-solid fa-pen-nib"></i> Assinatura Digital do Funcionário</label>
-                <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; margin-top: 5px; position: relative;">
-                    <canvas id="quadroAssinatura" height="120" style="width: 100%; cursor: crosshair; touch-action: none;"></canvas>
-                </div>
-                <button class="btn" type="button" onclick="limparAssinatura()" style="background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; padding: 5px 10px; font-size: 12px; margin-top: 5px; width: auto;">
-                    <i class="fa-solid fa-eraser"></i> Limpar Quadro
-                </button>
-            </div>
-            
-            <select id="funcCargo" style="margin-bottom: 15px;">
-                <option value="" disabled selected>Selecione o Cargo</option>
-                <option>Porteiro Diurno</option>
-                <option>Porteiro Noturno</option>
-                <option>Zelador</option>
-                <option>Auxiliar de Limpeza</option>
-                <option>Síndico</option>
-                <option>Sub síndico</option>
-                <option>Gerente</option>
-                <option>Administrador(a)</option>
-            </select>
-            
-            <!-- 🚀 CHECKBOX PARA OBRIGAR O PONTO ADICIONADO AQUI -->
-            <div style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px; background: rgba(59, 130, 246, 0.05); padding: 12px; border-radius: 8px; border: 1px dashed #3b82f6;">
-                <input type="checkbox" id="funcExigePonto" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #3b82f6;">
-                <label for="funcExigePonto" style="font-size: 13px; color: #1e293b; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                    <i class="fa-regular fa-clock" style="color: #3b82f6;"></i> Obrigatório bater ponto eletrônico?
-                </label>
-            </div>
-            
-            <button class="btn" id="btnSalvarEquipe" onclick="addFuncionario()" style="background: #3b82f6;">Cadastrar Funcionário</button>
-        </div>
-        <div id="listaEquipe" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;"></div>
-    </div>
-
-    <div id="passagem" class="tela">
-        <div class="box">
-            <h2><i class="fa-solid fa-clock-rotate-left"></i> Livro de Plantão (Passagem)</h2>
-            
-            <div style="background: rgba(59, 130, 246, 0.03); padding: 25px; border-radius: 16px; margin-top: 20px; border: 1px solid #e2e8f0;">
-                <p style="font-size: 13px; font-weight: 700; margin-bottom: 20px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;">
-                    <i class="fa-solid fa-list-check" style="margin-right: 8px;"></i> Check-list de Verificação de Infraestrutura:
-                </p>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px;">
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkPortoes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-door-open" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Portões e Cancelas OK</span>
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkElevadores" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-elevator" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Elevadores OK</span>
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkLuzes" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-lightbulb" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Lâmpadas/Luzes OK</span>
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkCameras" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-video" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Monitoramento/Câmeras OK</span>
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkBombas" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-faucet" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Bombas d'Água OK</span>
-                    </label>
-
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; background: white; padding: 15px; border-radius: 12px; border: 1px solid #cbd5e1; transition: 0.3s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='#cbd5e1'">
-                        <input type="checkbox" id="chkEnergia" style="width:20px; height:20px; cursor: pointer; accent-color: #10b981;">
-                        <i class="fa-solid fa-bolt" style="color: #64748b; font-size: 18px; width: 25px; text-align: center;"></i>   
-                        <span style="font-size: 14px; font-weight: 500; color: #334155;">Elétrica/Energia OK</span>
-                    </label>
-                </div>
-            </div>
-
-            <select id="passagemNome" style="margin-top: 20px; padding: 14px 16px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 15px; background: #f8fafc; color: #334155; width: 100%; cursor: pointer;">
-                <option value="" disabled selected>👤 Selecione o seu Nome (Porteiro que está saindo)</option>
-            </select>
-            
-            <textarea id="passagemObs" placeholder="Relatório de turno: Descreva pendências, recados ou ocorrências para o próximo porteiro..." style="margin-top: 15px;"></textarea>
-            
-            <button class="btn" style="background: #10b981; margin-top: 25px; height: 55px; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="salvarPassagem()">
-                <i class="fa-solid fa-arrow-right-arrow-left"></i> Finalizar e Passar Serviço
-            </button>
-        </div>
-
-        <div class="box" style="background: rgba(59, 130, 246, 0.02); border-color: #e2e8f0;">
-            <h2 style="color: #1e293b;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Histórico de Plantões</h2>
-            
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; align-items: center;">
-                <select id="filtroPorteiroPassagem" style="flex: 1; min-width: 180px; margin: 0; padding: 11px 14px; border-radius: 8px;">
-                    <option value="">Todos os Porteiros</option>
-                </select>
-                
-                <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-                    <input type="date" id="filtroDataInicio" title="Data Inicial" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
-                </div>
-
-                <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-                    <input type="date" id="filtroDataFim" title="Data Final" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
-                </div>
-                
-                <div style="display: flex; gap: 8px; margin-top: 0;">
-                    <button class="btn" style="margin: 0; padding: 11px 20px; background: #3b82f6; font-size: 14px;" onclick="mostrarPassagens()">
-                        <i class="fa-solid fa-filter"></i> Filtrar
-                    </button>
-                    <button class="btn btn-limpar" style="margin: 0; padding: 11px 16px; font-size: 14px;" onclick="limparFiltrosPlantao()">Limpar</button>
-                    
-                    <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 42px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioPassagem()">
-                        <i class="fa-solid fa-file-pdf"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div id="listaPassagens" class="timeline"></div>
-    </div>
-
-    <div id="ponto" class="tela">
-        <div class="box" style="text-align: center; max-width: 600px; margin: 0 auto 25px auto; border-top: 4px solid #3b82f6;">
-            <h2><i class="fa-solid fa-fingerprint" style="color: #3b82f6; margin-right: 8px;"></i> Ponto Digital Integrado</h2>
-            <p style="margin-bottom: 10px; font-size: 14px; color: #64748b;">Autenticação vinculada ao login do usuário.</p>
-            
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 25px;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 20px;">Olá, <span id="nomeIdentificadoPonto" style="color: #3b82f6;">Carregando...</span></h3>
-                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;" id="statusAtualPonto">Verificando seu status de hoje...</p>
-            </div>
-
-            <div id="areaBotoesPonto" style="display: flex; flex-direction: column; gap: 15px;">
-                <button class="btn" style="background: #cbd5e1; cursor: not-allowed; margin: 0;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando sistema...</button>
-            </div>
-            
-            <div style="margin-top: 15px;">
-                <input type="text" id="obsPonto" placeholder="Observação opcional (Ex: Atraso por chuva, esqueci de bater na volta...)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; margin: 0;">
-            </div>
-        </div>
-
-        <div id="painelGestaoPonto" class="box" style="display: none; background: rgba(59, 130, 246, 0.03); border-color: #bfdbfe; margin-bottom: 25px;">
-            <h2 style="color: #1e293b; margin-bottom: 20px;"><i class="fa-solid fa-users-viewfinder" style="color: #3b82f6; margin-right: 8px;"></i> Status da Equipe</h2>
-            
-            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; text-align: center; padding: 15px;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #16a34a;">🟢 EM SERVIÇO</h3>
-                    <span id="card-qtd-servico" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block; margin-bottom: 10px;">0</span>
-                    <button class="btn" style="margin: 0; padding: 8px; width: 100%; font-size: 12px; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;" onclick="abrirModalEquipePonto('servico')">Ver Detalhes</button>
-                </div>
-
-                <div class="stat-card" style="border-bottom: 4px solid #f59e0b; background: white; text-align: center; padding: 15px;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #ea580c;">🟠 ALMOÇO</h3>
-                    <span id="card-qtd-almoco" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block; margin-bottom: 10px;">0</span>
-                    <button class="btn" style="margin: 0; padding: 8px; width: 100%; font-size: 12px; background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa;" onclick="abrirModalEquipePonto('almoco')">Ver Detalhes</button>
-                </div>
-
-                <div class="stat-card" style="border-bottom: 4px solid #ca8a04; background: white; text-align: center; padding: 15px;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #ca8a04;">☕ INTERVALO</h3>
-                    <span id="card-qtd-intervalo" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block; margin-bottom: 10px;">0</span>
-                    <button class="btn" style="margin: 0; padding: 8px; width: 100%; font-size: 12px; background: #fefce8; color: #ca8a04; border: 1px solid #fef08a;" onclick="abrirModalEquipePonto('intervalo')">Ver Detalhes</button>
-                </div>
-
-                <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; text-align: center; padding: 15px;">
-                    <h3 style="margin: 0 0 10px 0; font-size: 13px; color: #dc2626;">🔴 FORA</h3>
-                    <span id="card-qtd-fora" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block; margin-bottom: 10px;">0</span>
-                    <button class="btn" style="margin: 0; padding: 8px; width: 100%; font-size: 12px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;" onclick="abrirModalEquipePonto('fora')">Ver Detalhes</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="box" style="background: rgba(59, 130, 246, 0.05);">
-            <h2><i class="fa-solid fa-chart-pie" style="color: #8b5cf6; margin-right: 8px;"></i> Folha de Ponto Individual</h2>
-            <div class="filtro-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-    
-                <div style="display: flex; flex: 1; min-width: 150px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 45px;">
-                    <i class="fa-regular fa-calendar" style="color: #94a3b8; font-size: 16px; margin-right: 8px;"></i>
-                    <input type="month" id="filtroMesPonto" title="Selecione o Mês da Folha" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; cursor: pointer;">
-                </div>
-                
-                <select id="filtroFuncionarioPonto" style="flex: 2; min-width: 200px; height: 45px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; cursor: pointer; margin: 0;">
-                    <option value="" disabled selected>Selecione o Funcionário</option>
-                </select>
-                
-                <button class="btn btn-limpar" style="margin:0; flex: none; height: 45px; padding: 0 15px;" onclick="filtrarPorSeletores()">Filtrar na Tela</button>
-                
-                <button class="btn" title="Extrair Folha PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 45px; height: 45px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 8px; flex: none; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarFolhaPontoIndividual(event)">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </button>
-            </div>
-        </div>
-        <div id="listaPontos" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;"></div>
-    </div>
-
-    <div id="moradores" class="tela">
-        <div class="box">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b; margin: 0;">
-                    <span class="icone-premium-morador">
-                        <i class="fa-solid fa-user-plus"></i>
-                    </span> 
-                    Cadastro de Moradores
-                </h2>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="gerarQrCodeConvite(localStorage.getItem('condominioId'))" style="background: #8b5cf6; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
-                        <i class="fa-solid fa-link"></i> Link de Convite
-                    </button>
-
-                    <button onclick="abrirModalAprovacao()" style="position: relative; background: #3b82f6; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;">
-                        <i class="fa-solid fa-user-clock"></i> Pendentes
-                        <span id="badge-pendentes" class="badge-pulse" style="display: none; position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; font-size: 11px; padding: 3px 7px; border-radius: 50%; border: 2px solid #fff; font-weight: 800;">0</span>
-                    </button>
-                </div>
-            </div>
-            
-            <input id="nome" placeholder="Nome do Morador" style="margin-bottom: 15px;">
-            <input id="apto" placeholder="Apartamento (ex: 301)" style="margin-bottom: 15px;">
-            
-            <div id="container-telefones" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input class="telefone-input" type="tel" placeholder="WhatsApp / Telefone principal" style="flex: 1; width: 100%; margin: 0;">
-                    <button type="button" class="btn" onclick="adicionarCampoTelefone('container-telefones')" style="background: #10b981; margin: 0; padding: 0; width: 42px; height: 42px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 16px; transition: 0.2s;" title="Adicionar outro telefone">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </div>
-            </div>
-
-            <input id="secretaria" placeholder="Secretária / Empregada" style="margin-bottom: 15px;">
-            <input id="visitantes" placeholder="Visitantes / Autorizados separados por vírgula" style="margin-bottom: 15px;">
-            <button class="btn" id="btnSalvarMorador" onclick="addMorador()">Cadastrar Morador</button>
-        </div>
-
-        <div class="box" style="background: rgba(59, 130, 246, 0.05);">
-            <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b; margin-bottom: 15px;">
-                <span class="icone-premium-predio">
-                    <i class="fa-solid fa-building-user"></i>
-                </span> 
-                Painel de Apartamentos
-            </h2>
-            <div class="filtro-container" style="align-items: center; gap: 10px;">
-                <div style="display: flex; flex: 2; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-                    <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8; font-size: 16px;"></i>
-                    <input type="text" id="pesquisaMorador" placeholder="Buscar por nome ou apartamento..." onkeyup="pesquisarMoradores()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; margin: 0;">
-                </div>
-                
-                <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioMoradores()">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </button>
-            </div>
-            <div id="listaMoradores"></div>
-        </div>
-    </div>
-
-    <div id="veiculos" class="tela">
-        <div class="box">
-            <h2>🚘 Cadastro de Veículos</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div style="grid-column: span 2; position: relative;">
-                    <i class="fa-solid fa-user" style="position: absolute; left: 15px; top: 18px; color: #94a3b8;"></i>
-                    <input id="veiMorador" placeholder="Nome do Morador ou Apto" style="margin-top: 0; padding-left: 45px; width: 100%;">
-                </div>
-                
-                <div style="position: relative;">
-                    <i class="fa-solid fa-car-side" style="position: absolute; left: 15px; top: 18px; color: #94a3b8;"></i>
-                    <input id="veiModelo" placeholder="Modelo (Ex: Corolla, HR-V, Renegade)" style="margin-top: 0; padding-left: 45px; width: 100%;">
-                </div>
-
-                <div style="position: relative;">
-                    <i class="fa-solid fa-window-maximize" style="position: absolute; left: 15px; top: 18px; color: #94a3b8;"></i>
-                    <input id="veiPlaca" placeholder="Placa (Ex: ABC-1D23)" oninput="mascararPlaca(this)" maxlength="8" style="margin-top: 0; padding-left: 45px; width: 100%; text-transform: uppercase; font-weight: bold;">
-                </div>
-
-                <select id="veiCor" style="margin-top: 0;">
-                    <option value="" disabled selected>Cor do Veículo</option>
-                    <option>Branco</option>
-                    <option>Preto</option>
-                    <option>Prata</option>
-                    <option>Cinza</option>
-                    <option>Vermelho</option>
-                    <option>Azul</option>
-                    <option>Outra</option>
-                </select>
-
-                <div style="position: relative;">
-                    <i class="fa-solid fa-square-parking" style="position: absolute; left: 15px; top: 18px; color: #94a3b8;"></i>
-                    <input id="veiVaga" placeholder="Nº da Vaga" style="margin-top: 0; padding-left: 45px; width: 100%;">
-                </div>
-            </div>
-            <button class="btn" onclick="addVeiculo()" style="margin-top: 20px; background: #3b82f6;"><i class="fa-solid fa-plus"></i> Cadastrar Veículo</button>
-        </div>
-
-        <div class="box" style="background: rgba(59, 130, 246, 0.02); border-color: #e2e8f0;">
-            <h2 style="color: #1e293b;"><i class="fa-solid fa-magnifying-glass"></i> Consultar Garagem</h2>
-            <div class="filtro-container" style="align-items: center; gap: 10px;">
-                <div style="position: relative; flex: 2; margin-top: 0;">
-                    <input type="text" id="pesquisaVeiculo" placeholder="Buscar placa, morador, modelo..." onkeyup="mostrarVeiculos()" style="width: 100%; margin: 0; padding-right: 55px; height: 50px;">
-                    
-                    <button class="btn" onclick="mostrarVeiculos()" style="position: absolute; right: 6px; top: 6px; margin: 0; padding: 0; width: 38px; height: 38px; background: #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                        <i class="fa-solid fa-magnifying-glass" style="color: white; font-size: 15px;"></i>
-                    </button>
-                </div>
-                
-                <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 50px; height: 50px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioVeiculos()">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </button>
-            </div>
-        </div>
-        
-        <div id="listaVeiculos"></div>
-    </div>
-
-    <div id="reservas" class="tela">
-        
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-            <button onclick="gerarTermoBranco()" class="btn" style="width: auto; background: #0ea5e9; margin: 0; padding: 10px 15px; font-size: 14px; border-radius: 8px;">
-                <i class="fa-solid fa-file-pdf" style="margin-right: 5px;"></i> Imprimir Termo em Branco
-            </button>
-        </div>
-
-        <div class="box">
-            <h2>📅 Nova Reserva</h2>
-            <select id="tipoReserva">
-                <option>Churrasqueira</option>
-                <option>Salão de Festa</option>
-                <option>Combo</option>
-            </select>
-            <input type="date" id="dataReserva">
-            <input type="time" id="horaReserva">
-            
-            <select id="aptoReserva" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; margin-bottom: 12px;">
-                <option value="">🏢 Selecione o Apto / Bloco</option>
-            </select>
-            <input id="responsavel" placeholder="Aguardando escolha do Apto..." readonly style="background: #f8fafc; width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px;">
-            
-            <div class="input-group" style="margin-top: 15px; grid-column: 1 / -1;">
-                <label style="display: block; margin-bottom: 8px; color: #64748b; font-weight: 500; font-size: 14px;">
-                    <i class="fa-solid fa-signature"></i> Assinatura do Morador (Opcional)
-                </label>
-                <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; text-align: center; padding: 10px;">
-                    <canvas id="canvasReserva" width="300" height="120" style="background: transparent; cursor: crosshair; touch-action: none; display: inline-block; border-bottom: 1px solid #e2e8f0;"></canvas>
-                </div>
-                <button class="btn-acao" onclick="limparAssinaturaReserva()" style="margin-top: 10px; background: #f1f5f9; color: #475569; width: 100%; max-width: 300px; margin-left: auto; margin-right: auto; display: block; border-radius: 8px; border: 1px solid #cbd5e1; transition: 0.2s;">
-                    <i class="fa-solid fa-eraser"></i> Limpar Assinatura
-                </button>
-            </div>
-            <button class="btn" style="margin-top: 20px;" onclick="salvarReserva()">Agendar Reserva</button>
-        </div>
-        <div id="listaReservas"></div>
-    </div>
-    <!-- ========================================== -->
-    <!-- TELA DE AUTORIZAÇÕES DE ACESSO (LEITOR)    -->
-    <!-- ========================================== -->
-    <div id="autorizacoes" class="tela">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div>
-                <h2 style="margin-bottom: 5px; color: #0f172a;"><i class="fa-solid fa-qrcode" style="color: #a855f7; margin-right: 10px;"></i>Controle de Acessos</h2>
-                <p style="color: #64748b; font-size: 14px;">Valide os códigos gerados pelos moradores pelo App.</p>
-            </div>
-            
-            <!-- NOVOS FILTROS RÁPIDOS: DATA E BUSCA -->
-            <div style="display: flex; gap: 10px;">
-                <!-- Filtro por Data -->
-                <div class="search-box" style="display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 10px;">
-                    <i class="fa-regular fa-calendar" style="color: #94a3b8;"></i>
-                    <input type="date" id="filtroDataPortaria" onchange="filtrarAutorizacoesPortaria()" style="border: none; outline: none; background: transparent; font-size: 14px; color: #475569; cursor: pointer; font-family: inherit;">
-                </div>
-                
-                <!-- Filtro por Texto (Código/Nome) -->
-                <div class="search-box" style="width: 250px; display: flex; align-items: center; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #cbd5e1; gap: 10px;">
-                    <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8;"></i>
-                    <input type="text" id="buscaCodigoPortaria" onkeyup="filtrarAutorizacoesPortaria()" placeholder="Buscar código ou nome..." style="border: none; outline: none; background: transparent; width: 100%; font-size: 14px;">
-                </div>
-            </div>
-        </div>
-
-        <!-- AQUI O JAVASCRIPT VAI CUSPIR OS CARDS -->
-        <div id="lista-autorizacoes-portaria">
-            <!-- Carregando... -->
-        </div>
-    </div>
-    <!-- ========================================== -->
-    
-    <div id="ocorrencias" class="tela">
-        
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 15px; gap: 10px;">
-            <div class="stat-card" style="border-bottom: 3px solid #ef4444; padding: 10px; display: flex; flex-direction: column; align-items: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
-                <div style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;"><i class="fa-solid fa-circle-exclamation" style="color: #ef4444; margin-right: 4px;"></i> Urgentes</div>
-                <span id="stat-urgente" style="font-size: 20px; font-weight: bold; color: #0f172a;">0</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 3px solid #f59e0b; padding: 10px; display: flex; flex-direction: column; align-items: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
-                <div style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;"><i class="fa-solid fa-clock-rotate-left" style="color: #f59e0b; margin-right: 4px;"></i> Pendentes</div>
-                <span id="stat-aberto" style="font-size: 20px; font-weight: bold; color: #0f172a;">0</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 3px solid #10b981; padding: 10px; display: flex; flex-direction: column; align-items: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
-                <div style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;"><i class="fa-solid fa-circle-check" style="color: #10b981; margin-right: 4px;"></i> Resolvidas</div>
-                <span id="stat-resolvida" style="font-size: 20px; font-weight: bold; color: #0f172a;">0</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 3px solid #3b82f6; padding: 10px; display: flex; flex-direction: column; align-items: center; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.03);">
-                <div style="color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 2px;"><i class="fa-regular fa-calendar-days" style="color: #3b82f6; margin-right: 4px;"></i> Hoje</div>
-                <span id="stat-hoje" style="font-size: 20px; font-weight: bold; color: #0f172a;">0</span>
-            </div>
-        </div>
-
-        <div class="box" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 15px;">
-            <div style="display: flex; flex: 2; min-width: 200px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-                <i class="fa-solid fa-magnifying-glass" style="color: #94a3b8; font-size: 16px;"></i>
-                <input type="text" id="pesquisaOcorrencia" placeholder="Pesquisar ocorrências..." onkeyup="pesquisarOcorrencias()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; margin: 0;">
-            </div>
-            
-            <button class="btn" style="margin:0; flex: 1; min-width: 130px; height: 44px; font-size: 14px; background: #10b981;" onclick="toggleFormOcorrencia()">➕ Nova Ocorrência</button>
-            
-            <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; border-radius: 8px; flex: none;" onclick="gerarRelatorioOcorrencias()">
-                <i class="fa-solid fa-file-pdf"></i>
-            </button>
-        </div>
-
-        <div class="box" id="form-ocorrencia" style="display: none; border-left: 4px solid #e53935; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h2 style="margin: 0; font-size: 18px;"><i class="fa-solid fa-triangle-exclamation" style="color: #e53935; margin-right: 5px;"></i> Registrar Ocorrência</h2>
-                <button onclick="toggleFormOcorrencia()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #64748b;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <select id="ocoTipo" style="margin: 0;">
-                    <option value="" disabled selected>🏷️ Selecione o Tipo</option>
-                    <option value="🔊 Barulho">🔊 Barulho</option>
-                    <option value="⚡ Falta de energia">⚡ Falta de energia</option>
-                    <option value="🛗 Elevador">🛗 Elevador</option>
-                    <option value="🚗 Veículo irregular">🚗 Veículo irregular</option>
-                    <option value="👤 Visitante suspeito">👤 Visitante suspeito</option>
-                    <option value="📦 Problema encomenda">📦 Problema encomenda</option>
-                    <option value="🛠️ Manutenção">🛠️ Manutenção</option>
-                    <option value="💧 Vazamento">💧 Vazamento</option>
-                    <option value="🔐 Segurança">🔐 Segurança</option>
-                    <option value="📢 Reclamação">📢 Reclamação</option>
-                    <option value="Outros">Outros</option>
-                </select>
-                <select id="ocoStatus" style="margin: 0;">
-                    <option value="🔴 Não Resolvido">🔴 Não Resolvido</option>
-                    <option value="🟡 Pendente" selected>🟡 Pendente</option>
-                    <option value="🟢 Resolvido">🟢 Resolvido</option>
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <select id="ocoApto" style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-                    <option value="">🏢 Selecione o Apto / Local</option>
-                </select>
-                <input id="ocoMorador" placeholder="Aguardando escolha..." readonly style="margin: 0; width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; color: #475569;">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 12px;">
-                <select id="ocoPorteiro" style="margin: 0;">
-                    <option value="" disabled selected>👮 Selecione o Responsável</option>
-                </select>
-                <select id="ocoPrioridade" style="margin: 0;">
-                    <option value="Baixa">🟢 Prioridade Baixa</option>
-                    <option value="Média" selected>🟡 Prioridade Média</option>
-                    <option value="Alta">🔴 Prioridade Alta</option>
-                </select>
-            </div>
-
-            <textarea id="ocoDescricao" placeholder="📄 Detalhes da ocorrência..." style="margin: 0; min-height: 80px; margin-bottom: 12px;"></textarea>
-            
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="file" id="ocoFoto" accept="image/*" style="flex: 1; margin: 0;">
-                <button class="btn" id="btnSalvarOcorrencia" onclick="salvarOcorrencia()" style="flex: 1; margin: 0; background: #3b82f6;"><i class="fa-solid fa-floppy-disk"></i> Salvar Ocorrência</button>
-            </div>
-        </div> 
-        <div id="listaOcorrencias"></div>
-    </div>
-
-    <div id="encomendas" class="tela">
-        
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
-            <button class="btn" style="width: auto; background: #10b981; margin: 0; padding: 10px 15px; font-size: 14px; border-radius: 8px;" onclick="iniciarLeitorQR(); document.getElementById('box-camera-qr').style.display='block';">
-                <i class="fa-solid fa-qrcode" style="margin-right: 5px;"></i> Leitor QR Code (Baixa Rápida)
-            </button>
-        </div>
-
-        <div id="box-camera-qr" class="box" style="display: none; background: rgba(16, 185, 129, 0.05); border-color: #10b981; text-align: center;">
-            <h3 style="color: #059669; margin-bottom: 15px;"><i class="fa-solid fa-camera"></i> Posicione o QR Code</h3>
-            <div id="leitor-qr" style="width: 100%; max-width: 350px; margin: 0 auto; border-radius: 12px; overflow: hidden; border: 2px solid #10b981;"></div>
-            <button id="btn-fechar-leitor" class="btn" style="background:#ef4444; width: auto; padding: 10px 20px; margin-top: 15px;" onclick="fecharLeitorQR(); document.getElementById('box-camera-qr').style.display='none';"><i class="fa-solid fa-xmark"></i> Fechar Câmera</button>
-        </div>
-
-        <div class="box">
-            <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b;">
-                <span class="icone-premium-caixa" style="background: linear-gradient(135deg, #10b981, #059669); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(16,185,129,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
-                    <i class="fa-solid fa-box-open"></i>
-                </span> 
-                Nova Encomenda
-            </h2>
-
-            <style>
-                .icone-premium-caixa:hover {
-                    transform: scale(1.15) translateY(-5px);
-                    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4) !important;
-                    background: linear-gradient(135deg, #059669, #065f46) !important;
-                }
-            </style>
-
-            <input id="encMorador" placeholder="Destinatário (Obrigatório)">
-            <select id="encApto" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-                <option value="">🏢 Selecione o Apartamento...</option>
-            </select>
-            <div class="transportadora-search-container" style="margin-bottom: 12px;">
-                <div class="search-box" onclick="toggleDropdown()">
-                    <img id="selectedLogo" src="" alt="" class="selected-logo" style="display: none;">
-                    <input type="text" 
-                           id="transportadoraSearch" 
-                           placeholder="Buscar ou digitar Transportadora..." 
-                           oninput="filtrarTransportadoras()"
-                           onfocus="mostrarDropdown()"
-                           autocomplete="off">
-                    <span class="dropdown-arrow">▼</span>
-                </div>
-                
-                <div id="transportadoraDropdown" class="dropdown-content">
-                    <div class="dropdown-category">📦 Transportadoras</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Correios')"><span class="icone-empresa">📮</span> Correios</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Jadlog')"><span class="icone-empresa">🚛</span> Jadlog</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Loggi')"><span class="icone-empresa">📨</span> Loggi</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('FedEx')"><span class="icone-empresa">✈️</span> FedEx</div>
-                    
-                    <div class="dropdown-category">🛒 Lojas</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Amazon')"><span class="icone-empresa">📦</span> Amazon</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Mercado Livre')"><span class="icone-empresa">🤝</span> Mercado Livre</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Shopee')"><span class="icone-empresa">🛍️</span> Shopee</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('AliExpress')"><span class="icone-empresa">🌍</span> AliExpress</div>
-                    <div class="dropdown-item" onclick="selecionarTransportadora('Shein')"><span class="icone-empresa">👗</span> Shein</div>
-                    
-                    <div class="dropdown-category">🏪 Outros</div>
-                    <div class="dropdown-item personalizada" onclick="buscarOutraEmpresa()">
-                        <span class="icone-empresa">➕</span> Digitar outra empresa...
-                    </div>
-                </div>
-                <input type="hidden" id="transportadoraSelecionada" value="">
-            </div>
-            <input id="encCodigo" placeholder="Código/Rastreio">
-            <input id="encVolumes" placeholder="Volumes">
-            <input id="encPorteiro" placeholder="Porteiro que recebeu">
-            
-            <div style="margin-top: 15px; margin-bottom: 15px;">
-                <label id="label-foto" for="encFoto" class="btn" style="background: #3b82f6; margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;">
-                    <i class="fa-solid fa-camera"></i> Anexar Foto do Pacote
-                </label>
-                <input type="file" id="encFoto" accept="image/*" style="display: none;" onchange="if(this.files.length > 0) { document.getElementById('label-foto').innerHTML = '<i class=\'fa-solid fa-check\'></i> Foto Anexada com Sucesso!'; document.getElementById('label-foto').style.background = '#10b981'; } else { document.getElementById('label-foto').innerHTML = '<i class=\'fa-solid fa-camera\'></i> Anexar Foto do Pacote'; document.getElementById('label-foto').style.background = '#3b82f6'; }">
-            </div>
-
-            <p style="margin-top:15px; color: #64748b; font-weight: 500;"><i class="fa-solid fa-signature"></i> Assinatura de Recebimento</p>
-            <div style="border: 2px dashed #cbd5e1; border-radius: 8px; background: #f8fafc; text-align: center; padding: 10px; margin-bottom: 15px;">
-                <canvas id="canvasEncomenda" width="300" height="120" style="background: transparent; cursor: crosshair; touch-action: none; display: inline-block; border-bottom: 1px solid #e2e8f0;"></canvas>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 10px;">
-                <button class="btn" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; margin: 0;" onclick="limparAssinaturaEncomenda()"><i class="fa-solid fa-eraser"></i> Limpar</button>
-                <button class="btn" style="margin: 0; background: #3b82f6;" onclick="salvarEncomenda()"><i class="fa-solid fa-check"></i> Cadastrar Encomenda</button>
-            </div>
-        </div>
-
-        <div class="box" style="background: rgba(59, 130, 246, 0.05);">
-            <h2 style="display: flex; align-items: center; gap: 12px; color: #1e293b;">
-                <span class="icone-premium-lupa" style="background: linear-gradient(135deg, #60a5fa, #1d4ed8); color: white; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 4px 8px rgba(37,99,235,0.3); font-size: 16px; transition: all 0.3s ease; cursor: pointer;">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                </span> 
-                Histórico de Encomendas
-            </h2>
-
-            <style>
-                .icone-premium-lupa:hover {
-                    transform: scale(1.15) rotate(5deg);
-                    box-shadow: 0 6px 12px rgba(37, 99, 235, 0.5) !important;
-                    background: linear-gradient(135deg, #3b82f6, #1e40af) !important;
-                }
-            </style>
-
-            <div class="filtro-container" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                
-                <div style="display: flex; flex: 2; min-width: 180px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-                    <img src="https://cdn-icons-png.flaticon.com/512/2809/2809800.png" style="width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(59,130,246,0.3));">
-                    <input type="text" id="pesquisaEncomenda" placeholder="Buscar morador ou rastreio..." onkeyup="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; margin: 0;">
-                </div>
-                
-                <div style="display: flex; flex: 1; min-width: 140px; max-width: 200px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 44px;">
-                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
-                    <input type="date" id="filtroDataEncomenda" onchange="filtrarEncomendas()" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer; margin: 0;">
-                </div>
-                
-                <button class="btn btn-limpar" style="margin:0; flex: none; height: 44px; padding: 0 15px;" onclick="document.getElementById('pesquisaEncomenda').value=''; document.getElementById('filtroDataEncomenda').value=''; limparFiltroEncomendas()">Limpar</button>
-                
-                <button class="btn" title="Baixar PDF" style="margin: 0; background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 44px; height: 44px; padding: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: 0.2s; border-radius: 8px; flex: none;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" onclick="gerarRelatorioEncomendas()">
-                    <i class="fa-solid fa-file-pdf"></i>
-                </button>
-            </div>
-            
-            <div id="listaEncomendas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; align-items: start;"></div>
-        </div> 
-    </div> 
-
-    <div id="delivery" class="tela">
-        <div class="header-tela">
-            <h2><i class="fa-solid fa-motorcycle" style="color: #ef4444;"></i> Delivery Rápido</h2>
-            <p>Gestão de iFood, Rappi, Farmácias e Lanches</p>
-        </div>
-
-        <div class="card" style="margin-bottom: 25px;">
-            <div style="background: rgba(59, 130, 246, 0.03); padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
-                <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px;">
-                    <i class="fa-solid fa-box" style="color: #3b82f6;"></i> 1. Dados do Pedido
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div>
-                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Apto / Bloco</label>
-                        <select id="delApto" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; outline: none;">
-                            <option value="">Selecione o Apto...</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Destinatário</label>
-                        <input type="text" id="delMorador" placeholder="Nome do Destinatário..." style="background: #ffffff; width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; outline: none; box-sizing: border-box;">
-                    </div>
-                    <div>
-                        <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Entregador / Aplicativo</label>
-                        <!-- INÍCIO DO COMPONENTE PREMIUM COM LOGO -->
-                        <div class="transportadora-search-container" style="margin: 0; width: 100%; position: relative;">
-                            
-                            <div class="search-box" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; display: flex; align-items: center; gap: 8px; transition: 0.2s;">
-                                <img id="selectedDeliveryLogo" src="" alt="" style="display: none; width: 24px; height: 24px; object-fit: contain; border-radius: 4px; background: #f8fafc; padding: 2px;">
-                                
-                                <input type="text" 
-                                       id="delPlataforma" 
-                                       placeholder="Buscar app/loja..." 
-                                       oninput="filtrarDeliveryDropdown()"
-                                       onfocus="mostrarDeliveryDropdown()"
-                                       autocomplete="off"
-                                       style="border: none; outline: none; width: 100%; font-size: 14px; color: #334155; background: transparent; margin: 0;">
-                                
-                                <!-- A SETA AGORA TEM O CLIQUE EXCLUSIVO DELA -->
-                                <span class="dropdown-arrow-delivery" onclick="toggleDeliveryDropdown(event)" style="color: #94a3b8; font-size: 12px; cursor: pointer; transition: transform 0.3s ease; padding: 5px;">▼</span>
-                            </div>
-                            
-                            <div id="deliveryAppDropdown" class="dropdown-content" style="display: none; position: absolute; background: white; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); max-height: 250px; overflow-y: auto; z-index: 1000; width: 100%; margin-top: 5px;">
-                                <!-- Apps de Comida -->
-                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #ef4444; background: #fef2f2; text-transform: uppercase;">🍔 Apps de Comida</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('iFood')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🛵</span> iFood</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Rappi')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🧑‍🍳</span> Rappi</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Uber Eats')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🍽️</span> Uber Eats</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Zé Delivery')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🍻</span> Zé Delivery</div>
-                                
-                                <!-- Farmácias -->
-                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #10b981; background: #ecfdf5; text-transform: uppercase;">💊 Farmácias</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Pague Menos')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">⚕️</span> Pague Menos</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Drogasil')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">➕</span> Drogasil</div>
-                                
-                                <!-- Transporte Rápido -->
-                                <div class="del-cat" style="padding: 8px 12px; font-size: 11px; font-weight: bold; color: #3b82f6; background: #eff6ff; text-transform: uppercase;">🚗 Transporte</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('Uber Flash')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">📦</span> Uber Flash</div>
-                                <div class="dropdown-item-del" onclick="selecionarAppDelivery('99 Entrega')" style="padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; border-bottom: 1px solid #f1f5f9;"><span style="font-size: 18px;">🚕</span> 99 Entrega</div>
-                                
-                                <div class="dropdown-item-del personalizada" onclick="buscarOutraEmpresaDelivery()" style="padding: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #ef4444; font-weight: bold; background: #fef2f2; position: sticky; bottom: 0;">
-                                    <span style="font-size: 18px;">➕</span> Digitar outro estabelecimento...
-                                </div>
-                            </div>
-                        </div>
-                        <!-- FIM DO COMPONENTE PREMIUM -->
-                    </div>
-                </div>
-            </div>
-
-            <div style="background: rgba(16, 185, 129, 0.03); padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 10px;">
-                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> 2. Segurança e Entregador
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                    <div>
-                        <label>Código de Liberação (Se tiver)</label>
-                        <input type="text" id="delCodigoInformado" placeholder="Ex: 8842">
-                    </div>
-                    <div>
-                        <label>Nome do Entregador (Opcional)</label>
-                        <input type="text" id="delEntregador" placeholder="Ex: Carlos">
-                    </div>
-                    <div>
-                        <label>RG do Entregador (Opcional)</label>
-                        <input type="text" id="delRG" placeholder="Ex: 12.345.678-9">
-                    </div>
-                </div>
-            </div>
-
-            <div id="boxCodigoOculto" style="background: #ecfdf5; padding: 15px; border-radius: 8px; border: 1px dashed #10b981; display: none; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <span style="color: #059669; font-size: 15px; font-weight: bold;">
-                    <i class="fa-solid fa-brain"></i> Memória do Sistema:
-                </span>
-                <strong id="delCodigoFixo" style="font-size: 20px; color: #0f172a; letter-spacing: 2px;"></strong>
-            </div>
-            
-            <button class="btn" onclick="salvarDelivery()" style="width: 100%; background: #ef4444; color: white; padding: 15px; font-size: 16px;">
-                <i class="fa-solid fa-bell"></i> Registrar e Avisar Morador
-            </button>
-        </div>
-
-        <h3 style="margin: 0 0 15px 0; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-            <i class="fa-solid fa-clock" style="color: #f59e0b;"></i> Aguardando Retirada
-        </h3>
-        <div id="listaDelivery" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; margin-bottom: 30px;">
-        </div>
-
-        <h3 style="margin: 0 0 15px 0; color: #10b981; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">
-            <i class="fa-solid fa-check-double"></i> Últimos Entregues (Máx 6)
-        </h3>
-        <div id="listaDeliveryEntregues" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
-        </div>
-    </div>
-    
-    <div id="comunicados" class="tela">
-        <div class="box">
-            <h2 style="color: #1e293b; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                <i class="fa-solid fa-envelope-open-text" style="color: #3b82f6; font-size: 24px;"></i> Central de Comunicados
-            </h2>
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <select id="tipoComunicado" style="flex: 2; min-width: 200px;">
-                    <option>📢 Geral</option>
-                    <option>🛠️ Manutenção</option>
-                    <option>⚠️ Ocorrência</option>
-                    <option>🏛️ Assembleia</option>
-                </select>
-                <select id="statusComunicado" style="flex: 1; min-width: 150px;">
-                    <option value="🟡 Pendente" selected>🟡 Pendente</option>
-                    <option value="🔴 Não Resolvido">🔴 Não Resolvido</option>
-                    <option value="🟢 Resolvido">🟢 Resolvido</option>
-                </select>
-            </div>
-            <input id="tituloComunicado" placeholder="Título do Comunicado">
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <input type="date" id="dataComunicado" style="flex: 1;">
-                <input type="time" id="horaComunicado" style="flex: 1;">
-            </div>
-            <input id="localComunicado" placeholder="Local (Ex: Salão de Festas, Garagem...)">
-            <textarea id="mensagemComunicado" placeholder="Mensagem / Detalhes completos"></textarea>
-            <button class="btn" id="btnSalvarComunicado" onclick="salvarComunicado()">Publicar Comunicado</button>
-        </div>
-        <div id="listaComunicados"></div>
-    </div>
-
-    <!-- TELA MASTER: FUNCIONÁRIOS (CRIAR ACESSOS) -->
-    <div id="adm-funcionarios" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-key" style="color: #38bdf8; margin-right: 10px;"></i>Criar Acessos</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Geração de login para síndicos e administradores.</p>
-            </div>
-        </div>
-        <div class="box" style="border-top: 4px solid #38bdf8;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nome Completo</label>
-                    <input type="text" id="admFuncNome" placeholder="Ex: Carlos Silva" style="width: 100%; margin: 0;">
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">E-mail de Login</label>
-                    <input type="email" id="admFuncEmail" placeholder="Ex: carlos@email.com" style="width: 100%; margin: 0;">
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Senha de Acesso</label>
-                    <input type="password" id="admFuncSenha" placeholder="Mín. 6 caracteres" style="width: 100%; margin: 0;">
-                </div>
-            </div>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Cargo / Perfil</label>
-                    <select id="admFuncCargo" style="width: 100%; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-                        <option value="" disabled selected>Selecione...</option>
-                        <option value="Síndico">Síndico</option>
-                        <option value="Administradora">Administradora</option>
-                        <option value="Porteiro">Porteiro</option>
-                        <option value="Zelador">Zelador</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Vincular ao Condomínio</label>
-                    <select id="admFuncCondominio" style="width: 100%; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-                        <option value="" disabled selected>Carregando condomínios...</option>
-                    </select>
-                </div>
-            </div>
-            
-            <button class="btn" onclick="criarUsuarioPeloADM()" style="background: #38bdf8; color: white; width: 100%; font-weight: bold; font-size: 16px; margin: 0;">
-                <i class="fa-solid fa-paper-plane"></i> Gerar Login e Enviar E-mail
-            </button>
-        </div>
-    </div>
-
-    <!-- TELA MASTER: CONTROLE GERAL -->
-    <!-- TELA MASTER: CONTROLE GERAL -->
-    <div id="adm-controle-geral" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-users-gear" style="color: #8b5cf6; margin-right: 10px;"></i>Controle Geral de Contas</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Visão completa de todos os usuários (síndicos e porteiros) cadastrados na sua plataforma.</p>
-            </div>
-        </div>
-        
-        <div class="box" style="padding: 0; overflow: visible; border: 1px solid #e2e8f0;">
-            
-            <!-- 🚀 INÍCIO DA NOVA BARRA DE FILTROS -->
-            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-users" style="color: #64748b; margin-right: 8px;"></i> Logins Ativos</h3>
-                
-                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
-                    <!-- Travei a largura máxima para não estourar a tela -->
-                    <select id="filtroCondominioGeral" onchange="filtrarUsuariosGeral()" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; background: white; width: 250px; margin: 0;">
-                        <option value="">🏢 Todos os Condomínios</option>
-                        <!-- O Javascript vai preencher os clientes aqui -->
-                    </select>
-                    
-                    <div style="position: relative; width: 250px;">
-                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 12px; color: #94a3b8;"></i>
-                        <input type="text" id="pesquisaUserGeral" placeholder="Buscar nome ou e-mail..." onkeyup="filtrarUsuariosGeral()" style="padding: 10px 10px 10px 35px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; width: 100%; margin: 0; box-sizing: border-box;">
-                    </div>
-                </div>
-            </div>
-            <!-- FIM DA BARRA DE FILTROS -->
-            
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead>
-                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
-                            <th style="padding: 15px 20px;">Usuário</th>
-                            <th style="padding: 15px 20px;">Condomínio Vinculado</th>
-                            <th style="padding: 15px 20px;">Perfil / Cargo</th>
-                            <th style="padding: 15px 20px; text-align: right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-usuarios-geral" style="font-size: 14px;">
-                        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando usuários...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- TELA 1: GESTÃO DE FATURAS E COBRANÇAS      -->
-    <!-- ========================================== -->
-    <div id="adm-faturas" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-file-invoice-dollar" style="color: #10b981; margin-right: 10px;"></i>Gestão de Faturas</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Controle de cobranças mensais dos condomínios.</p>
-            </div>
-            <button class="btn" style="background: #10b981; height: 45px; margin: 0;" onclick="gerarFaturasDoMes()">
-              <i class="fa-solid fa-plus"></i> Gerar Fatura
-            </button>
-        </div>
-
-        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
-            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-list" style="color: #64748b; margin-right: 8px;"></i> Histórico de Cobranças</h3>
-                
-                <select id="filtroStatusFatura" style="margin: 0; padding: 8px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; outline: none; cursor: pointer;">
-                    <option value="todas">Todas as Faturas</option>
-                    <option value="pendente">🟡 Pendentes</option>
-                    <option value="paga">🟢 Pagas</option>
-                    <option value="vencida">🔴 Vencidas</option>
-                </select>
-            </div>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left;">
-                    <thead>
-                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
-                            <th style="padding: 15px 20px;">Cliente (Condomínio)</th>
-                            <th style="padding: 15px 20px;">Vencimento</th>
-                            <th style="padding: 15px 20px;">Valor (R$)</th>
-                            <th style="padding: 15px 20px;">Status</th>
-                            <th style="padding: 15px 20px; text-align: right;">Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-faturas-saas" style="font-size: 14px;">
-                        <tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando faturas...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ========================================== -->
-    <!-- TELA 2: DASHBOARD DE RECEITA MRR           -->
-    <!-- ========================================== -->
-    <div id="adm-mrr" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-chart-pie" style="color: #3b82f6; margin-right: 10px;"></i>Dashboard de Receita (MRR)</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Análise de saúde financeira da plataforma.</p>
-            </div>
-        </div>
-
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 25px; gap: 15px;">
-            <!-- Receita Bruta Prevista -->
-            <div class="stat-card" style="border-bottom: 4px solid #3b82f6; background: white; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Receita Mensal (MRR)</h3>
-                    <i class="fa-solid fa-sack-dollar" style="color: #3b82f6; font-size: 20px;"></i>
-                </div>
-                <span id="mrr-total-previsto" style="font-size: 28px; font-weight: bold; color: #0f172a; display: block;">R$ 0,00</span>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">100% das assinaturas ativas</p>
-            </div>
-
-            <!-- Receita Recebida -->
-            <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Já Recebido (Mês Atual)</h3>
-                    <i class="fa-solid fa-hand-holding-dollar" style="color: #10b981; font-size: 20px;"></i>
-                </div>
-                <span id="mrr-total-recebido" style="font-size: 28px; font-weight: bold; color: #10b981; display: block;">R$ 0,00</span>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">Faturas pagas no mês</p>
-            </div>
-
-            <!-- Inadimplência -->
-            <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
-                    <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Inadimplência</h3>
-                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 20px;"></i>
-                </div>
-                <span id="mrr-total-vencido" style="font-size: 28px; font-weight: bold; color: #ef4444; display: block;">R$ 0,00</span>
-                <p style="margin: 5px 0 0 0; font-size: 12px; color: #94a3b8;">Faturas em atraso</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="relatorios" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-chart-line" style="color: #38bdf8; margin-right: 10px;"></i>Central de Relatórios</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Geração de PDF integrada com o Banco de Dados</p>
-            </div>
-        </div>
-
-        <div class="box" style="margin-bottom: 25px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; background: rgba(56, 189, 248, 0.05); border-color: #38bdf8;">
-            <h3 style="margin: 0; color: #0f172a; display: flex; align-items: center; font-size: 16px;"><i class="fa-solid fa-calendar-days" style="color: #38bdf8; margin-right: 8px;"></i> Período do Relatório:</h3>
-            
-            <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                <input type="date" id="relDataInicio" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; cursor: pointer; margin: 0;" title="Data Inicial">
-            </div>
-            
-            <span style="color: #64748b; font-weight: bold;">até</span>
-            
-            <div style="display: flex; flex: 1; min-width: 140px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
-                <input type="date" id="relDataFim" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; cursor: pointer; margin: 0;" title="Data Final">
-            </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-            
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #3b82f6; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-box-open" style="font-size: 40px; color: #3b82f6; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Encomendas</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relatório do período selecionado acima.</p>
-                <button class="btn" style="background: #3b82f6; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('encomendas', true, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Ocorrências</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relatório do período selecionado acima.</p>
-                <button class="btn" style="background: #ef4444; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('ocorrencias', true, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #10b981; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-clipboard-check" style="font-size: 40px; color: #10b981; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Livro de Plantão</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relatório do período selecionado acima.</p>
-                <button class="btn" style="background: #10b981; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('passagem', true, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #8b5cf6; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-calendar-check" style="font-size: 40px; color: #8b5cf6; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Reservas de Áreas</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Reservas do período selecionado acima.</p>
-                <button class="btn" style="background: #8b5cf6; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('reservas', true, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #64748b; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-car" style="font-size: 40px; color: #64748b; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Veículos</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relação completa de toda a garagem.</p>
-                <button class="btn" style="background: #64748b; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('veiculos', false, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF (Completo)</button>
-            </div>
-            
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #0ea5e9; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-users" style="font-size: 40px; color: #0ea5e9; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Moradores</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relação completa de apartamentos.</p>
-                <button class="btn" style="background: #0ea5e9; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('moradores', false, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF (Completo)</button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #14b8a6; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-id-badge" style="font-size: 40px; color: #14b8a6; margin-bottom: 15px;"></i>
-                <h3 style="margin-bottom: 10px; color: #0f172a;">Equipe</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Lista de funcionários ativos cadastrados.</p>
-                <button class="btn" style="background: #14b8a6; width: 100%; margin: 0;" onclick="gerarRelatorioFiltrado('equipe', false, this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF (Completo)</button>
-            </div>
-
-            <div class="card" style="padding: 20px; border-top: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05); text-align: left;">
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <i class="fa-solid fa-user-clock" style="font-size: 24px; color: #f59e0b;"></i>
-                    <h3 style="margin: 0; color: #0f172a;">Folha de Ponto (PDF)</h3>
-                </div>
-                
-                <label style="font-size: 12px; color: #64748b;">Mês de Referência:</label>
-                <input type="month" id="relatorioMesPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 10px; cursor: pointer;">
-                
-                <label style="font-size: 12px; color: #64748b;">Funcionário:</label>
-                <select id="relatorioFuncPonto" style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 15px; cursor: pointer;">
-                    <option value="" disabled selected>Escolha o funcionário...</option>
-                </select>
-
-                <button class="btn" style="background: #f59e0b; color: white; width: 100%; margin: 0; border: none;" onclick="gerarPdfPontoViaRelatorio()">
-                    <i class="fa-solid fa-cloud-arrow-down"></i> Extrair Documento CLT
-                </button>
-            </div>
-
-            <div class="card" style="text-align: center; padding: 30px 20px; border-top: 4px solid #ef4444; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                <i class="fa-solid fa-motorcycle" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
-                <h3 style="margin: 0; color: #0f172a;">Delivery Rápido</h3>
-                <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">Relatório do período.</p>
-                <button class="btn" style="background: #ef4444; width: 100%; margin: 0;" onclick="gerarRelatorioDelivery(this)"><i class="fa-solid fa-cloud-arrow-down" style="margin-right: 5px;"></i> Extrair PDF</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="perfil" class="tela">
-        <div class="box" style="max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1e293b; margin-bottom: 20px;"><i class="fa-solid fa-user-gear" style="color: #3b82f6;"></i> Meu Perfil</h2>
-            <p style="color: #64748b; margin-bottom: 20px;">Gerencie as suas informações de acesso e dados de contato.</p>
-
-            <form id="formDadosPessoais">
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilEmail" style="display: block; font-weight: 600; margin-bottom: 5px;">E-mail de Acesso (Não alterável)</label>
-                    <input type="email" id="perfilEmail" disabled style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f1f5f9; cursor: not-allowed;">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilNome" style="display: block; font-weight: 600; margin-bottom: 5px;">Nome Completo</label>
-                    <input type="text" id="perfilNome" required placeholder="Carregando..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilWhatsapp" style="display: block; font-weight: 600; margin-bottom: 5px;">WhatsApp / Telefone</label>
-                    <input type="text" id="perfilWhatsapp" required placeholder="(00) 00000-0000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                </div>
-
-                <button type="submit" id="btnSalvarDados" style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
-                </button>
-            </form>
-
-            <div style="margin: 30px 0 20px 0; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
-                <h3><i class="fa-solid fa-lock" style="color: #ef4444;"></i> Alterar Senha de Acesso</h3>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Por segurança, escolha uma senha forte com mais de 6 caracteres.</p>
-            </div>
-
-            <form id="formAlterarSenha">
-                <div style="margin-bottom: 15px;">
-                    <label for="novaSenha" style="display: block; font-weight: 600; margin-bottom: 5px;">Nova Senha</label>
-                    <input type="password" id="novaSenha" required placeholder="Digite a nova senha" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <label for="confirmarNovaSenha" style="display: block; font-weight: 600; margin-bottom: 5px;">Confirmar Nova Senha</label>
-                    <input type="password" id="confirmarNovaSenha" required placeholder="Repita a nova senha" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                </div>
-
-                <button type="submit" id="btnSalvarSenha" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">
-                    <i class="fa-solid fa-key"></i> Atualizar Senha
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <div id="configuracoes" class="tela">
-        <div class="box" style="max-width: 650px; margin: 0 auto; border-top: 4px solid #10b981;">
-            <h2 style="color: #1e293b; margin-bottom: 10px;"><i class="fa-solid fa-gears" style="color: #10b981;"></i> Configurações do Sistema</h2>
-            <p style="color: #64748b; margin-bottom: 25px; font-size: 14px;">Integração do motor de e-mails (Brevo) e ajustes globais da plataforma.</p>
-
-            <form id="form-smtp">
-                <div style="background: rgba(16, 185, 129, 0.05); border: 1px dashed #10b981; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #0f172a;"><i class="fa-solid fa-envelope-circle-check" style="color: #10b981;"></i> Credenciais de Disparo</h3>
-                    
-                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; margin-bottom: 15px;">
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b; font-size: 13px;">Servidor (Host)</label>
-                            <input type="text" id="smtp-host" placeholder="ex: smtp-relay.brevo.com" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b; font-size: 13px;">Porta</label>
-                            <input type="number" id="smtp-port" placeholder="ex: 587" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                        </div>
-                    </div>
-
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b; font-size: 13px;">Usuário (Login)</label>
-                        <input type="email" id="smtp-user" placeholder="Seu e-mail da Brevo" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                    </div>
-
-                    <div style="margin-bottom: 10px;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b; font-size: 13px;">Chave Mestra (Senha API / SMTP)</label>
-                        <input type="password" id="smtp-pass" placeholder="Cole sua chave gigante aqui..." required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
-                    </div>
-                </div>
-
-                <button type="submit" class="btn" style="background-color: #10b981; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; margin: 0;">
-                    <i class="fa-solid fa-plug-circle-check"></i> Conectar e Salvar Motor de E-mail
-                </button>
-            </form>
-        </div>
-    </div>
-    <div id="ajuda" class="tela">
-        <div class="box" style="max-width: 600px; margin: 0 auto; border-top: 4px solid #3b82f6;">
-            <h2 style="color: #1e293b; margin-bottom: 10px;"><i class="fa-solid fa-headset" style="color: #3b82f6;"></i> Suporte Condo Up</h2>
-            <p style="color: #64748b; margin-bottom: 25px; font-size: 14px;">Precisa de ajuda ou encontrou algum problema? Abra um chamado direto com a nossa equipe técnica (Evo Upi).</p>
-
-            <form id="formSuporte">
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b;">Assunto da Ajuda</label>
-                    <select id="supAssunto" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 14px; color: #334155;">
-                        <option value="" disabled selected>Selecione o motivo...</option>
-                        <option value="Dúvida no Sistema">Dúvida no Sistema</option>
-                        <option value="Erro / Bug na Tela">Erro / Bug na Tela</option>
-                        <option value="Sugestão de Melhoria">Sugestão de Melhoria</option>
-                        <option value="Problema com Login/Senha">Problema com Login/Senha</option>
-                        <option value="Outros">Outros</option>
-                    </select>
-                </div>
-
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b;">Prioridade</label>
-                    <select id="supPrioridade" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-size: 14px; color: #334155;">
-                        <option value="Baixa">🟢 Baixa (Pode esperar)</option>
-                        <option value="Média" selected>🟡 Média (Incomoda, mas dá pra usar)</option>
-                        <option value="Alta">🔴 Alta (Sistema travado / Crítico)</option>
-                    </select>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 5px; color: #1e293b;">Descreva o Problema</label>
-                    <textarea id="supMensagem" required placeholder="Explique com detalhes o que aconteceu ou a sua dúvida..." style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; min-height: 120px; font-size: 14px; color: #334155; font-family: inherit;"></textarea>
-                </div>
-
-                <button type="submit" id="btnEnviarSuporte" class="btn" style="background-color: #3b82f6; color: white; width: 100%; padding: 15px; font-size: 16px; font-weight: bold; margin: 0;">
-                    <i class="fa-solid fa-paper-plane"></i> Enviar Chamado
-                </button>
-            </form>
-
-            <div style="margin: 30px 0 20px 0; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px dashed #cbd5e1; text-align: center;">
-                <p style="margin: 0; color: #475569; font-size: 14px;">
-                    <i class="fa-brands fa-whatsapp" style="color: #10b981; font-size: 18px;"></i> 
-                    Atendimento Urgente? <strong>(84) 99415-6452</strong>
-                </p>
-                <small style="color: #94a3b8;">Segunda a Sexta, das 08h às 18h</small>
-            </div>
-        </div>
-    </div>
-
-    <!-- TELA MASTER: CONDOMINIOS (COM O NOVO LAYOUT DO BOTÃO AÇÕES) -->
-    <div id="adm-condominios" class="tela">
-        <div class="dash-header" style="margin-bottom: 20px;">
-            <div>
-                <h2><i class="fa-solid fa-building" style="color: #38bdf8; margin-right: 10px;"></i>Gestão de Condomínios (SaaS)</h2>
-                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Controle de clientes, planos e acessos remotos.</p>
-            </div>
-            <button class="btn" style="background: #38bdf8; height: 45px; margin: 0;" onclick="document.getElementById('box-cad-condominio').style.display='block'">
-                <i class="fa-solid fa-plus"></i> Novo Cliente
-            </button>
-        </div>
-
-        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 25px; gap: 15px;">
-            <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; text-align: center; padding: 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Receita Recorrente (MRR)</h3>
-                <span id="master-mrr" style="font-size: 26px; font-weight: bold; color: #10b981; display: block; margin-bottom: 5px;">R$ 0,00</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #3b82f6; background: white; text-align: center; padding: 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Total de Apartamentos</h3>
-                <span id="master-aptos" style="font-size: 26px; font-weight: bold; color: #3b82f6; display: block; margin-bottom: 5px;">0</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #8b5cf6; background: white; text-align: center; padding: 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Condomínios Ativos</h3>
-                <span id="master-ativos" style="font-size: 26px; font-weight: bold; color: #8b5cf6; display: block; margin-bottom: 5px;">0</span>
-            </div>
-            <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; text-align: center; padding: 20px;">
-                <h3 style="margin: 0 0 10px 0; font-size: 12px; color: #64748b; text-transform: uppercase;">Inadimplentes / Suspensos</h3>
-                <span id="master-suspensos" style="font-size: 26px; font-weight: bold; color: #ef4444; display: block; margin-bottom: 5px;">0</span>
-            </div>
-        </div>
-
-        <div id="box-cad-condominio" style="display: none; background: rgba(56, 189, 248, 0.05); border-radius: 12px; padding: 25px; border: 1px solid #bae6fd; margin-bottom: 25px; position: relative;">
-            <button onclick="document.getElementById('box-cad-condominio').style.display='none'" style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 18px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-            <h3 style="color: #0f172a; margin-top: 0; border-bottom: 1px dashed #bae6fd; padding-bottom: 10px; font-size: 16px;">
-                <i class="fa-solid fa-building-circle-check" style="color: #38bdf8;"></i> Cadastrar Novo Cliente
-            </h3>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 20px;">
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
-        <input type="text" id="novo-cond-nome" placeholder="Ex: Residencial Flores" style="width: 100%; margin-top: 0;">
-    </div>
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">ID Único (Sem espaços)</label>
-        <input type="text" id="novo-cond-id" placeholder="Ex: res_flores_001" style="width: 100%; margin-top: 0; font-family: monospace;">
-    </div>
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Quantidade de Aptos</label>
-        <input type="number" id="novo-cond-aptos" placeholder="Ex: 80" style="width: 100%; margin-top: 0;">
-    </div>
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Valor do Plano (R$)</label>
-        <input type="number" id="novo-cond-valor" placeholder="Ex: 890.00" style="width: 100%; margin-top: 0;">
-    </div>
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Período do Contrato</label>
-        <select id="novo-cond-periodo" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-            <option value="12">1 Ano (12 Meses)</option>
-            <option value="24">2 Anos (24 Meses)</option>
-            <option value="36">3 Anos (36 Meses)</option>
-        </select>
-    </div>
-    <div>
-        <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">Logo do Sistema (Opcional)</label>
-        <input type="file" id="novo-cond-logo" accept="image/*" style="width: 100%; font-size: 12px;">
-    </div>
-</div>
-
-            <button onclick="salvarNovoCondominioSaaS()" class="btn" style="background: #38bdf8; margin-top: 20px; width: 100%; max-width: 250px;">
-                <i class="fa-solid fa-check"></i> Salvar Condomínio
-            </button>
-        </div>
-
-        <div class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0; overflow: visible;">
-            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 16px;"><i class="fa-solid fa-list" style="color: #64748b; margin-right: 8px;"></i> Condomínios Cadastrados</h3>
-            </div>
-            <div style="overflow-x: auto; overflow: visible;">
-                <table style="width: 100%; border-collapse: collapse; text-align: left; overflow: visible;">
-                    <thead>
-                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
-                            <th style="padding: 15px 20px;">Condomínio</th>
-                            <th style="padding: 15px 20px;">Plano / Aptos</th>
-                            <th style="padding: 15px 20px;">Status</th>
-                            <th style="padding: 15px 20px; text-align: right;">Ações Mestre</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-condominios-saas" style="font-size: 14px;">
-                        <tr><td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Carregando sistema...</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-</div> 
-
-<div id="modalMorador" class="modal-overlay"><div class="modal-content"><button class="fechar-modal" onclick="fecharModalMorador()"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalMorador"></div></div></div>
-<div id="modalPlantao" class="modal-overlay"><div class="modal-content"><button class="fechar-modal" onclick="fecharModalPlantao()"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalPlantao"></div></div></div>
-<div id="modalVeiculo" class="modal-overlay"><div class="modal-content" style="max-width: 400px; padding: 0; overflow: hidden;"><button class="fechar-modal" onclick="fecharModalVeiculo()" style="z-index: 10; background: white; color: #1e293b; box-shadow: 0 2px 10px rgba(0,0,0,0.1);"><i class="fa-solid fa-xmark"></i></button><div id="conteudoModalVeiculo"></div></div></div>
-<div id="modalGestaoPonto" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);"><div class="modal-content" style="background: white; width: 90%; max-width: 400px; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);"><div id="modalPontoHeader" style="padding: 15px 20px; color: white; display: flex; justify-content: space-between; align-items: center;"><h3 id="modalPontoTitulo" style="margin: 0; font-size: 16px;">Lista de Funcionários</h3><button onclick="document.getElementById('modalGestaoPonto').style.display='none'" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button></div><div id="modalPontoLista" style="padding: 20px; max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;"></div></div></div>
-
-<div id="modal-permissao-ios" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6);">
-    <div style="background-color: white; margin: 20% auto; padding: 20px; border-radius: 10px; width: 80%; text-align: center; font-family: sans-serif;">
-        <h3 style="color: #333;">Notificações Desativadas</h3>
-        <p style="color: #666; font-size: 14px;">Para receber os avisos da portaria, precisamos que você libere as notificações.</p>
-        <p style="color: #666; font-size: 14px;">Vá em <strong>Ajustes > Safari > Avançado > Dados dos Sites</strong>, limpe os dados e acesse novamente.</p>
-        <button onclick="fecharModalIos()" style="background-color: #d9534f; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 15px; cursor: pointer;">Entendi</button>
-    </div>
-</div>
-
-<div id="modalMegafoneGlobal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 500px; border-top: 5px solid #ef4444; border-radius: 12px; padding: 25px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #0f172a; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-bullhorn" style="color: #ef4444; font-size: 24px;"></i> Megafone Global
-            </h3>
-            <button onclick="fecharModalMegafone()" style="background: #f1f5f9; border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <p style="color: #64748b; font-size: 14px; margin-bottom: 20px; line-height: 1.5;">
-            Envie uma notificação Push urgente para a tela do celular e PC de <b>absolutamente todos</b> os usuários de todos os condomínios ativos.
-        </p>
-        
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Título do Alerta</label>
-        <input type="text" id="megaTitulo" placeholder="Ex: Atualização Importante do Sistema" style="width: 100%; margin-bottom: 15px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; font-weight: bold;">
-        
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Mensagem Principal</label>
-        <textarea id="megaMensagem" placeholder="Escreva a mensagem que aparecerá na tela dos clientes..." style="width: 100%; min-height: 100px; margin-bottom: 20px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-family: inherit; outline: none; background: #f8fafc;"></textarea>
-        
-        <button onclick="dispararMegafoneGlobal(); fecharModalMegafone();" class="btn" style="background: #ef4444; color: white; width: 100%; margin: 0; padding: 15px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
-            <i class="fa-solid fa-tower-broadcast"></i> Propagar para Todos
+        <button class="btn-secondary" onclick="abrirModalInstall()">
+            <i class="fa-solid fa-download"></i> Como instalar o App
+        </button>
+
+        <button class="btn-tertiary" onclick="recuperarSenha()">
+            Esqueceu sua senha?
         </button>
     </div>
-</div>
-<div id="modalEditarCondominio" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 500px; border-top: 5px solid #38bdf8; border-radius: 12px; padding: 25px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #0f172a; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-pen-to-square" style="color: #38bdf8; font-size: 24px;"></i> Alterar Cliente
-            </h3>
-            <button onclick="fecharModalEditarSaaS()" style="background: #f1f5f9; border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+
+    <!-- ================================================= -->
+    <!-- TELA DE TUTORIAL DE INSTALAÇÃO (DESLIZA POR CIMA) -->
+    <!-- ================================================= -->
+    <div id="telaInstall" class="modal-install">
+        <div class="install-header">
+            <button onclick="fecharModalInstall()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            <h2><i class="fa-solid fa-mobile-screen"></i> Instalar App</h2>
+            <div style="flex: 1;"></div> <!-- Espaçador para alinhar ao centro -->
         </div>
-        
-        <input type="hidden" id="edit-cond-id">
 
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nome do Condomínio</label>
-        <input type="text" id="edit-cond-nome" style="width: 100%; margin-bottom: 15px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; font-weight: bold;">
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-    <div>
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Mensalidade (R$)</label>
-        <input type="number" id="edit-cond-valor" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
-    </div>
-    <div>
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Nº de Apartamentos</label>
-        <input type="number" id="edit-cond-aptos" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
-    </div>
-</div>
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-    <div>
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Período do Contrato</label>
-        <select id="edit-cond-periodo" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: white;">
-            <option value="12">1 Ano (12 Meses)</option>
-            <option value="24">2 Anos (24 Meses)</option>
-            <option value="36">3 Anos (36 Meses)</option>
-        </select>
-    </div>
-    <div>
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Alterar Logo</label>
-        <input type="file" id="edit-cond-logo" accept="image/*" style="width: 100%; font-size: 12px;">
-    </div>
-</div>
+        <div class="install-body">
+            <div style="text-align: center;">
+                <div class="badge-otimizado">
+                    <i class="fa-solid fa-circle-check"></i> WEB APP OTIMIZADO
+                </div>
+                <p class="install-desc">Transforme o sistema em um aplicativo no seu celular para acessar mais rápido e receber avisos importantes.</p>
+            </div>
 
-        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Status da Licença</label>
-        <select id="edit-cond-status" style="width: 100%; margin-bottom: 25px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; cursor: pointer; font-weight: bold;">
-            <option value="true">🟢 Ativo (Acesso Liberado)</option>
-            <option value="false">🔴 Suspenso (Bloqueado)</option>
-        </select>
-        
-        <button onclick="salvarEdicaoCondominioSaaS()" class="btn" style="background: #38bdf8; color: white; width: 100%; margin: 0; padding: 15px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 10px rgba(56, 189, 248, 0.3);">
-            <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
-        </button>
-    </div>
-</div>
+            <!-- CARD ANDROID -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-android" style="color: #22c55e;"></i>
+                    <div>
+                        Android
+                        <span>Via Google Chrome</span>
+                    </div>
+                </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-messaging-compat.js"></script>
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra este site no <span class="highlight">Chrome</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque nos <span class="highlight">três pontos</span> <span class="icon-box"><i class="fa-solid fa-ellipsis-vertical"></i></span> no topo.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Selecione <span class="highlight">"Instalar aplicativo"</span> ou "Adicionar à tela inicial".</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Aguarde a conclusão e o ícone aparecerá no seu menu.</div>
+                </div>
+            </div>
 
-<script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
-        authDomain: "portaria-pro-ebc5c.firebaseapp.com",
-        projectId: "portaria-pro-ebc5c",
-        storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
-        messagingSenderId: "948781126590",
-        appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-    const auth = firebase.auth();
-</script>
+            <!-- CARD iOS -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-apple" style="color: #f8fafc;"></i>
+                    <div>
+                        iPhone / iOS
+                        <span>Via Safari</span>
+                    </div>
+                </div>
 
-<script>
-  function gerarPdfPontoViaRelatorio() {
-      const nome = document.getElementById('relatorioFuncPonto').value;
-      const mes = document.getElementById('relatorioMesPonto').value;
-      if(typeof gerarFolhaPontoIndividual === 'function') {
-          gerarFolhaPontoIndividual(nome, mes);
-      }
-  }
-  
-  // Clona os funcionários para o select do relatório sempre que abrir a aba
-  document.querySelector('button[onclick="trocarTela(\'relatorios\')"]')?.addEventListener('click', () => {
-      const origem = document.getElementById('filtroFuncionarioPonto');
-      const destino = document.getElementById('relatorioFuncPonto');
-      if(origem && destino) destino.innerHTML = origem.innerHTML;
-  });
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra o site pelo navegador <span class="highlight">Safari</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque no botão <span class="highlight">Compartilhar</span> <span class="icon-box"><i class="fa-solid fa-arrow-up-from-bracket"></i></span> (barra inferior).</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Procure e toque em <span class="highlight">"Adicionar à Tela de Início"</span> <span class="icon-box"><i class="fa-solid fa-square-plus"></i></span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Toque em <span class="highlight">Adicionar</span> no canto superior.</div>
+                </div>
+            </div>
 
-  /* SCRIPTS DO MENU GAVETA E MODAIS SaaS */
-  function toggleGaveta(id) {
-      const gaveta = document.getElementById(id);
-      const btn = gaveta.previousElementSibling;
-      gaveta.classList.toggle('aberta');
-      btn.classList.toggle('gaveta-aberta');
-  }
-
-  function abrirModalMegafone() { document.getElementById('modalMegafoneGlobal').style.display = 'flex'; }
-  function fecharModalMegafone() { document.getElementById('modalMegafoneGlobal').style.display = 'none'; }
-  
-  function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
-</script>
-
-<script src="js/app.js?v=133"></script>
-<script src="js/equipe.js?v=14"></script>
-<script src="js/plantao.js?v=13"></script>
-<script src="js/ponto.js?v=15"></script>
-<script src="js/moradores.js?v=17"></script>
-<script src="js/veiculos.js?v=3"></script>
-<script src="js/reservas.js?v=13"></script>
-<script src="js/ocorrencias.js?v=14"></script>
-<script src="js/encomendas.js?v=16"></script>
-<script src="js/comunicados.js?v=14"></script>
-<script src="js/relatorios.js?v=12"></script>
-<script src="js/limpeza.js?v=11"></script>
-<script src="js/delivery.js?v=13"></script>
-<script src="js/autorizacoes.js"></script>
-<script src="js/perfil.js?v=11"></script>
-<script src="js/ajuda.js?v=11"></script> 
-<script src="js/transportadoras.js?v=1"></script>
-<script src="js/adm.js?v=16"></script>
-<script src="js/financeiro.js?v=1"></script>
-<script src="js/notificacoes.js?v=2"></script>
-
-
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=133')
-        .then(registration => {
-          console.log('ServiceWorker registrado com sucesso!', registration.scope);
-        })
-        .catch(err => {
-          console.log('Falha no registro do ServiceWorker: ', err);
-        });
-    });
-  }
-</script>
-
-<script>
-    document.getElementById('form-smtp').addEventListener('submit', async function(event) {
-        event.preventDefault(); 
-        
-        const host = document.getElementById('smtp-host').value;
-        const port = document.getElementById('smtp-port').value;
-        const user = document.getElementById('smtp-user').value;
-        const pass = document.getElementById('smtp-pass').value;
-
-        try {
-            // Salvando as credenciais no cofre do Firebase
-            await db.collection("configuracoes").doc("smtp").set({
-                host: host,
-                port: port,
-                user: user,
-                pass: pass 
-            });
+            <!-- CARD POR QUE INSTALAR -->
+            <div class="install-card why">
+                <div class="bolt-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3 style="margin-bottom: 10px; color: #f8fafc; font-size: 18px;">Por que instalar?</h3>
+                <p style="color: #94a3b8; font-size: 14px; line-height: 1.6;">
+                    Instalando o Web App, você terá acesso instantâneo sem precisar digitar a URL. O sistema funcionará como um aplicativo comum, ocupando quase nada de memória no seu aparelho.
+                </p>
+            </div>
             
-            alert("✅ Credenciais da Brevo salvas no cofre com sucesso!");
-            document.getElementById('smtp-pass').value = ''; 
-        } catch (error) {
-            console.error("Erro ao salvar:", error);
-            alert("❌ Erro ao salvar configurações no banco.");
+            <div style="height: 40px;"></div> <!-- Margem extra no final -->
+        </div>
+    </div>
+
+    <!-- SCRIPTS DO FIREBASE -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // CONFIGURAÇÃO DO SEU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
+            authDomain: "portaria-pro-ebc5c.firebaseapp.com",
+            projectId: "portaria-pro-ebc5c",
+            storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
+            messagingSenderId: "948781126590",
+            appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // CONTROLE DO TUTORIAL DE INSTALAÇÃO
+        function abrirModalInstall() {
+            document.getElementById('telaInstall').style.display = 'flex';
         }
-    });
-</script>
 
-<div id="modalAprovacaoMoradores" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 600px; width: 90%; background: #0f172a; border-top: 5px solid #10b981; border-radius: 12px; padding: 25px; max-height: 80vh; overflow-y: auto;">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #f8fafc; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-user-clock" style="color: #10b981; font-size: 24px;"></i> Cadastros Pendentes
-            </h3>
-            <button onclick="fecharModalAprovacao()" style="background: rgba(255,255,255,0.1); border: none; font-size: 16px; cursor: pointer; color: #cbd5e1; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        
-        <div id="lista-moradores-pendentes" style="display: flex; flex-direction: column; gap: 15px;">
-            </div>
+        function fecharModalInstall() {
+            document.getElementById('telaInstall').style.display = 'none';
+        }
 
-    </div>
-</div>
+        // MOSTRAR/ESCONDER SENHA
+        function toggleSenha() {
+            const input = document.getElementById('senha');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash icon-right';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye icon-right';
+            }
+        }
 
-<!-- MODAL DE QR CODE E LINK DE CONVITE -->
-<div id="modalQRCodeConvite" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 400px; width: 90%; background: #0f172a; border-top: 5px solid #8b5cf6; border-radius: 16px; padding: 25px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #f8fafc; font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-qrcode" style="color: #8b5cf6;"></i> Portal do Morador
-            </h3>
-            <button onclick="document.getElementById('modalQRCodeConvite').style.display='none'" style="background: rgba(255,255,255,0.1); border: none; font-size: 16px; cursor: pointer; color: #cbd5e1; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">Imprima este QR Code para a portaria/elevador ou copie o link para enviar no grupo do condomínio.</p>
-
-        <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 20px; border: 4px solid #f8fafc; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-            <img id="img-qrcode-convite" src="" alt="QR Code" style="width: 200px; height: 200px; display: block;">
-        </div>
-
-        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 5px; display: flex; align-items: center; margin-bottom: 15px;">
-            <input type="text" id="input-link-convite" readonly style="background: transparent; border: none; color: #cbd5e1; width: 100%; padding: 8px; font-size: 13px; outline: none;">
-        </div>
-
-        <button onclick="copiarLinkConvite()" class="btn" style="background: #8b5cf6; color: white; width: 100%; margin: 0; padding: 15px; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);">
-            <i class="fa-solid fa-copy"></i> Copiar Link Oficial
-        </button>
-    </div>
-</div>
-
-<!-- 🚀 MODAL: EDITAR USUÁRIO GERAL -->
-    <div id="modalEditarUsuarioGeral" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-        <div class="modal-content" style="max-width: 450px; width: 90%; background: #fff; border-top: 5px solid #8b5cf6; border-radius: 12px; padding: 25px; position: relative;">
-            <button onclick="fecharModalEditarUsuarioGeral()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+        // SIMULAÇÃO DO CHECK CLOUDFLARE
+        let segurancaOk = false;
+        function verificarSeguranca() {
+            const icone = document.getElementById('check-cf');
+            const texto = document.getElementById('txt-cf');
+            const caixa = document.getElementById('box-cf');
             
-            <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-user-pen" style="color: #8b5cf6;"></i> Editar Perfil do Usuário</h3>
+            icone.className = 'fa-solid fa-spinner fa-spin';
+            texto.innerText = 'Verificando segurança...';
             
-            <input type="hidden" id="editUserId">
+            setTimeout(() => {
+                icone.className = 'fa-solid fa-circle-check check-icon';
+                texto.innerText = 'Sucesso!';
+                caixa.style.borderColor = '#10b981';
+                caixa.style.cursor = 'default';
+                segurancaOk = true;
+            }, 1000);
+        }
+
+        // 🚀 MOTOR DE LOGIN PRINCIPAL COM A TRAVA SAAS E PASSE LIVRE DO ADM
+        function fazerLogin() {
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+            const termos = document.getElementById('termos').checked;
+
+            if (!termos) {
+                alert("⚠️ Você precisa aceitar os Termos de Uso e LGPD para entrar.");
+                return;
+            }
+
+            if (!segurancaOk) {
+                alert("⚠️ Por favor, clique na caixa da Cloudflare para confirmar que você não é um robô.");
+                return;
+            }
+
+            if (!email || !senha) {
+                alert("⚠️ Preencha e-mail e senha.");
+                return;
+            }
+
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            auth.signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    const uid = userCredential.user.uid;
+                    
+                    db.collection("usuarios").doc(uid).get().then((doc) => {
+                        if (doc.exists) {
+                            const dados = doc.data();
+                            const cargoLogado = (dados.cargo || "").toLowerCase();
+                            
+                            // 🚀 PASSE LIVRE PARA O MESTRE/ADM GLOBAL!
+                            const isMaster = cargoLogado.includes('master') || cargoLogado.includes('adm') || cargoLogado.includes('admin') || cargoLogado.includes('gestor');
+
+                            if (isMaster) {
+                                // Se for o dono do sistema, entra direto sem cobrar condomínio!
+                                localStorage.setItem("condoup_logado", "true");
+                                localStorage.setItem("usuario_uid", uid);
+                                localStorage.setItem("usuario_nome", dados.nome || "Master");
+                                localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                localStorage.setItem("condominioId", dados.condominioId || "");
+                                window.location.href = "index.html"; 
+                                return;
+                            }
+
+                            const condominioId = dados.condominioId;
+
+                            if(!condominioId) {
+                                alert("❌ Erro: Usuário sem condomínio vinculado.");
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                                return;
+                            }
+
+                            // 🚀 AQUI ACONTECE A MÁGICA: CHECAGEM DO STATUS DO CONDOMÍNIO (SAAS)
+                            db.collection("condominios").doc(condominioId).get().then((docCondo) => {
+                                if (docCondo.exists) {
+                                    const dadosCondo = docCondo.data();
+
+                                    // VERIFICA SE O CONDOMÍNIO ESTÁ COM A MENSALIDADE EM DIA
+                                    if (dadosCondo.ativo === true) {
+                                        
+                                        // 🟢 TUDO CERTO! Salva os dados na memória e libera a catraca
+                                        localStorage.setItem("condoup_logado", "true");
+                                        localStorage.setItem("usuario_uid", uid);
+                                        localStorage.setItem("usuario_nome", dados.nome || "Usuário");
+                                        localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                        localStorage.setItem("condominioId", condominioId);
+                                        localStorage.setItem("usuario_apto", dados.apto || "");
+                                        localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
+                                        
+                                        // 🚀 DESVIO INTELIGENTE DE ROTAS
+                                        const cargoMorador = (dados.cargo || "").toLowerCase();
+                                        
+                                        if (cargoMorador === "morador") {
+                                            console.log("Logado como Morador. Redirecionando para a pasta morador/");
+                                            window.location.href = "morador/"; 
+                                        } else {
+                                            console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                                            window.location.href = "index.html"; 
+                                        }
+
+                                    } else {
+                                        // 🚫 BLOQUEADO! O painel Zero Labs marcou como ativo: false
+                                        auth.signOut();
+                                        alert("⚠️ ACESSO SUSPENSO\nO sistema deste condomínio encontra-se inativo no momento. Por favor, entre em contato com a administração.");
+                                        restaurarBotaoDeLogin(btn);
+                                    }
+                                } else {
+                                    alert("❌ Erro: Ficha do condomínio não encontrada no sistema matriz.");
+                                    auth.signOut();
+                                    restaurarBotaoDeLogin(btn);
+                                }
+                            }).catch((err) => {
+                                console.error("Erro ao verificar status do condomínio:", err);
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                            });
+                            
+                        } else {
+                            alert("❌ Usuário não encontrado no banco de dados.");
+                            auth.signOut();
+                            restaurarBotaoDeLogin(btn);
+                        }
+                    }).catch((err) => {
+                        console.error("Erro ao buscar dados do usuário:", err);
+                        auth.signOut();
+                        restaurarBotaoDeLogin(btn);
+                    });
+                })
+                .catch((error) => {
+                    alert("❌ Erro ao entrar: Verifique seu e-mail ou senha.");
+                    console.error(error);
+                    restaurarBotaoDeLogin(btn);
+                });
+        }
+
+        // Função auxiliar para voltar o botão ao normal em caso de erro
+        function restaurarBotaoDeLogin(btn) {
+            btn.innerHTML = 'Entrar na Plataforma';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+
+        // Função para o botão "Esqueci minha senha"
+        function recuperarSenha() {
+            const email = prompt("🔒 Digite o seu e-mail de acesso para receber o link de redefinição:");
             
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Nome Completo</label>
-                <input type="text" id="editUserNome" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
-            </div>
+            if (!email) return;
 
-            <div style="margin-bottom: 15px;">
-                <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">E-mail (Login) - <span style="color: #ef4444; font-weight: normal;">*Não pode ser alterado</span></label>
-                <input type="email" id="editUserEmail" disabled style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; background: #f1f5f9; color: #64748b; cursor: not-allowed;">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Cargo / Perfil</label>
-                    <select id="editUserCargo" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
-                        <option value="Síndico">Síndico</option>
-                        <option value="Administradora">Administradora</option>
-                        <option value="Porteiro">Porteiro</option>
-                        <option value="Zelador">Zelador</option>
-                        <option value="Morador">Morador</option>
-                        <option value="ADM">ADM</option>
-                    </select>
-                </div>
-                <div>
-                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Condomínio</label>
-                    <select id="editUserCondominio" style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none;">
-                        <!-- JS vai preencher -->
-                    </select>
-                </div>
-            </div>
-
-            <!-- Botão Mágico de Recuperar Senha -->
-            <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <p style="font-size: 12px; color: #b45309; margin-bottom: 10px; font-weight: 600;">O usuário esqueceu a senha?</p>
-                <button onclick="enviarRedefinicaoSenhaGeral()" style="background: #f59e0b; color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;"><i class="fa-solid fa-envelope"></i> Enviar Link de Recuperação</button>
-            </div>
-
-            <button onclick="salvarEdicaoUsuarioGeral()" style="background: #8b5cf6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 15px;"><i class="fa-solid fa-check"></i> Salvar Alterações</button>
-        </div>
-    </div>
-
-<!-- ====================================================================== -->
-<!-- 🚀 MODAL UNIVERSAL: JUSTIFICATIVA DE ARQUIVAMENTO (PARA FUNCIONÁRIOS)  -->
-<!-- ====================================================================== -->
-<div id="modalJustificativaArquivamento" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 450px; width: 90%; background: #fff; border-top: 5px solid #ef4444; border-radius: 12px; padding: 25px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-        
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; color: #ef4444;">
-            <i class="fa-solid fa-circle-exclamation" style="font-size: 30px;"></i>
-            <h3 style="font-size: 18px; color: #0f172a; margin: 0;">Arquivar Registro</h3>
-        </div>
-
-        <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.5; background: #f8fafc; padding: 10px; border-left: 3px solid #ef4444; border-radius: 4px;">
-            Atenção: Seu perfil não possui permissão de exclusão direta. Por favor, informe o motivo do arquivamento para auditoria da administração.
-        </p>
-
-        <input type="hidden" id="justificativaItemId">
-        <input type="hidden" id="justificativaColecao">
-
-        <div style="margin-bottom: 15px;">
-            <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Motivo Principal</label>
-            <select id="motivoArquivamento" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #fff; cursor: pointer;">
-                <option value="Cadastrado por engano">Cadastrado por engano / Erro de digitação</option>
-                <option value="Registro Duplicado">Registro Duplicado</option>
-                <option value="Morador cancelou">Morador / Visitante cancelou</option>
-                <option value="Outro motivo">Outro motivo (Especifique abaixo)</option>
-            </select>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-            <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Detalhes da Correção (Opcional)</label>
-            <textarea id="detalhesArquivamento" rows="3" placeholder="Ex: Placa do carro estava errada e cadastrei novamente..." style="width: 100%; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; outline: none; resize: none; font-family: inherit; font-size: 13px;"></textarea>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-            <button onclick="document.getElementById('modalJustificativaArquivamento').style.display='none'" style="flex: 1; background: #f1f5f9; color: #64748b; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Cancelar</button>
-            
-            <button onclick="confirmarArquivamentoComJustificativa()" style="flex: 1; background: #ef4444; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);">
-                <i class="fa-solid fa-box-archive"></i> Arquivar
-            </button>
-        </div>
-    </div>
-</div>
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("✅ Link de redefinição enviado! Verifique a sua caixa de entrada (e o Spam).");
+                })
+                .catch((error) => {
+                    console.error("Erro ao resetar senha:", error);
+                    if (error.code === 'auth/user-not-found') {
+                        alert("❌ Este e-mail não está cadastrado no sistema.");
+                    } else {
+                        alert("❌ Erro ao enviar e-mail: " + error.message);
+                    }
+                });
+        }
+    </script>
 </body>
 </html>
