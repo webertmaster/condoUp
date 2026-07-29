@@ -628,7 +628,7 @@
             }, 1000);
         }
 
-        // 🚀 MOTOR DE LOGIN PRINCIPAL (GUARDA DE TRÂNSITO)
+        // 🚀 MOTOR DE LOGIN PRINCIPAL COM A TRAVA SAAS E PASSE LIVRE DO ADM
         function fazerLogin() {
             const email = document.getElementById('email').value.trim();
             const senha = document.getElementById('senha').value.trim();
@@ -652,6 +652,7 @@
             const btn = document.querySelector('.btn-primary');
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
             btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
 
             auth.signInWithEmailAndPassword(email, senha)
                 .then((userCredential) => {
@@ -660,45 +661,99 @@
                     db.collection("usuarios").doc(uid).get().then((doc) => {
                         if (doc.exists) {
                             const dados = doc.data();
-                            
-                            // Salva as credenciais básicas
-                            localStorage.setItem("condoup_logado", "true");
-                            localStorage.setItem("usuario_uid", uid);
-                            localStorage.setItem("usuario_nome", dados.nome || "Usuário");
-                            localStorage.setItem("usuario_cargo", dados.cargo || "");
-                            localStorage.setItem("condominioId", dados.condominioId || "");
-                            
-                            // 🚀 ADICIONE ESTA LINHA PARA O APP SABER O APARTAMENTO:
-                            localStorage.setItem("usuario_apto", dados.apto || "");
-                            
-                            // 🚀 Guarda a obrigação do Ponto na memória!
-                            localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
-                            
-                            // 🚀 DESVIO INTELIGENTE DE ROTAS
                             const cargoLogado = (dados.cargo || "").toLowerCase();
                             
-                            if (cargoLogado === "morador") {
-                                console.log("Logado como Morador. Redirecionando para a pasta morador/");
-                                window.location.href = "morador/"; 
-                            } else {
-                                console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                            // 🚀 PASSE LIVRE PARA O MESTRE/ADM GLOBAL!
+                            const isMaster = cargoLogado.includes('master') || cargoLogado.includes('adm') || cargoLogado.includes('admin') || cargoLogado.includes('gestor');
+
+                            if (isMaster) {
+                                // Se for o dono do sistema, entra direto sem cobrar condomínio!
+                                localStorage.setItem("condoup_logado", "true");
+                                localStorage.setItem("usuario_uid", uid);
+                                localStorage.setItem("usuario_nome", dados.nome || "Master");
+                                localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                localStorage.setItem("condominioId", dados.condominioId || "");
                                 window.location.href = "index.html"; 
+                                return;
                             }
+
+                            const condominioId = dados.condominioId;
+
+                            if(!condominioId) {
+                                alert("❌ Erro: Usuário sem condomínio vinculado.");
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                                return;
+                            }
+
+                            // 🚀 AQUI ACONTECE A MÁGICA: CHECAGEM DO STATUS DO CONDOMÍNIO (SAAS)
+                            db.collection("condominios").doc(condominioId).get().then((docCondo) => {
+                                if (docCondo.exists) {
+                                    const dadosCondo = docCondo.data();
+
+                                    // VERIFICA SE O CONDOMÍNIO ESTÁ COM A MENSALIDADE EM DIA
+                                    if (dadosCondo.ativo === true) {
+                                        
+                                        // 🟢 TUDO CERTO! Salva os dados na memória e libera a catraca
+                                        localStorage.setItem("condoup_logado", "true");
+                                        localStorage.setItem("usuario_uid", uid);
+                                        localStorage.setItem("usuario_nome", dados.nome || "Usuário");
+                                        localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                        localStorage.setItem("condominioId", condominioId);
+                                        localStorage.setItem("usuario_apto", dados.apto || "");
+                                        localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
+                                        
+                                        // 🚀 DESVIO INTELIGENTE DE ROTAS
+                                        const cargoMorador = (dados.cargo || "").toLowerCase();
+                                        
+                                        if (cargoMorador === "morador") {
+                                            console.log("Logado como Morador. Redirecionando para a pasta morador/");
+                                            window.location.href = "morador/"; 
+                                        } else {
+                                            console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                                            window.location.href = "index.html"; 
+                                        }
+
+                                    } else {
+                                        // 🚫 BLOQUEADO! O painel Zero Labs marcou como ativo: false
+                                        auth.signOut();
+                                        alert("⚠️ ACESSO SUSPENSO\nO sistema deste condomínio encontra-se inativo no momento. Por favor, entre em contato com a administração.");
+                                        restaurarBotaoDeLogin(btn);
+                                    }
+                                } else {
+                                    alert("❌ Erro: Ficha do condomínio não encontrada no sistema matriz.");
+                                    auth.signOut();
+                                    restaurarBotaoDeLogin(btn);
+                                }
+                            }).catch((err) => {
+                                console.error("Erro ao verificar status do condomínio:", err);
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                            });
                             
                         } else {
                             alert("❌ Usuário não encontrado no banco de dados.");
                             auth.signOut();
-                            btn.innerHTML = 'Entrar na Plataforma';
-                            btn.style.opacity = '1';
+                            restaurarBotaoDeLogin(btn);
                         }
+                    }).catch((err) => {
+                        console.error("Erro ao buscar dados do usuário:", err);
+                        auth.signOut();
+                        restaurarBotaoDeLogin(btn);
                     });
                 })
                 .catch((error) => {
                     alert("❌ Erro ao entrar: Verifique seu e-mail ou senha.");
                     console.error(error);
-                    btn.innerHTML = 'Entrar na Plataforma';
-                    btn.style.opacity = '1';
+                    restaurarBotaoDeLogin(btn);
                 });
+        }
+
+        // Função auxiliar para voltar o botão ao normal em caso de erro
+        function restaurarBotaoDeLogin(btn) {
+            btn.innerHTML = 'Entrar na Plataforma';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
         }
 
         // Função para o botão "Esqueci minha senha"
