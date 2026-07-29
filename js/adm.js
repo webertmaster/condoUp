@@ -8,23 +8,20 @@ let perfilUsuarioLogado = "Desconhecido"; // Ex: Porteiro, Síndico, Master
 let isMasterSupremo = false;
 
 // ============================================================================
-// 🔒 MÓDULO DE PERMISSÕES E AUDITORIA (RESTRIÇÕES PARA PORTARIA)
+// 🔒 MÓDULO DE PERMISSÕES E AUDITORIA (RESTRIÇÕES PARA PORTARIA E GESTOR)
 // ============================================================================
 
 // Esta função é chamada logo após o login no auth.js para aplicar as regras visuais
 function aplicarPermissoesPorCargo(dadosUsuario) {
     perfilUsuarioLogado = dadosUsuario.cargo || "Desconhecido";
     
-    // Verifica se é porteiro ou zelador (Cargos operacionais)
-    const isOperacional = perfilUsuarioLogado.toLowerCase().includes('porteiro') || 
-                          perfilUsuarioLogado.toLowerCase().includes('funcionário') ||
-                          perfilUsuarioLogado.toLowerCase().includes('zelador');
+    const cargoLower = perfilUsuarioLogado.toLowerCase();
     
-    // Verifica se é Master ou Gestão
-    isMasterSupremo = perfilUsuarioLogado.toLowerCase().includes('master') || 
-                      perfilUsuarioLogado.toLowerCase().includes('adm') ||
-                      perfilUsuarioLogado.toLowerCase().includes('síndico') ||
-                      perfilUsuarioLogado.toLowerCase().includes('administradora');
+    // Verifica os perfis
+    const isOperacional = cargoLower.includes('porteiro') || cargoLower.includes('funcionário') || cargoLower.includes('zelador');
+    const isGestorZeroLabs = cargoLower.includes('gestor'); // 🚀 O ADM SUPORTE
+    
+    isMasterSupremo = cargoLower.includes('master') || cargoLower.includes('adm') || cargoLower.includes('síndico') || cargoLower.includes('administradora');
 
     if (isOperacional) {
         // Regra 1: Esconde o botão de CRIAR COMUNICADOS. Ele só visualiza.
@@ -39,20 +36,28 @@ function aplicarPermissoesPorCargo(dadosUsuario) {
         // Regra 2: Verifica se a aba de Ponto deve aparecer para este funcionário
         const menuPonto = document.getElementById('menu-ponto');
         if (menuPonto) {
-            // Se o master não marcou "batePonto" lá no cadastro, esconde a aba
             if (dadosUsuario.batePonto === true) {
                 menuPonto.style.display = 'flex';
             } else {
                 menuPonto.style.display = 'none';
             }
         }
-    } else if (isMasterSupremo) {
-        // Se for o gestor/síndico, garante que tudo de gerencial apareça e esconde a aba Ponto (gestor não bate ponto aqui)
+    } else if (isMasterSupremo || isGestorZeroLabs) {
+        // Se for gestor ou Master, libera criar comunicados e esconde Ponto
         const btnNovoComunicado = document.getElementById('btnSalvarComunicado');
         if (btnNovoComunicado) btnNovoComunicado.style.display = 'flex';
         
         const menuPonto = document.getElementById('menu-ponto');
         if (menuPonto) menuPonto.style.display = 'none';
+    }
+
+    // 🚨 BLOQUEIO FINANCEIRO PARA O GESTOR
+    if (isGestorZeroLabs) {
+        const btnGavetaFinanceiro = document.querySelector('button[onclick="toggleGaveta(\'gaveta-financeiro\')"]');
+        const gavetaFinanceiro = document.getElementById('gaveta-financeiro');
+        
+        if (btnGavetaFinanceiro) btnGavetaFinanceiro.style.display = 'none';
+        if (gavetaFinanceiro) gavetaFinanceiro.style.display = 'none';
     }
 }
 
@@ -138,26 +143,54 @@ async function executarArquivamentoNoBanco(colecao, id, motivo, detalhes) {
 async function salvarNovoCondominioSaaS() {
     const nomeInput = document.getElementById('novo-cond-nome');
     const idInput = document.getElementById('novo-cond-id');
+    const cnpjInput = document.getElementById('novo-cond-cnpj');
+    const emailInput = document.getElementById('novo-cond-email');
     const aptosInput = document.getElementById('novo-cond-aptos');
     const valorInput = document.getElementById('novo-cond-valor');
+    const vencimentoInput = document.getElementById('novo-cond-vencimento');
     const periodoInput = document.getElementById('novo-cond-periodo');
     const logoInput = document.getElementById('novo-cond-logo');
 
     const nome = nomeInput.value.trim();
     const condominioId = idInput.value.trim().toLowerCase().replace(/\s+/g, '_');
+    const cnpj = cnpjInput ? cnpjInput.value.trim() : '';
+    const emailContato = emailInput ? emailInput.value.trim() : '';
     const aptos = parseInt(aptosInput.value) || 0;
-    const valorPlano = parseFloat(valorInput.value) || 0;
-    const contratoMeses = parseInt(periodoInput.value) || 12;
+    
+    // Converte vírgula para ponto se o usuário digitar assim
+    let valorTexto = valorInput.value || "0";
+    if (typeof valorTexto === 'string') valorTexto = valorTexto.replace(',', '.');
+    const valor = parseFloat(valorTexto) || 0;
+    
+    const periodo = parseInt(periodoInput.value) || 12;
 
-    if (!nome || !condominioId) {
-        alert("⚠️ Preencha o Nome e o ID Único do condomínio!");
+    // 🚀 CORREÇÃO DO VENCIMENTO: Tira a palavra "Dia" e manda só o número pro Asaas
+    let diaVencimento = 10;
+    if (vencimentoInput && vencimentoInput.value) {
+        const apenasNumeros = vencimentoInput.value.replace(/\D/g, ''); 
+        if (apenasNumeros) diaVencimento = parseInt(apenasNumeros);
+    }
+
+    if (!nome || !condominioId || !cnpj || !emailContato) {
+        alert("⚠️ Preencha o Nome, ID Único, CNPJ e E-mail do condomínio!");
         return;
     }
 
-    // Função interna pra ler o arquivo de imagem e transformar em Base64
+    const btn = document.querySelector('button[onclick="salvarNovoCondominioSaaS()"]');
+    const textoOriginal = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cadastrando e Preparando Asaas...';
+    btn.disabled = true;
+
+    // 🚀 TRAVA DA IMAGEM PESADA
     let logoBase64 = null;
     if (logoInput && logoInput.files.length > 0) {
         const file = logoInput.files[0];
+        if (file.size > 800000) { // Limite de 800kb
+            alert("⚠️ A imagem do logo é muito pesada (maior que 800KB). O banco de dados não aceita. Escolha uma imagem menor ou deixe sem logo.");
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
+            return;
+        }
         logoBase64 = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onloadend = () => resolve(reader.result);
@@ -168,33 +201,43 @@ async function salvarNovoCondominioSaaS() {
     try {
         const docExistente = await db.collection("condominios").doc(condominioId).get();
         if (docExistente.exists) {
-            alert("❌ Esse ID Único já está sendo usado por outro condomínio. Escolha outro!");
+            alert("❌ Esse ID Único já está sendo usado. Escolha outro!");
+            btn.innerHTML = textoOriginal;
+            btn.disabled = false;
             return;
         }
 
         await db.collection("condominios").doc(condominioId).set({
             nome: nome,
             condominioId: condominioId,
+            cnpj: cnpj,                  
+            email: emailContato, // Adequado para o CRM ler
+            vencimento: diaVencimento, // Adequado para o CRM ler 
+            statusAsaas: "pendente",     
             aptos: aptos,
-            valorPlano: valorPlano,
-            contratoMeses: contratoMeses,
+            valor: valor, // Salvo como 'valor' para o CRM achar
+            periodo: periodo, // Salvo como 'periodo' para o CRM gerar os meses
             logoSistema: logoBase64,
-            dataCadastro: new Date().toISOString(),
-            ativo: true
+            criadoEm: new Date().toISOString(), // Usado pelo carnê como data base
+            status: true // Ativo
         });
 
-        alert("✅ Condomínio cadastrado com sucesso!");
+        alert("✅ Condomínio cadastrado com sucesso! A cobrança será gerada automaticamente.");
         
-        nomeInput.value = '';
-        idInput.value = '';
-        aptosInput.value = '';
-        valorInput.value = '';
+        nomeInput.value = ''; idInput.value = ''; if(cnpjInput) cnpjInput.value = '';
+        if(emailInput) emailInput.value = ''; aptosInput.value = ''; valorInput.value = '';
         if(logoInput) logoInput.value = '';
         document.getElementById('box-cad-condominio').style.display = 'none';
 
+        // Atualiza a tabela de contratos do CRM na hora se ela estiver aberta!
+        if (typeof carregarContratosCRM === 'function') carregarContratosCRM();
+
     } catch (error) {
         console.error("Erro ao cadastrar condomínio:", error);
-        alert("❌ Erro ao salvar no banco de dados.");
+        alert("❌ Erro ao salvar no banco de dados. " + error.message);
+    } finally {
+        btn.innerHTML = textoOriginal;
+        btn.disabled = false;
     }
 }
 
@@ -223,13 +266,13 @@ function carregarCondominiosSaaS() {
 
         // Ordena por data (mais novo primeiro)
         clientes.sort((a, b) => {
-            const dataA = a.dataCadastro ? new Date(a.dataCadastro).getTime() : 0;
-            const dataB = b.dataCadastro ? new Date(b.dataCadastro).getTime() : 0;
+            const dataA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
+            const dataB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
             return dataB - dataA;
         });
 
         clientes.forEach((cond) => {
-            const isAtivo = cond.ativo !== false;
+            const isAtivo = cond.status !== false && cond.status !== "false";
             const id = cond.condominioId;
             const nomeCond = cond.nome || 'Sem Nome';
 
@@ -237,7 +280,7 @@ function carregarCondominiosSaaS() {
             if (isAtivo) {
                 qtdAtivos++;
                 totalAptos += (cond.aptos || 0);
-                totalReceita += (cond.valorPlano || 0);
+                totalReceita += (cond.valor || 0); // Ajustado para ler "valor"
             } else {
                 qtdSuspensos++;
             }
@@ -247,30 +290,29 @@ function carregarCondominiosSaaS() {
                 ? `<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> ATIVO</span>` 
                 : `<span style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-ban"></i> SUSPENSO</span>`;
 
-            const valorFormatado = (cond.valorPlano || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            // 🔒 Mascara o valor na tabela com padrão de banco se for o Gestor Técnico
+            const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
+            const valorFormatado = isGestorZeroLabs ? 'R$ *****' : (cond.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
             const aptosFormatado = cond.aptos ? `${cond.aptos} aptos` : 'N/D';
 
-            // 🔥 NOVO LAYOUT DE BOTÕES
+            // 🔥 BOTOES DE ACAO (Mantidos idênticos ao seu original)
             const botoesAcao = `
                 <div style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
-                    <!-- Acesso / Editar / Link -->
                     <button onclick="entrarComoCondominio('${id}', '${nomeCond}')" style="background: #10b981; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Acessar Sistema"><i class="fa-solid fa-right-to-bracket"></i></button>
-                    <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valorPlano || 0}, ${isAtivo})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Plano"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valor || 0}, ${isAtivo}, ${cond.periodo || 12})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Plano"><i class="fa-solid fa-pen"></i></button>
                     <button onclick="gerarQrCodeConvite('${id}')" style="background: #8b5cf6; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="QR Code Convite"><i class="fa-solid fa-qrcode"></i></button>
                     
-                    <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></div> <!-- Divisor -->
+                    <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></div>
 
-                    <!-- Toggle Ativar/Desativar -->
                     <button onclick="alternarStatusCondominio('${id}', ${isAtivo}, '${nomeCond}')" style="background: ${isAtivo ? '#10b981' : '#64748b'}; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="${isAtivo ? 'Desativar/Bloquear' : 'Ativar/Desbloquear'}">
                         <i class="fa-solid ${isAtivo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
                     </button>
                     
-                    <!-- Excluir Vermelho -->
                     <button onclick="excluirCondominioMestre('${id}', '${nomeCond}')" style="background: #ef4444; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Excluir Definitivamente">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                     
-                    <!-- Botão Azul de AÇÕES (Dropdown Hover) -->
                     <div style="position: relative;" onmouseover="this.querySelector('.dropdown-acoes').style.display='block'" onmouseout="this.querySelector('.dropdown-acoes').style.display='none'">
                         <button style="background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
                             Ações <i class="fa-solid fa-caret-down"></i>
@@ -317,7 +359,12 @@ function atualizarCardsMaster(receita, aptos, ativos, suspensos) {
     const elAtivos = document.getElementById('master-ativos');
     const elSuspensos = document.getElementById('master-suspensos');
 
-    if(elReceita) elReceita.innerText = receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
+
+    if(elReceita) {
+        // 🔒 Mascara o painel MRR com padrão bancário para gestor
+        elReceita.innerText = isGestorZeroLabs ? 'R$ *****' : receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
     if(elAptos) elAptos.innerText = aptos;
     if(elAtivos) elAtivos.innerText = ativos;
     if(elSuspensos) elSuspensos.innerText = suspensos;
@@ -334,12 +381,29 @@ function entrarComoCondominio(condId, nome) {
 
 // 🛠️ EDICAO SaaS: FUNÇÃO QUE ABRE O MODAL PREENCHIDO
 function abrirModalEditarSaaS(id, nome, aptos, valor, ativo, contratoMeses) {
+    const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
+    
     document.getElementById('edit-cond-id').value = id;
     document.getElementById('edit-cond-nome').value = nome;
     document.getElementById('edit-cond-aptos').value = aptos;
-    document.getElementById('edit-cond-valor').value = valor;
+    
+    // 🔒 Bloqueia edição de valor se for Gestor
+    const inputValor = document.getElementById('edit-cond-valor');
+    if (isGestorZeroLabs) {
+        inputValor.value = "";
+        inputValor.disabled = true;
+        inputValor.placeholder = "Bloqueado (Gestor)";
+    } else {
+        inputValor.value = valor;
+        inputValor.disabled = false;
+        inputValor.placeholder = "Valor (R$)";
+    }
+
     document.getElementById('edit-cond-status').value = ativo ? "true" : "false";
-    if(document.getElementById('edit-cond-periodo')) document.getElementById('edit-cond-periodo').value = contratoMeses || 12;
+    
+    // Tenta setar o valor do select, se não existir, usa 12.
+    const selPeriodo = document.getElementById('edit-cond-periodo');
+    if(selPeriodo) selPeriodo.value = contratoMeses || 12;
     
     document.getElementById('modalEditarCondominio').style.display = 'flex';
 }
@@ -348,9 +412,22 @@ async function salvarEdicaoCondominioSaaS() {
     const id = document.getElementById('edit-cond-id').value;
     const nome = document.getElementById('edit-cond-nome').value.trim();
     const aptos = parseInt(document.getElementById('edit-cond-aptos').value) || 0;
-    const valorPlano = parseFloat(document.getElementById('edit-cond-valor').value) || 0;
+    
+    // O gestor não consegue mandar o valor, então não atualizamos o valor se ele estiver bloqueado
+    const inputValor = document.getElementById('edit-cond-valor');
+    let valor = 0;
+    if (!inputValor.disabled) {
+        // Converte vírgula para ponto se houver
+        let vText = inputValor.value || "0";
+        if (typeof vText === 'string') vText = vText.replace(',', '.');
+        valor = parseFloat(vText) || 0;
+    }
+
     const statusAtivo = document.getElementById('edit-cond-status').value === "true";
-    const contratoMeses = parseInt(document.getElementById('edit-cond-periodo').value) || 12;
+    
+    const periodoInput = document.getElementById('edit-cond-periodo');
+    const periodo = periodoInput ? (parseInt(periodoInput.value) || 12) : 12;
+    
     const logoInput = document.getElementById('edit-cond-logo');
 
     if (!nome) {
@@ -361,10 +438,13 @@ async function salvarEdicaoCondominioSaaS() {
     let dadosUpdate = {
         nome: nome,
         aptos: aptos,
-        valorPlano: valorPlano,
-        ativo: statusAtivo,
-        contratoMeses: contratoMeses
+        status: statusAtivo,
+        periodo: periodo // Corrigido para 'periodo'
     };
+
+    if (!inputValor.disabled) {
+        dadosUpdate.valor = valor; // Corrigido para 'valor'
+    }
 
     if (logoInput && logoInput.files.length > 0) {
         const file = logoInput.files[0];
@@ -379,6 +459,11 @@ async function salvarEdicaoCondominioSaaS() {
         await db.collection("condominios").doc(id).update(dadosUpdate);
         alert("✅ Dados do condomínio atualizados com sucesso!");
         fecharModalEditarSaaS();
+        
+        // Atualiza a tabela de contratos para refletir as mudanças
+        if (typeof carregarContratosCRM === 'function') {
+            carregarContratosCRM();
+        }
     } catch (error) {
         console.error("Erro ao atualizar condomínio:", error);
         alert("❌ Erro ao atualizar os dados no banco.");
@@ -395,9 +480,19 @@ function carregarListaCondominios() {
     const selectEdit = document.getElementById('editUserCondominio');
 
     db.collection("condominios").onSnapshot((snapshot) => {
-        if(selectCriar) selectCriar.innerHTML = '<option value="" disabled selected>Selecione o Condomínio...</option>';
+        if(selectCriar) {
+            selectCriar.innerHTML = '<option value="" disabled selected>Selecione o Condomínio...</option>';
+            // 🚀 INJETANDO A OPÇÃO GLOBAL VIA CÓDIGO
+            selectCriar.innerHTML += '<option value="GLOBAL">🌐 ACESSO GLOBAL (Mestre / Gestor)</option>';
+        }
+        
         if(selectFiltro) selectFiltro.innerHTML = '<option value="">🏢 Todos os Condomínios</option>';
-        if(selectEdit) selectEdit.innerHTML = '<option value="" disabled>Selecione...</option>';
+        
+        if(selectEdit) {
+            selectEdit.innerHTML = '<option value="" disabled>Selecione...</option>';
+            // 🚀 INJETANDO A OPÇÃO GLOBAL NO MODAL DE EDIÇÃO TAMBÉM
+            selectEdit.innerHTML += '<option value="GLOBAL">🌐 ACESSO GLOBAL (Mestre / Gestor)</option>';
+        }
 
         snapshot.forEach((doc) => {
             let c = doc.data();
@@ -410,7 +505,6 @@ function carregarListaCondominios() {
         });
     });
 }
-
 // ---------------------------------------------------------
 // 🚀 MOTOR DE E-MAILS (BUSCA AS CHAVES NO FIREBASE)
 // ---------------------------------------------------------
@@ -835,8 +929,8 @@ function carregarUsuariosGeral() {
             
             let condominioVisu = condId ? condId.replace(/_/g, ' ') : "Acesso Global / Master";
             
-            const badgeCargo = (cargo === 'Master' || cargo === 'ADM' || cargo === 'admin-master')
-                ? `<span style="background: #1e293b; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-crown"></i> MESTRE</span>`
+            const badgeCargo = (cargo === 'Master' || cargo === 'ADM' || cargo === 'admin-master' || cargo.toLowerCase().includes('gestor'))
+                ? `<span style="background: #1e293b; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-crown"></i> MESTRE/GESTOR</span>`
                 : `<span style="background: #e0e7ff; color: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">${cargo}</span>`;
 
             listaHtml.innerHTML += `
