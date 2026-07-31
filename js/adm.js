@@ -1,1048 +1,872 @@
 // ==========================================
 // EVO UPI - CONDO UP
-// adm.js - Motor do Painel Master Global e Permissões
+// app.js - Núcleo do Sistema (Menu, Relógio e Dashboard)
 // ==========================================
 
-// Variáveis Universais para Controle de Permissões
-let perfilUsuarioLogado = "Desconhecido"; // Ex: Porteiro, Síndico, Master
-let isMasterSupremo = false;
+// --- CHAVE MESTRA DA MULTI-TENANCY (RESOLUÇÃO DE CONDOMÍNIO ATIVO) ---
+function obterCondominioAtivo() {
+    // Se o Modo Fantasma estiver ligado, retorna o ID do condomínio visitado. 
+    // Caso contrário, usa o condomínio padrão do usuário logado.
+    return localStorage.getItem("condominio_fantasma") || localStorage.getItem("condominioId");
+}
 
-// ============================================================================
-// 🔒 MÓDULO DE PERMISSÕES E AUDITORIA (RESTRIÇÕES PARA PORTARIA E GESTOR)
-// ============================================================================
+// --- MOTOR UNIVERSAL DO DOMINÓ (COMPARTILHADO PARA TODO O PRÉDIO) ---
+let memoriaDominóMoradores = []; 
 
-// Esta função é chamada logo após o login no auth.js para aplicar as regras visuais
-function aplicarPermissoesPorCargo(dadosUsuario) {
-    perfilUsuarioLogado = dadosUsuario.cargo || "Desconhecido";
-    
-    const cargoLower = perfilUsuarioLogado.toLowerCase();
-    
-    // Verifica os perfis
-    const isOperacional = cargoLower.includes('porteiro') || cargoLower.includes('funcionário') || cargoLower.includes('zelador');
-    const isGestorZeroLabs = cargoLower.includes('gestor'); // 🚀 O ADM SUPORTE
-    
-    isMasterSupremo = cargoLower.includes('master') || cargoLower.includes('adm') || cargoLower.includes('síndico') || cargoLower.includes('administradora');
+async function carregarApartamentosNoSelect(idSelectDestino) {
+    const meuCondominio = obterCondominioAtivo();
+    const select = document.getElementById(idSelectDestino);
+    if (!meuCondominio || !select || typeof db === 'undefined') return;
 
-    if (isOperacional) {
-        // Regra 1: Esconde o botão de CRIAR COMUNICADOS. Ele só visualiza.
-        const btnNovoComunicado = document.getElementById('btnSalvarComunicado');
-        if (btnNovoComunicado) btnNovoComunicado.style.display = 'none';
-        
-        // Esconde os campos de digitação de comunicado também para deixar a tela limpa
-        document.getElementById('tituloComunicado') && (document.getElementById('tituloComunicado').style.display = 'none');
-        document.getElementById('mensagemComunicado') && (document.getElementById('mensagemComunicado').style.display = 'none');
-        document.getElementById('localComunicado') && (document.getElementById('localComunicado').style.display = 'none');
-        
-        // Regra 2: Verifica se a aba de Ponto deve aparecer para este funcionário
-        const menuPonto = document.getElementById('menu-ponto');
-        if (menuPonto) {
-            if (dadosUsuario.batePonto === true) {
-                menuPonto.style.display = 'flex';
-            } else {
-                menuPonto.style.display = 'none';
-            }
-        }
-    } else if (isMasterSupremo || isGestorZeroLabs) {
-        // Se for gestor ou Master, libera criar comunicados e esconde Ponto
-        const btnNovoComunicado = document.getElementById('btnSalvarComunicado');
-        if (btnNovoComunicado) btnNovoComunicado.style.display = 'flex';
-        
-        const menuPonto = document.getElementById('menu-ponto');
-        if (menuPonto) menuPonto.style.display = 'none';
-    }
+    try {
+        const snap = await db.collection("moradores")
+            .where("condominioId", "==", meuCondominio)
+            .where("excluido", "==", false)
+            .get();
 
-    // 🚨 BLOQUEIO FINANCEIRO PARA O GESTOR
-    if (isGestorZeroLabs) {
-        const btnGavetaFinanceiro = document.querySelector('button[onclick="toggleGaveta(\'gaveta-financeiro\')"]');
-        const gavetaFinanceiro = document.getElementById('gaveta-financeiro');
-        
-        if (btnGavetaFinanceiro) btnGavetaFinanceiro.style.display = 'none';
-        if (gavetaFinanceiro) gavetaFinanceiro.style.display = 'none';
+        memoriaDominóMoradores = [];
+        select.innerHTML = '<option value="">Selecione o Apto...</option>';
+
+        snap.forEach(doc => memoriaDominóMoradores.push(doc.data()));
+
+        // Organiza em ordem alfabética bonita na tela (101 A, 101 B, 102 A...)
+        memoriaDominóMoradores.sort((a, b) => (a.apto || "").localeCompare(b.apto || ""));
+
+        memoriaDominóMoradores.forEach(m => {
+            let opt = document.createElement('option');
+            opt.value = m.apto;
+            opt.textContent = `Apto ${m.apto} - ${m.nome}`; // Exibe: "Apto 101 - Carlos"
+            select.appendChild(opt);
+        });
+
+        console.log(`✅ Select [${idSelectDestino}] recheado com ${memoriaDominóMoradores.length} apartamentos!`);
+
+    } catch (e) {
+        console.error("Erro ao carregar lista de apartamentos no motor universal:", e);
     }
 }
 
-// -------------------------------------------------------------
-// 🗑️ MOTOR INTELIGENTE DE EXCLUSÃO / ARQUIVAMENTO
-// As outras abas (encomendas.js, moradores.js) vão usar essa função
-// -------------------------------------------------------------
-function solicitarArquivamentoRestrito(colecao, idDoDocumento) {
-    if (isMasterSupremo) {
-        // Se for chefe, apaga direto e sem choro!
-        if (confirm("Tem certeza que deseja excluir/arquivar este registro definitivamente?")) {
-            executarArquivamentoNoBanco(colecao, idDoDocumento, "Exclusão Direta pela Gestão", "");
-        }
+// --- CONTROLE UNIVERSAL DE MENUS E TELAS (BLINDADO) ---
+function trocarTela(telaId) {
+    // Esconde todas as telas do sistema de forma limpa
+    document.querySelectorAll('.content .tela').forEach(tela => {
+        tela.classList.remove('ativa');
+    });
+    
+    // Tira o estilo de "selecionado" de todos os botões do menu
+    document.querySelectorAll('.menu button').forEach(btn => {
+        btn.style.background = 'transparent';
+        btn.style.borderLeftColor = 'transparent';
+        btn.style.color = '#94a3b8';
+    });
+
+    // Mostra a tela solicitada se ela existir no HTML
+    const telaSelecionada = document.getElementById(telaId);
+    if(telaSelecionada) {
+        telaSelecionada.classList.add('ativa');
     } else {
-        // Se for porteiro/funcionário, abre o MODAL DE JUSTIFICATIVA!
-        document.getElementById('justificativaItemId').value = idDoDocumento;
-        document.getElementById('justificativaColecao').value = colecao;
-        document.getElementById('modalJustificativaArquivamento').style.display = 'flex';
+        console.error(`🚨 Erro de Navegação: A tela com o ID '${telaId}' não existe no HTML!`);
     }
-}
-
-// Botão "Arquivar" dentro do Modal de Justificativa
-async function confirmarArquivamentoComJustificativa() {
-    const id = document.getElementById('justificativaItemId').value;
-    const colecao = document.getElementById('justificativaColecao').value;
-    const motivo = document.getElementById('motivoArquivamento').value;
-    const detalhes = document.getElementById('detalhesArquivamento').value;
-    const condId = localStorage.getItem("condominioId");
-
-    const btn = document.querySelector('button[onclick="confirmarArquivamentoComJustificativa()"]');
-    const textoBotaoOriginal = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Arquivando...';
-    btn.disabled = true;
-
-    try {
-        // 1. Salva a auditoria (Fofoca para a gestão saber quem apagou)
-        await db.collection("auditoria_arquivamentos").add({
-            condominioId: condId,
-            colecaoAfetada: colecao,
-            documentoId: id,
-            motivoPrincipal: motivo,
-            detalhes: detalhes,
-            quemApagou: document.getElementById('nomeFuncionarioLogado').innerText,
-            dataHora: new Date().toISOString()
-        });
-
-        // 2. Executa a exclusão lógica no banco (coloca uma tag de excluido=true ou deleta)
-        await executarArquivamentoNoBanco(colecao, id, motivo, detalhes);
-        
-        document.getElementById('modalJustificativaArquivamento').style.display = 'none';
-        document.getElementById('detalhesArquivamento').value = ''; // Limpa pra próxima
-        alert("✅ Registro arquivado com sucesso e notificado à gestão!");
-
-    } catch (error) {
-        console.error("Erro ao arquivar com justificativa:", error);
-        alert("❌ Ocorreu um erro ao tentar arquivar o registro.");
-    } finally {
-        btn.innerHTML = textoBotaoOriginal;
-        btn.disabled = false;
-    }
-}
-
-// Função que efetivamente faz o "Delete" ou "Update excluido:true" lá no Firebase
-async function executarArquivamentoNoBanco(colecao, id, motivo, detalhes) {
-    try {
-        // Nós usamos "Exclusão Lógica" (update excluido:true) para não perder histórico
-        await db.collection(colecao).doc(id).update({
-            excluido: true,
-            arquivadoEm: new Date().toISOString(),
-            motivoArquivamento: motivo
-        });
-    } catch (error) {
-        // Se a coleção não aceitar update, a gente força o Delete
-        await db.collection(colecao).doc(id).delete();
-    }
-}
-
-
-// ==========================================
-// 🏢 PARTE 1: GESTÃO DE CONDOMÍNIOS
-// ==========================================
-
-async function salvarNovoCondominioSaaS() {
-    const nomeInput = document.getElementById('novo-cond-nome');
-    const idInput = document.getElementById('novo-cond-id');
-    const cnpjInput = document.getElementById('novo-cond-cnpj');
-    const emailInput = document.getElementById('novo-cond-email');
-    const aptosInput = document.getElementById('novo-cond-aptos');
-    const valorInput = document.getElementById('novo-cond-valor');
-    const vencimentoInput = document.getElementById('novo-cond-vencimento');
-    const periodoInput = document.getElementById('novo-cond-periodo');
-    const logoInput = document.getElementById('novo-cond-logo');
-
-    const nome = nomeInput.value.trim();
-    const condominioId = idInput.value.trim().toLowerCase().replace(/\s+/g, '_');
-    const cnpj = cnpjInput ? cnpjInput.value.trim() : '';
-    const emailContato = emailInput ? emailInput.value.trim() : '';
-    const aptos = parseInt(aptosInput.value) || 0;
     
-    // Converte vírgula para ponto se o usuário digitar assim
-    let valorTexto = valorInput.value || "0";
-    if (typeof valorTexto === 'string') valorTexto = valorTexto.replace(',', '.');
-    const valor = parseFloat(valorTexto) || 0;
-    
-    const periodo = parseInt(periodoInput.value) || 12;
-
-    // 🚀 CORREÇÃO DO VENCIMENTO: Tira a palavra "Dia" e manda só o número pro Asaas
-    let diaVencimento = 10;
-    if (vencimentoInput && vencimentoInput.value) {
-        const apenasNumeros = vencimentoInput.value.replace(/\D/g, ''); 
-        if (apenasNumeros) diaVencimento = parseInt(apenasNumeros);
+    // Pinta o botão do menu correspondente
+    const btnAtivo = document.getElementById('menu-' + telaId);
+    if(btnAtivo) {
+        btnAtivo.style.background = 'rgba(59, 130, 246, 0.1)';
+        btnAtivo.style.borderLeftColor = '#3b82f6';
+        btnAtivo.style.color = '#fff';
     }
 
-    if (!nome || !condominioId || !cnpj || !emailContato) {
-        alert("⚠️ Preencha o Nome, ID Único, CNPJ e E-mail do condomínio!");
+    // Gatilhos específicos ao trocar de tela
+    if(telaId === 'dashboard') atualizarDashboard();
+    
+    // Blindagem para a garagem carregar corretamente
+    if(telaId === 'veiculos' && typeof mostrarVeiculos === 'function') mostrarVeiculos();
+
+    // 🚀 INJEÇÃO DE GATILHOS DOMINÓ: Força os selects a atualizarem os moradores na hora que abre a aba!
+    if(telaId === 'delivery' && typeof carregarApartamentosNoSelect === 'function') carregarApartamentosNoSelect('delApto');
+    if(telaId === 'encomendas' && typeof carregarApartamentosNoSelect === 'function') carregarApartamentosNoSelect('encApto');
+    if(telaId === 'ocorrencias' && typeof carregarApartamentosNoSelect === 'function') carregarApartamentosNoSelect('ocoApto');
+    if(telaId === 'reservas' && typeof carregarApartamentosNoSelect === 'function') carregarApartamentosNoSelect('aptoReserva');
+
+    // =======================================================
+    // 🚀 GATILHO INVISÍVEL PARA O IOS (Embutido na troca de tela)
+    // =======================================================
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted' && typeof gerarESalvarToken === 'function') {
+                gerarESalvarToken();
+            }
+        }).catch(err => console.log("Permissão silenciosa recusada pelo iOS."));
+    }
+}
+
+// --- RELÓGIO EM TEMPO REAL ---
+function atualizarRelogio() {
+    const agora = new Date();
+    const horas = String(agora.getHours()).padStart(2, '0');
+    const minutes = String(agora.getMinutes()).padStart(2, '0');
+    const segundos = String(agora.getSeconds()).padStart(2, '0');
+    const elRelogio = document.getElementById('relogio');
+    if(elRelogio) elRelogio.textContent = `${horas}:${minutes}:${segundos}`;
+}
+setInterval(atualizarRelogio, 1000);
+
+// --- MOTO ESCURO (DARK MODE) ---
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDark);
+}
+
+// --- DASHBOARD (NUVEM EM TEMPO REAL REDIRECIONADA) ---
+function atualizarDashboard() {
+    const meuCondominio = obterCondominioAtivo();
+
+    if (!meuCondominio || typeof db === 'undefined') {
+        console.log("⏳ Aguardando Firebase para atualizar a Dashboard...");
         return;
     }
 
-    const btn = document.querySelector('button[onclick="salvarNovoCondominioSaaS()"]');
-    const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Cadastrando e Preparando Asaas...';
-    btn.disabled = true;
-
-    // 🚀 TRAVA DA IMAGEM PESADA
-    let logoBase64 = null;
-    if (logoInput && logoInput.files.length > 0) {
-        const file = logoInput.files[0];
-        if (file.size > 800000) { // Limite de 800kb
-            alert("⚠️ A imagem do logo é muito pesada (maior que 800KB). O banco de dados não aceita. Escolha uma imagem menor ou deixe sem logo.");
-            btn.innerHTML = textoOriginal;
-            btn.disabled = false;
-            return;
-        }
-        logoBase64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
-    }
-
-    try {
-        const docExistente = await db.collection("condominios").doc(condominioId).get();
-        if (docExistente.exists) {
-            alert("❌ Esse ID Único já está sendo usado. Escolha outro!");
-            btn.innerHTML = textoOriginal;
-            btn.disabled = false;
-            return;
-        }
-
-        await db.collection("condominios").doc(condominioId).set({
-            nome: nome,
-            condominioId: condominioId,
-            cnpj: cnpj,                  
-            email: emailContato, // Adequado para o CRM ler
-            vencimento: diaVencimento, // Adequado para o CRM ler 
-            statusAsaas: "pendente",     
-            aptos: aptos,
-            valor: valor, // Salvo como 'valor' para o CRM achar
-            periodo: periodo, // Salvo como 'periodo' para o CRM gerar os meses
-            logoSistema: logoBase64,
-            criadoEm: new Date().toISOString(), // Usado pelo carnê como data base
-            status: true // Ativo
-        });
-
-        alert("✅ Condomínio cadastrado com sucesso! A cobrança será gerada automaticamente.");
-        
-        nomeInput.value = ''; idInput.value = ''; if(cnpjInput) cnpjInput.value = '';
-        if(emailInput) emailInput.value = ''; aptosInput.value = ''; valorInput.value = '';
-        if(logoInput) logoInput.value = '';
-        document.getElementById('box-cad-condominio').style.display = 'none';
-
-        // Atualiza a tabela de contratos do CRM na hora se ela estiver aberta!
-        if (typeof carregarContratosCRM === 'function') carregarContratosCRM();
-
-    } catch (error) {
-        console.error("Erro ao cadastrar condomínio:", error);
-        alert("❌ Erro ao salvar no banco de dados. " + error.message);
-    } finally {
-        btn.innerHTML = textoOriginal;
-        btn.disabled = false;
-    }
-}
-
-function carregarCondominiosSaaS() {
-    const listaHtml = document.getElementById('lista-condominios-saas');
-    if (!listaHtml) return;
-
-    db.collection("condominios").onSnapshot((snapshot) => {
-        listaHtml.innerHTML = ''; 
-
-        let totalAptos = 0;
-        let totalReceita = 0;
-        let qtdAtivos = 0;
-        let qtdSuspensos = 0;
-
-        if (snapshot.empty) {
-            listaHtml.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Nenhum condomínio cadastrado ainda.</td></tr>';
-            atualizarCardsMaster(0, 0, 0, 0);
-            return;
-        }
-
-        let clientes = [];
-        snapshot.forEach((doc) => {
-            clientes.push(doc.data());
-        });
-
-        // Ordena por data (mais novo primeiro)
-        clientes.sort((a, b) => {
-            const dataA = a.criadoEm ? new Date(a.criadoEm).getTime() : 0;
-            const dataB = b.criadoEm ? new Date(b.criadoEm).getTime() : 0;
-            return dataB - dataA;
-        });
-
-        clientes.forEach((cond) => {
-            const isAtivo = cond.status !== false && cond.status !== "false";
-            const id = cond.condominioId;
-            const nomeCond = cond.nome || 'Sem Nome';
-
-            /// Cálculos para o Dashboard Master
-            if (isAtivo) {
-                qtdAtivos++;
-                totalAptos += (cond.aptos || 0);
-                totalReceita += (cond.valor || 0); // Ajustado para ler "valor"
-            } else {
-                qtdSuspensos++;
-            }
-
-            // Formatação Visual da Tabela
-            const statusBadge = isAtivo 
-                ? `<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-circle-check"></i> ATIVO</span>` 
-                : `<span style="background: #fee2e2; color: #dc2626; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-ban"></i> SUSPENSO</span>`;
-
-            // 🔒 Mascara o valor na tabela com padrão de banco se for o Gestor Técnico
-            const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
-            const valorFormatado = isGestorZeroLabs ? 'R$ *****' : (cond.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    // 🔥 ATUALIZA A LOGO E O NOME EM TEMPO REAL
+    db.collection("condominios").doc(meuCondominio).get().then(doc => {
+        if (doc.exists) {
+            const dados = doc.data();
             
-            const aptosFormatado = cond.aptos ? `${cond.aptos} aptos` : 'N/D';
-
-            // 🔥 BOTOES DE ACAO (Mantidos idênticos ao seu original)
-            const botoesAcao = `
-                <div style="display: flex; justify-content: flex-end; gap: 6px; align-items: center;">
-                    <button onclick="entrarComoCondominio('${id}', '${nomeCond}')" style="background: #10b981; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Acessar Sistema"><i class="fa-solid fa-right-to-bracket"></i></button>
-                    <button onclick="abrirModalEditarSaaS('${id}', '${nomeCond}', ${cond.aptos || 0}, ${cond.valor || 0}, ${isAtivo}, ${cond.periodo || 12})" style="background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Plano"><i class="fa-solid fa-pen"></i></button>
-                    <button onclick="gerarQrCodeConvite('${id}')" style="background: #8b5cf6; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="QR Code Convite"><i class="fa-solid fa-qrcode"></i></button>
-                    
-                    <div style="width: 1px; height: 20px; background: #cbd5e1; margin: 0 2px;"></div>
-
-                    <button onclick="alternarStatusCondominio('${id}', ${isAtivo}, '${nomeCond}')" style="background: ${isAtivo ? '#10b981' : '#64748b'}; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="${isAtivo ? 'Desativar/Bloquear' : 'Ativar/Desbloquear'}">
-                        <i class="fa-solid ${isAtivo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
-                    </button>
-                    
-                    <button onclick="excluirCondominioMestre('${id}', '${nomeCond}')" style="background: #ef4444; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Excluir Definitivamente">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                    
-                    <div style="position: relative;" onmouseover="this.querySelector('.dropdown-acoes').style.display='block'" onmouseout="this.querySelector('.dropdown-acoes').style.display='none'">
-                        <button style="background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 5px;">
-                            Ações <i class="fa-solid fa-caret-down"></i>
-                        </button>
-                        <div class="dropdown-acoes" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #cbd5e1; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-radius: 8px; min-width: 170px; z-index: 100; overflow: hidden; padding: 5px 0;">
-                            <a href="#" onclick="event.preventDefault(); abrirRenovacao('${id}', '${nomeCond}')" style="display: flex; align-items: center; gap: 8px; padding: 10px 15px; color: #1e293b; text-decoration: none; font-size: 13px; transition: 0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
-                                <i class="fa-solid fa-file-contract" style="color: #8b5cf6;"></i> Renovar Contrato
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            listaHtml.innerHTML += `
-                <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 15px 20px;">
-                        <strong style="color: #0f172a; display: block; text-transform: capitalize;">${nomeCond}</strong>
-                        <span style="color: #64748b; font-size: 12px; font-family: monospace;">ID: ${id || 'Sem ID'}</span>
-                    </td>
-                    <td style="padding: 15px 20px; color: #475569;">
-                        <strong style="display: block;">${valorFormatado}</strong>
-                        <span style="font-size: 12px;"><i class="fa-solid fa-door-closed" style="color: #94a3b8;"></i> ${aptosFormatado}</span>
-                    </td>
-                    <td style="padding: 15px 20px;">${statusBadge}</td>
-                    <td style="padding: 15px 20px; text-align: right; overflow: visible;">
-                        ${botoesAcao}
-                    </td>
-                </tr>
-            `;
-        });
-
-        // Atualiza os números nos cards lá em cima
-        atualizarCardsMaster(totalReceita, totalAptos, qtdAtivos, qtdSuspensos);
-
-    }, (error) => {
-        console.error("🚨 Erro ao carregar lista:", error);
-        listaHtml.innerHTML = `<tr><td colspan="4" style="color: #ef4444; text-align: center; padding: 20px;">Erro na conexão com o banco de dados.</td></tr>`;
-    });
-}
-
-function atualizarCardsMaster(receita, aptos, ativos, suspensos) {
-    const elReceita = document.getElementById('master-mrr');
-    const elAptos = document.getElementById('master-aptos');
-    const elAtivos = document.getElementById('master-ativos');
-    const elSuspensos = document.getElementById('master-suspensos');
-
-    const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
-
-    if(elReceita) {
-        // 🔒 Mascara o painel MRR com padrão bancário para gestor
-        elReceita.innerText = isGestorZeroLabs ? 'R$ *****' : receita.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    }
-    if(elAptos) elAptos.innerText = aptos;
-    if(elAtivos) elAtivos.innerText = ativos;
-    if(elSuspensos) elSuspensos.innerText = suspensos;
-}
-
-// 👁️ MODO FANTASMA
-function entrarComoCondominio(condId, nome) {
-    if (confirm(`🚨 MODO FANTASMA 🚨\n\nVocê vai acessar o painel de "${nome}" exatamente como o Síndico deles vê.\n\nDeseja continuar?`)) {
-        localStorage.setItem("condominio_fantasma", condId);
-        localStorage.setItem("condominio_fantasma_nome", nome);
-        window.location.href = 'index.html';
-    }
-}
-
-// 🛠️ EDICAO SaaS: FUNÇÃO QUE ABRE O MODAL PREENCHIDO
-function abrirModalEditarSaaS(id, nome, aptos, valor, ativo, contratoMeses) {
-    const isGestorZeroLabs = typeof perfilUsuarioLogado !== 'undefined' && perfilUsuarioLogado.toLowerCase().includes('gestor');
-    
-    document.getElementById('edit-cond-id').value = id;
-    document.getElementById('edit-cond-nome').value = nome;
-    document.getElementById('edit-cond-aptos').value = aptos;
-    
-    // 🔒 Bloqueia edição de valor se for Gestor
-    const inputValor = document.getElementById('edit-cond-valor');
-    if (isGestorZeroLabs) {
-        inputValor.value = "";
-        inputValor.disabled = true;
-        inputValor.placeholder = "Bloqueado (Gestor)";
-    } else {
-        inputValor.value = valor;
-        inputValor.disabled = false;
-        inputValor.placeholder = "Valor (R$)";
-    }
-
-    document.getElementById('edit-cond-status').value = ativo ? "true" : "false";
-    
-    // Tenta setar o valor do select, se não existir, usa 12.
-    const selPeriodo = document.getElementById('edit-cond-periodo');
-    if(selPeriodo) selPeriodo.value = contratoMeses || 12;
-    
-    document.getElementById('modalEditarCondominio').style.display = 'flex';
-}
-
-async function salvarEdicaoCondominioSaaS() {
-    const id = document.getElementById('edit-cond-id').value;
-    const nome = document.getElementById('edit-cond-nome').value.trim();
-    const aptos = parseInt(document.getElementById('edit-cond-aptos').value) || 0;
-    
-    // O gestor não consegue mandar o valor, então não atualizamos o valor se ele estiver bloqueado
-    const inputValor = document.getElementById('edit-cond-valor');
-    let valor = 0;
-    if (!inputValor.disabled) {
-        // Converte vírgula para ponto se houver
-        let vText = inputValor.value || "0";
-        if (typeof vText === 'string') vText = vText.replace(',', '.');
-        valor = parseFloat(vText) || 0;
-    }
-
-    const statusAtivo = document.getElementById('edit-cond-status').value === "true";
-    
-    const periodoInput = document.getElementById('edit-cond-periodo');
-    const periodo = periodoInput ? (parseInt(periodoInput.value) || 12) : 12;
-    
-    const logoInput = document.getElementById('edit-cond-logo');
-
-    if (!nome) {
-        alert("⚠️ O nome do condomínio não pode ficar vazio!");
-        return;
-    }
-
-    let dadosUpdate = {
-        nome: nome,
-        aptos: aptos,
-        status: statusAtivo,
-        periodo: periodo // Corrigido para 'periodo'
-    };
-
-    if (!inputValor.disabled) {
-        dadosUpdate.valor = valor; // Corrigido para 'valor'
-    }
-
-    if (logoInput && logoInput.files.length > 0) {
-        const file = logoInput.files[0];
-        dadosUpdate.logoSistema = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
-    }
-
-    try {
-        await db.collection("condominios").doc(id).update(dadosUpdate);
-        alert("✅ Dados do condomínio atualizados com sucesso!");
-        fecharModalEditarSaaS();
-        
-        // Atualiza a tabela de contratos para refletir as mudanças
-        if (typeof carregarContratosCRM === 'function') {
-            carregarContratosCRM();
-        }
-    } catch (error) {
-        console.error("Erro ao atualizar condomínio:", error);
-        alert("❌ Erro ao atualizar os dados no banco.");
-    }
-}
-
-// ==========================================
-// 👥 PARTE 2: FÁBRICA DE ACESSOS (SaaS)
-// ==========================================
-
-function carregarListaCondominios() {
-    const selectCriar = document.getElementById('admFuncCondominio');
-    const selectFiltro = document.getElementById('filtroCondominioGeral');
-    const selectEdit = document.getElementById('editUserCondominio');
-
-    db.collection("condominios").onSnapshot((snapshot) => {
-        if(selectCriar) {
-            selectCriar.innerHTML = '<option value="" disabled selected>Selecione o Condomínio...</option>';
-            // 🚀 INJETANDO A OPÇÃO GLOBAL VIA CÓDIGO
-            selectCriar.innerHTML += '<option value="GLOBAL">🌐 ACESSO GLOBAL (Mestre / Gestor)</option>';
-        }
-        
-        if(selectFiltro) selectFiltro.innerHTML = '<option value="">🏢 Todos os Condomínios</option>';
-        
-        if(selectEdit) {
-            selectEdit.innerHTML = '<option value="" disabled>Selecione...</option>';
-            // 🚀 INJETANDO A OPÇÃO GLOBAL NO MODAL DE EDIÇÃO TAMBÉM
-            selectEdit.innerHTML += '<option value="GLOBAL">🌐 ACESSO GLOBAL (Mestre / Gestor)</option>';
-        }
-
-        snapshot.forEach((doc) => {
-            let c = doc.data();
-            if(c.condominioId && c.nome) {
-                const opt = `<option value="${c.condominioId}" style="text-transform: capitalize;">${c.nome}</option>`;
-                if(selectCriar) selectCriar.innerHTML += opt;
-                if(selectFiltro) selectFiltro.innerHTML += opt;
-                if(selectEdit) selectEdit.innerHTML += opt;
-            }
-        });
-    });
-}
-// ---------------------------------------------------------
-// 🚀 MOTOR DE E-MAILS (BUSCA AS CHAVES NO FIREBASE)
-// ---------------------------------------------------------
-async function dispararEmail(destinatarioEmail, destinatarioNome, assunto, conteudoHTML) {
-    
-    const configDoc = await db.collection("configuracoes").doc("smtp").get();
-    
-    if (!configDoc.exists) {
-        alert("❌ Erro de Sistema: Configure o SMTP na aba de Configurações do painel Master antes de enviar e-mails!");
-        return false;
-    }
-
-    const config = configDoc.data(); 
-    const CHAVE_API_BREVO = config.pass; 
-    const REMETENTE_EMAIL = config.user; 
-
-    const url = "https://api.brevo.com/v3/smtp/email";
-
-    const dadosDoEmail = {
-        sender: { name: "CondoUp - Portaria Inteligente", email: REMETENTE_EMAIL },
-        to: [{ email: destinatarioEmail, name: destinatarioNome }],
-        subject: assunto,
-        htmlContent: conteudoHTML
-    };
-
-    try {
-        const resposta = await fetch(url, {
-            method: "POST",
-            headers: {
-                "accept": "application/json",
-                "api-key": CHAVE_API_BREVO, 
-                "content-type": "application/json"
-            },
-            body: JSON.stringify(dadosDoEmail)
-        });
-
-        if (resposta.ok) {
-            console.log("🚀 E-mail disparado com as credenciais do banco!");
-            return true;
-        } else {
-            console.error("❌ Erro da Brevo:", await resposta.text());
-            return false;
-        }
-    } catch (erro) {
-        console.error("❌ Falha na conexão:", erro);
-        return false;
-    }
-}
-
-// ---------------------------------------------------------
-// NOVA FUNÇÃO: CRIA USUÁRIO NO FIREBASE E MANDA O E-MAIL
-// ---------------------------------------------------------
-async function criarUsuarioPeloADM() {
-    const email = document.getElementById('admFuncEmail').value.trim();
-    const senha = document.getElementById('admFuncSenha').value.trim();
-    const nome = document.getElementById('admFuncNome').value.trim();
-    const cargo = document.getElementById('admFuncCargo').value;
-    const condominioId = document.getElementById('admFuncCondominio').value;
-
-    if(!email || !senha || !nome || !cargo || !condominioId) {
-        alert("⚠️ Preencha todos os campos!");
-        return;
-    }
-
-    if (senha.length < 6) {
-        alert("⚠️ A senha precisa ter pelo menos 6 caracteres.");
-        return;
-    }
-
-    const btn = document.querySelector('button[onclick="criarUsuarioPeloADM()"]');
-    const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando e Enviando E-mail...';
-    btn.disabled = true;
-
-    try {
-        const secondaryApp = firebase.initializeApp(firebaseConfig, "SecondaryApp");
-        const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senha);
-        const uid = userCredential.user.uid;
-
-        await db.collection("usuarios").doc(uid).set({
-            nome: nome,
-            email: email,
-            cargo: cargo,
-            condominioId: condominioId,
-            criadoEm: new Date().toISOString()
-        });
-
-        await secondaryApp.auth().signOut();
-        await secondaryApp.delete();
-
-        const htmlDoEmail = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                <div style="background-color: #0F172A; padding: 25px; text-align: center;">
-                    <h2 style="color: #38bdf8; margin: 0; font-size: 24px; letter-spacing: 1px;">CONDO UP</h2>
-                </div>
-                <div style="padding: 30px; background-color: #ffffff; color: #334155;">
-                    <h3 style="color: #1e293b; font-size: 20px; margin-top: 0;">Olá, ${nome}!</h3>
-                    <p style="font-size: 15px; line-height: 1.6;">Seu acesso ao sistema da portaria inteligente foi criado com sucesso. O seu perfil registrado é de <strong>${cargo}</strong>.</p>
-                    
-                    <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; border-left: 4px solid #38bdf8; margin: 25px 0;">
-                        <p style="margin: 0 0 10px 0; font-size: 15px;"><b>E-mail de acesso:</b> ${email}</p>
-                        <p style="margin: 0; font-size: 15px;"><b>Senha provisória:</b> <span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace;">${senha}</span></p>
-                    </div>
-                    
-                    <p style="font-size: 15px;">Acesse o painel pelo link abaixo para iniciar o seu trabalho:</p>
-                    <div style="text-align: center; margin-top: 25px;">
-                        <a href="https://condoup.evoupi.com.br/" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
-                    </div>
-                    
-                    <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 30px 0;">
-                    <p style="margin: 0; font-size: 12px; color: #94a3b8; text-align: center;">Por segurança, recomendamos que você altere sua senha no primeiro acesso através da aba "Meu Perfil".</p>
-                </div>
-            </div>`;
-
-        const emailEnviado = await dispararEmail(email, nome, "Seus dados de acesso - CondoUp", htmlDoEmail);
-
-        if(emailEnviado) {
-            alert(`✅ Sucesso! Login de ${nome} (${cargo}) criado e E-MAIL ENVIADO.`);
-        } else {
-            alert(`⚠️ O Login foi criado, mas houve falha ao enviar o e-mail via Brevo.`);
-        }
-
-        document.getElementById('admFuncNome').value = '';
-        document.getElementById('admFuncEmail').value = '';
-        document.getElementById('admFuncSenha').value = '';
-
-    } catch (error) {
-        console.error("Erro no processo:", error);
-        alert("❌ Erro ao criar login: " + error.message);
-        try { if(firebase.apps.length > 1) { await firebase.app("SecondaryApp").delete(); } } catch(e) {}
-    } finally {
-        btn.innerHTML = textoOriginal;
-        btn.disabled = false;
-    }
-}
-
-
-// ==========================================
-// 📢 MEGAFONE: DISPARO VIA ROBÔ DA NUVEM
-// ==========================================
-async function dispararMegafoneGlobal() {
-    const campoTitulo = document.getElementById('megaTitulo');
-    const campoMensagem = document.getElementById('megaMensagem');
-
-    if (!campoTitulo || !campoMensagem) {
-        alert("❌ ERRO CRÍTICO: Os campos visuais do Megafone não foram localizados na tela.");
-        return;
-    }
-
-    const titulo = campoTitulo.value.trim();
-    const messageText = campoMensagem.value.trim();
-
-    if (!titulo || !messageText) {
-        alert("⚠️ Preencha o Título e a Mensagem do aviso global!");
-        return;
-    }
-
-    const confirmar = confirm(`🚨 ATENÇÃO MASTER 🚨\n\nIsso vai disparar uma notificação Push e preencher o Mural de Comunicados de ABSOLUTAMENTE TODOS os condomínios ativos na plataforma.\n\nTítulo: ${titulo}\n\nTem certeza absoluta que deseja propagar o aviso?`);
-    if (!confirmar) return;
-
-    try {
-        const snapshot = await db.collection("condominios").get();
-        if (snapshot.empty) {
-            alert("Nenhum condomínio ativo foi localizado no banco de dados.");
-            return;
-        }
-
-        const timestampDisparo = new Date().toISOString();
-        const promessasDeInjecao = [];
-
-        snapshot.forEach((doc) => {
-            const predio = doc.data();
-            if (predio.condominioId) {
-                const acaoMural = db.collection("comunicados").add({
-                    tipo: "📢 Geral", status: "🟡 Pendente",
-                    titulo: `📢 AVISO GLOBAL: ${titulo}`,
-                    dataEvento: "", horaEvento: "", local: "Geral",
-                    mensagem: messageText, condominioId: predio.condominioId,
-                    dataRegistro: timestampDisparo, excluido: false
-                });
-                
-                const acaoSino = db.collection("notificacoes").add({
-                    titulo: `📢 Alerta Geral: ${titulo}`,
-                    mensagem: messageText, tipo: "comunicado",
-                    lida: false, condominioId: predio.condominioId,
-                    timestamp: new Date().getTime()
-                });
-
-                promessasDeInjecao.push(acaoMural, acaoSino);
-            }
-        });
-
-        await Promise.all(promessasDeInjecao);
-
-        alert(`🚀 MEGAFONE PROPAGADO COM SUCESSO!\nO aviso foi injetado em todos os condomínios.`);
-        campoTitulo.value = ''; campoMensagem.value = '';
-
-    } catch (error) {
-        console.error("Falha na execução do Megafone Global:", error);
-        alert("❌ Erro ao processar o disparo em massa na base de dados.");
-    }
-}
-
-// ==========================================
-// 🔗 MÓDULO DE QR CODE E LINK DE CONVITE
-// ==========================================
-function gerarQrCodeConvite(condominioId) {
-    if (!condominioId) {
-        alert("Erro: ID do condomínio não encontrado.");
-        return;
-    }
-
-    const baseUrl = "https://condoup.evoupi.com.br"; 
-    const linkOficial = `${baseUrl}/cadastro-morador.html?cond=${condominioId}`;
-
-    document.getElementById('input-link-convite').value = linkOficial;
-
-    const urlQrCode = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(linkOficial)}&margin=10`;
-    document.getElementById('img-qrcode-convite').src = urlQrCode;
-
-    document.getElementById('modalQRCodeConvite').style.display = 'flex';
-}
-
-function copiarLinkConvite() {
-    const inputLink = document.getElementById('input-link-convite');
-    inputLink.select();
-    inputLink.setSelectionRange(0, 99999); 
-
-    navigator.clipboard.writeText(inputLink.value).then(() => {
-        alert("✅ Link copiado com sucesso! Agora é só colar no WhatsApp do morador.");
-    }).catch(err => {
-        console.error('Erro ao copiar: ', err);
-    });
-}
-
-// ==========================================
-// 🛠️ FUNÇÕES DOS NOVOS BOTÕES (Toggle, Excluir, Renovar)
-// ==========================================
-
-async function alternarStatusCondominio(id, statusAtual, nome) {
-    const acao = statusAtual ? "BLOQUEAR / SUSPENDER" : "ATIVAR / DESBLOQUEAR";
-    if(!confirm(`Deseja ${acao} o condomínio "${nome}"?\n\nIsso altera o status de acesso deles.`)) return;
-    
-    try {
-        await db.collection("condominios").doc(id).update({ ativo: !statusAtual });
-    } catch(e) { alert("Erro ao alterar status: " + e); }
-}
-
-async function excluirCondominioMestre(id, nome) {
-    if(!confirm(`🚨 ALERTA VERMELHO 🚨\n\nVocê está prestes a EXCLUIR DEFINITIVAMENTE o condomínio "${nome}".\nTodos os logins ligados a ele perderão o acesso.\n\nDeseja mesmo destruir este cliente?`)) return;
-    
-    try {
-        await db.collection("condominios").doc(id).delete();
-        alert("✅ Condomínio excluído com sucesso.");
-    } catch(e) { alert("Erro ao excluir: " + e); }
-}
-
-function abrirRenovacao(id, nome) {
-    let modal = document.getElementById('modalRenovacaoDinamico');
-    if(!modal) {
-        document.body.insertAdjacentHTML('beforeend', `
-        <div id="modalRenovacaoDinamico" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-            <div class="modal-content" style="max-width: 400px; width: 90%; background: #fff; border-top: 5px solid #3b82f6; border-radius: 12px; padding: 25px;">
-                <h3 style="margin: 0 0 15px 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-file-signature" style="color: #3b82f6;"></i> Renovar Contrato</h3>
-                <p id="nomeCondRenovacao" style="color: #64748b; font-size: 14px; margin-bottom: 20px; font-weight: bold;"></p>
-                <input type="hidden" id="idCondRenovacao">
-                
-                <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Período de Renovação</label>
-                <select id="periodoRenovacao" style="width: 100%; margin-bottom: 20px; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc;">
-                    <option value="1">1 Ano (12 meses)</option>
-                    <option value="2">2 Anos (24 meses)</option>
-                    <option value="3">3 Anos (36 meses)</option>
-                </select>
-                
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <button onclick="document.getElementById('modalRenovacaoDinamico').style.display='none'" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;">Cancelar</button>
-                    <button onclick="confirmarRenovacaoMestre()" style="background: #3b82f6; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Confirmar</button>
-                </div>
-            </div>
-        </div>`);
-        modal = document.getElementById('modalRenovacaoDinamico');
-    }
-    
-    document.getElementById('idCondRenovacao').value = id;
-    document.getElementById('nomeCondRenovacao').innerText = "Cliente: " + nome;
-    modal.style.display = 'flex';
-}
-
-async function confirmarRenovacaoMestre() {
-    const id = document.getElementById('idCondRenovacao').value;
-    const anos = parseInt(document.getElementById('periodoRenovacao').value);
-    
-    try {
-        await db.collection("condominios").doc(id).update({
-            contratoRenovadoEm: new Date().toISOString(),
-            contratoAnosValidade: anos
-        });
-        alert(`✅ Sucesso! Contrato renovado por mais ${anos} ano(s)!`);
-        document.getElementById('modalRenovacaoDinamico').style.display = 'none';
-    } catch(e) { alert("Erro ao renovar: " + e); }
-}
-
-
-// ==========================================
-// 🛡️ GUARDA-COSTAS (SISTEMA DE BLOQUEIO DE INADIMPLENTES)
-// ==========================================
-window.addEventListener('DOMContentLoaded', () => {
-    // Dá um tempinho para o sistema carregar o localStorage após o login
-    setTimeout(() => {
-        const meuCond = localStorage.getItem("condominioId");
-        if (!meuCond || typeof db === 'undefined') return;
-
-        const isFantasma = localStorage.getItem("condominio_fantasma") !== null;
-        
-        // Verifica se a aba Master está visível na tela (Se estiver, ele é o Dono do Sistema)
-        const menuMaster = document.getElementById('secao-master-saas');
-        const isMaster = menuMaster && menuMaster.style.display !== 'none';
-
-        // Se for o Dono da plataforma e NÃO estiver no modo fantasma, ele NUNCA é bloqueado!
-        if (isMaster && !isFantasma) return; 
-
-        // Acorda o vigilante que fica olhando para a nuvem 24 horas
-        db.collection("condominios").doc(meuCond).onSnapshot((doc) => {
-            if (doc.exists) {
-                const dados = doc.data();
-                // Se a chavinha de ATIVO for para FALSE, levanta o escudo!
-                if (dados.ativo === false) {
-                    bloquearTelaCondoUp(isFantasma);
-                } else {
-                    desbloquearTelaCondoUp();
+            // 1. Atualiza a Foto (Logo)
+            if (dados.logoSistema) {
+                const imgLogoElement = document.querySelector('.logo img');
+                if (imgLogoElement) {
+                    imgLogoElement.src = dados.logoSistema;
+                    imgLogoElement.style.objectFit = "contain"; 
+                    imgLogoElement.style.background = "transparent";
                 }
             }
+
+            // 2. Atualiza o Nome do Condomínio embaixo da foto
+            if (dados.nome) {
+                const textoLogoElement = document.querySelector('.logo h2');
+                if (textoLogoElement) {
+                    textoLogoElement.innerText = dados.nome.toUpperCase(); 
+                }
+            }
+
+            // 🚀 3. A CHAVE NA IGNIÇÃO (BLINDADA CONTRA ERROS DE CARREGAMENTO):
+            if (typeof carregarBannerDeVencimento === 'function' && dados.vencimento) {
+                // O setTimeout manda o robô esperar meio segundo para a tela existir
+                setTimeout(() => {
+                    carregarBannerDeVencimento(dados.vencimento);
+                }, 500);
+            }
+        }
+    }).catch(err => console.log("Erro na logo/nome:", err));
+    
+    db.collection("encomendas").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let pendentes = 0;
+        snap.forEach(doc => { 
+            let enc = doc.data();
+            if (!enc.excluido && enc.status !== 'Entregue') pendentes++; 
         });
-    }, 2000); 
+        if(document.getElementById('dash-encomendas')) document.getElementById('dash-encomendas').textContent = pendentes;
+    });
+
+    db.collection("delivery").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let delPendentes = 0;
+        snap.forEach(doc => {
+            let d = doc.data();
+            if (!d.excluido && (d.status === "Aguardando Morador" || d.status === "Aguardando")) {
+                delPendentes++;
+            }
+        });
+        if(document.getElementById('dash-delivery')) document.getElementById('dash-delivery').textContent = delPendentes;
+    });
+
+    db.collection("veiculos").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let total = 0;
+        snap.forEach(doc => { if (!doc.data().excluido) total++; });
+        if(document.getElementById('dash-veiculos')) document.getElementById('dash-veiculos').textContent = total;
+    });
+
+    db.collection("moradores").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let total = 0;
+        snap.forEach(doc => { if (!doc.data().excluido) total++; });
+        if(document.getElementById('dash-moradores')) document.getElementById('dash-moradores').textContent = total;
+    });
+
+    db.collection("passagem").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let total = 0;
+        snap.forEach(doc => { if (!doc.data().excluido) total++; });
+        if(document.getElementById('dash-plantao')) document.getElementById('dash-plantao').textContent = total;
+    });
+
+    db.collection("ocorrencias").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let abertas = 0;
+        snap.forEach(doc => { 
+            let oco = doc.data();
+            if (!oco.excluido && oco.status !== '🟢 Resolvido' && oco.status !== 'Resolvido') abertas++; 
+        });
+        if(document.getElementById('dash-ocorrencias')) document.getElementById('dash-ocorrencias').textContent = abertas;
+    });
+
+    db.collection("reservas").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let reservasHj = 0;
+        const hojeStr = new Date().toISOString().split('T')[0];
+        snap.forEach(doc => { 
+            let r = doc.data();
+            if (!r.excluido && r.data === hojeStr) reservasHj++; 
+        });
+        if(document.getElementById('dash-reservas')) document.getElementById('dash-reservas').textContent = reservasHj;
+    });
+
+    db.collection("comunicados").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let ativos = 0;
+        snap.forEach(doc => { 
+            let com = doc.data();
+            if (!com.excluido && !com.status.includes('Resolvido')) ativos++; 
+        });
+        if(document.getElementById('dash-comunicados')) document.getElementById('dash-comunicados').textContent = ativos;
+    });
+
+    db.collection("equipe").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let totalEquipe = 0;
+        snap.forEach(() => { totalEquipe++; });
+        if(document.getElementById('dash-equipe')) document.getElementById('dash-equipe').textContent = totalEquipe;
+    });
+
+    db.collection("ponto").where("condominioId", "==", meuCondominio).onSnapshot(snap => {
+        let pontosHj = 0;
+        const hojeStr = new Date().toISOString().split('T')[0];
+        snap.forEach(doc => { 
+            if (doc.data().data === hojeStr) pontosHj++; 
+        });
+        if(document.getElementById('dash-ponto')) document.getElementById('dash-ponto').textContent = pontosHj;
+    });
+}
+
+// ==========================================
+// MOTOR DE NOTIFICAÇÕES PUSH (SISTEMA INTEGRADO ATIVO)
+// ==========================================
+
+function gerarESalvarToken() {
+    const messaging = firebase.messaging();
+    const meuCondominio = obterCondominioAtivo();
+    const meuCargo = localStorage.getItem("usuario_cargo"); 
+
+    messaging.getToken({ vapidKey: "BBADwvMiUsP_fLnWAzEK8ktiFbvPLsySsE0Zm4P4FaYgujxdGIgl8AiHMXt9vmmz2lD8UrFI7Z7DlrgUszYGSyE" })
+        .then((currentToken) => {
+            if (currentToken) {
+                console.log('📱 Token gerado silenciosamente.');
+                localStorage.setItem("push_token", currentToken);
+                
+                if (typeof db !== 'undefined') {
+                    if (meuCondominio || meuCargo === 'ADM') {
+                        db.collection("tokens_push").doc(currentToken).set({
+                            token: currentToken,
+                            condominioId: meuCondominio || "GLOBAL_MASTER", 
+                            cargo: meuCargo || "operacional",
+                            dataRegistro: new Date().toISOString()
+                        }, { merge: true }).catch(err => console.error("Erro no banco:", err));
+                    }
+                }
+            }
+        }).catch((err) => {
+            console.log('Erro silencioso ao pegar token (Normal no iOS se bloqueado ou em localhost sem HTTPS).', err);
+        });
+
+    messaging.onMessage((payload) => {
+        console.log('🔔 Mensagem em background (App Aberto): ', payload);
+    });
+}
+
+async function ativarNotificacoesPush() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || typeof firebase === 'undefined') {
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.register('./sw.js?v=144');
+        if (typeof firebase.messaging().useServiceWorker === 'function') {
+            firebase.messaging().useServiceWorker(registration);
+        }
+    } catch (e) {
+        console.log("Falha no SW (Normal se testando local):", e);
+    }
+
+    if (Notification.permission === 'granted') {
+        gerarESalvarToken();
+    } else if (Notification.permission === 'denied') {
+        const modalIos = document.getElementById('modal-permissao-ios');
+        if (modalIos) modalIos.style.display = 'block';
+    } else {
+        const toqueInvisivel = async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') gerarESalvarToken();
+            } catch (error) {
+                console.error(error);
+            } finally {
+                document.body.removeEventListener('click', toqueInvisivel);
+                document.body.removeEventListener('touchstart', toqueInvisivel);
+            }
+        };
+        document.body.addEventListener('click', toqueInvisivel);
+        document.body.addEventListener('touchstart', toqueInvisivel);
+    }
+}
+
+window.fecharModalIos = function() {
+    const modalIos = document.getElementById('modal-permissao-ios');
+    if (modalIos) modalIos.style.display = 'none';
+}
+
+// ==========================================
+// INICIALIZAÇÃO BLINDADA DO SISTEMA
+// ==========================================
+window.addEventListener('load', () => {
+    atualizarRelogio();
+    setTimeout(atualizarDashboard, 1500);
+    
+    if (localStorage.getItem('darkMode') === 'true') {
+        document.body.classList.add('dark-mode');
+    }
+
+    const nomeSalvo = localStorage.getItem("usuario_nome");
+    const elementoNome = document.getElementById("nomeFuncionarioLogado");
+
+    if (elementoNome) {
+        if (nomeSalvo && nomeSalvo !== "undefined" && nomeSalvo !== "null") {
+            elementoNome.innerText = nomeSalvo.split(" ")[0];
+        } else {
+            elementoNome.innerText = "Guerreiro"; 
+        }
+    }
+
+    setTimeout(ativarNotificacoesPush, 1000);
 });
 
-function bloquearTelaCondoUp(isFantasma) {
-    // 1. Esconde a interface inteira do sistema
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-    if (sidebar) sidebar.style.display = 'none';
-    if (content) content.style.display = 'none';
+// ==========================================
+// 🎨 SISTEMA WHITE LABEL - CARREGAR LOGO
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const meuCond = localStorage.getItem("condominioId");
+        
+        if (meuCond && typeof db !== 'undefined') {
+            db.collection("condominios").doc(meuCond).get().then(doc => {
+                if (doc.exists && doc.data().logoSistema) {
+                    const imgLogoElement = document.querySelector('.logo img');
+                    
+                    if (imgLogoElement) {
+                        imgLogoElement.src = doc.data().logoSistema;
+                        imgLogoElement.style.objectFit = "contain"; 
+                        imgLogoElement.style.background = "transparent";
+                    }
+                }
+            }).catch(err => {
+                console.log("Erro ao puxar a logo do cliente:", err);
+            });
+        }
+    }, 500);
+});
 
-    // 2. Cria a tela do Cadeado se ela não existir
-    let tela = document.getElementById('tela-inadimplencia-condoup');
-    if (!tela) {
-        tela = document.createElement('div');
-        tela.id = 'tela-inadimplencia-condoup';
-        tela.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%); z-index:999999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; text-align:center; padding: 20px;';
-        document.body.appendChild(tela);
-    }
+// ==========================================
+// 🗜️ COMPRESSOR DE IMAGEM PARA O FIREBASE
+// ==========================================
+async function comprimirLogo(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 300; // Tamanho ideal para logo
+                const MAX_HEIGHT = 300;
+                let width = img.width;
+                let height = img.height;
 
-    let btnHTML = `<button onclick="deslogarSistema()" style="background: #ef4444; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);"><i class="fa-solid fa-right-from-bracket"></i> Sair do Sistema</button>`;
-    
-    if (isFantasma) {
-        btnHTML = `<button onclick="sairDoModoFantasma()" style="background: #3b82f6; color: white; border: none; padding: 15px 30px; font-size: 16px; border-radius: 8px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);"><i class="fa-solid fa-ghost"></i> Voltar para o Painel Master</button>`;
-    }
+                // Redimensiona mantendo a proporção
+                if (width > height) {
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                } else {
+                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                }
 
-    tela.innerHTML = `
-        <i class="fa-solid fa-lock" style="font-size: 90px; color: #ef4444; margin-bottom: 25px; filter: drop-shadow(0 0 20px rgba(239,68,68,0.5));"></i>
-        <h1 style="font-size: 36px; margin-bottom: 15px; color: #f8fafc; letter-spacing: 1px;">Acesso Suspenso</h1>
-        <p style="font-size: 16px; color: #94a3b8; max-width: 500px; line-height: 1.6; margin-bottom: 35px;">
-            O sistema de portaria e gestão deste condomínio encontra-se temporariamente indisponível.<br><br>
-            Por favor, entre em contato com a administração da <strong>Condo Up</strong> para verificar a situação do seu plano.
-        </p>
-        ${btnHTML}
-    `;
-    tela.style.display = 'flex';
+                canvas.width = width; 
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Transforma na imagem leve e entrega pro banco em Base64
+                resolve(canvas.toDataURL('image/png')); 
+            };
+        };
+    });
 }
 
-function desbloquearTelaCondoUp() {
-    const tela = document.getElementById('tela-inadimplencia-condoup');
-    if (tela) tela.style.display = 'none';
+// ==========================================
+// ⏰ MOTOR DO BANNER PREMIUM DE VENCIMENTO
+// ==========================================
+async function carregarBannerDeVencimento(diaVencimentoDb) {
+    try {
+        console.log("🔥 Puxando o arquivo do Banner Premium...");
+        
+        // 1. Puxa o visual do arquivo separado (COM TRATAMENTO DE ERRO)
+        const resposta = await fetch('banner-vencimento.html');
+        if (!resposta.ok) {
+            console.error("🚨 O Live Server recusou a conexão com o banner:", resposta.status);
+            return; // Aborta se a conexão falhar
+        }
+        
+        const htmlDoBanner = await resposta.text();
+        
+        // 2. Injeta na tela
+        const container = document.getElementById('container-banner-vencimento');
+        if (!container) {
+             console.error("🚨 ERRO: A div container-banner-vencimento sumiu do index.html!");
+             return;
+        }
+        container.innerHTML = htmlDoBanner;
 
-    const sidebar = document.querySelector('.sidebar');
-    const content = document.querySelector('.content');
-    if (sidebar) sidebar.style.display = '';
-    if (content) content.style.display = '';
+        // 3. Se não tiver dia, aborta
+        if(!diaVencimentoDb) return;
+        
+        // 🚀 MATEMÁTICA BLINDADA: Zeramos as horas para contar SÓ os dias exatos
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); 
+        
+        let dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimentoDb);
+        dataVencimento.setHours(0, 0, 0, 0);
+        
+        // Se o dia do vencimento deste mês já passou, joga pro mês que vem
+        if (hoje.getTime() > dataVencimento.getTime()) {
+            dataVencimento.setMonth(dataVencimento.getMonth() + 1);
+        }
+
+        const diffMs = dataVencimento.getTime() - hoje.getTime();
+        const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+        
+        console.log(`⏰ O robô calculou: Faltam exatos ${diffDias} dias para o vencimento.`);
+
+        // 4. Aplica a inteligência visual
+        const banner = document.getElementById('banner-premium-vencimento');
+        const elContador = document.getElementById('contadorDias');
+        const elProgress = document.getElementById('progressBarFill');
+
+        // Se faltar 5 dias ou menos (e não tiver passado), acende o banner!
+        if (banner && diffDias <= 5 && diffDias >= 0) { 
+            console.log("🚨 Acendendo o Banner na tela do cliente!");
+            banner.style.display = 'flex'; // 👈 TEM QUE SER 'FLEX' PARA NÃO QUEBRAR O VISUAL!
+            
+            if (diffDias === 0) {
+                elContador.textContent = 'HOJE';
+                elProgress.style.width = '100%';
+                banner.classList.add('urgente');
+            } else if (diffDias === 1) {
+                elContador.textContent = '1 dia';
+                elProgress.style.width = '92%';
+                banner.classList.add('urgente');
+            } else {
+                elContador.textContent = diffDias + ' dias';
+                const pct = Math.min(95, Math.max(10, ((30 - diffDias) / 30) * 100));
+                elProgress.style.width = pct + '%';
+            }
+        }
+
+    } catch (erro) {
+        console.error('❌ Erro ao carregar o banner premium:', erro);
+    }
 }
 
-// ==========================================
-// 🚀 INICIALIZAÇÃO BLINDADA DO PAINEL MASTER
-// ==========================================
-const ligarMotorADM = setInterval(() => {
-    const listaNaTela = document.getElementById('lista-condominios-saas');
-    
-    if (listaNaTela && typeof db !== 'undefined') {
-        console.log("🚀 Motor ADM Ligado! Puxando dados em tempo real...");
-        carregarCondominiosSaaS();
-        carregarListaCondominios();
-        
-        if (typeof carregarUsuariosGeral === 'function') carregarUsuariosGeral(); 
-        
-        clearInterval(ligarMotorADM); 
+// Botão para fechar o aviso na tela
+window.fecharBannerPremium = function() {
+    const banner = document.getElementById('banner-premium-vencimento');
+    if (banner) {
+        banner.classList.add('saindo');
+        setTimeout(() => {
+            banner.style.display = 'none';
+        }, 450); 
     }
-}, 500);
+}
+
+// 👇 MANTÉM ESSA AQUI! Ela vai conectar com o Asaas em breve!
+function abrirFaturaAsaas() {
+    // Aqui nós vamos injetar a URL da fatura gerada pelo Asaas amanhã junto com o Webhook!
+    alert("Redirecionando para a fatura oficial no Asaas... 💳");
+}
+
 
 // ==========================================
-// 👥 CONTROLE GERAL DE USUÁRIOS
+// 🏢 MÓDULO CRM: GESTÃO DE CONTRATOS E CARNÊ (SAAS)
 // ==========================================
 
-function carregarUsuariosGeral() {
-    const listaHtml = document.getElementById('lista-usuarios-geral');
-    if (!listaHtml) return;
+// 1. Puxa os condomínios do Firebase e monta a tabela do CRM
+async function carregarContratosCRM() {
+    const tbody = document.getElementById('lista-contratos-crm');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fa-solid fa-spinner fa-spin"></i> Buscando clientes no banco de dados...</td></tr>';
 
-    db.collection("usuarios").onSnapshot((snapshot) => {
-        listaHtml.innerHTML = '';
-        
-        if(snapshot.empty) {
-            listaHtml.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #94a3b8;">Nenhum usuário encontrado.</td></tr>';
+    try {
+        // Puxa do Firebase
+        const snapshot = await db.collection('condominios').get();
+        tbody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 30px; color: #94a3b8;">Nenhum contrato ativo no momento.</td></tr>';
             return;
         }
 
-        snapshot.forEach((doc) => {
-            const user = doc.data();
-            const id = doc.id;
+        snapshot.forEach(doc => {
+            const dados = doc.data();
+            const nome = dados.nome || 'Sem Nome';
+            const aptos = dados.aptos || 0;
             
-            const nome = user.nome || "Sem Nome";
-            const email = user.email || "Sem E-mail";
-            const cargo = user.cargo || "Sem Cargo";
-            const condId = user.condominioId || "";
+            // 🔥 CORREÇÃO DO VALOR 0,00 AQUI
+            let valorBruto = dados.valor || 0;
+            if (typeof valorBruto === 'string') {
+                valorBruto = valorBruto.replace(',', '.'); // Troca a virgula pra ponto antes de calcular
+            }
+            const valorFormatado = Number(valorBruto).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
             
-            let condominioVisu = condId ? condId.replace(/_/g, ' ') : "Acesso Global / Master";
+            const diaVenc = parseInt(dados.vencimento || 10);
             
-            const badgeCargo = (cargo === 'Master' || cargo === 'ADM' || cargo === 'admin-master' || cargo.toLowerCase().includes('gestor'))
-                ? `<span style="background: #1e293b; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-solid fa-crown"></i> MESTRE/GESTOR</span>`
-                : `<span style="background: #e0e7ff; color: #3b82f6; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">${cargo}</span>`;
+            // Verifica se está ativo ou suspenso
+            const statusAtivo = dados.status !== false && dados.status !== "false";
+            const badgeStatus = statusAtivo 
+                ? `<span style="background: #dcfce7; color: #166534; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">✅ Ativo</span>`
+                : `<span style="background: #fee2e2; color: #991b1b; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold;">🔴 Suspenso</span>`;
 
-            listaHtml.innerHTML += `
-                <tr class="linha-usuario-geral" data-condominio="${condId}" style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                    <td style="padding: 15px 20px;">
-                        <strong style="display: block; color: #0f172a;">${nome}</strong>
-                        <span style="font-size: 12px; color: #64748b;">${email}</span>
-                    </td>
-                    <td style="padding: 15px 20px; color: #475569; text-transform: capitalize;">
-                        <i class="fa-solid fa-building" style="color: #cbd5e1; margin-right: 5px;"></i> ${condominioVisu}
-                    </td>
-                    <td style="padding: 15px 20px;">${badgeCargo}</td>
-                    <td style="padding: 15px 20px; text-align: right;">
-                        <div style="display: flex; justify-content: flex-end; gap: 5px;">
-                            <button onclick="abrirModalEditarUsuarioGeral('${id}', '${nome}', '${email}', '${cargo}', '${condId}')" style="background: #f1f5f9; color: #3b82f6; border: 1px solid #bfdbfe; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Editar Perfil / Recuperar Senha">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            <button onclick="excluirUsuarioMestre('${id}', '${nome}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Remover Acesso Permanente">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+            // Calcula o próximo vencimento no mês atual
+            const hoje = new Date();
+            let proxVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
+            if(hoje.getDate() > diaVenc) {
+                proxVenc.setMonth(proxVenc.getMonth() + 1);
+            }
+
+            // Cria a linha da tabela
+            const tr = document.createElement('tr');
+            tr.style.cssText = "border-bottom: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s;";
+            tr.onmouseover = () => tr.style.background = '#f8fafc';
+            tr.onmouseout = () => tr.style.background = 'white';
+            
+            // Quando clicar na linha, abre o Modal passando o ID real do cliente!
+            tr.onclick = () => abrirFichaCliente(doc.id); 
+
+            tr.innerHTML = `
+                <td style="padding: 15px 20px; font-weight: bold; color: #1e293b;"><i class="fa-solid fa-building" style="color: #94a3b8; margin-right: 8px;"></i> ${nome}</td>
+                <td style="padding: 15px 20px; color: #64748b;">${aptos} aptos</td>
+                <td style="padding: 15px 20px; color: #0f172a; font-weight: 600;">R$ ${valorFormatado}</td>
+                <td style="padding: 15px 20px; color: #64748b;">${proxVenc.toLocaleDateString('pt-BR')}</td>
+                <td style="padding: 15px 20px;">${badgeStatus}</td>
             `;
+            tbody.appendChild(tr);
         });
-        
-        filtrarUsuariosGeral();
-    });
+
+    } catch (erro) {
+        console.error("Erro ao carregar contratos:", erro);
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Erro ao puxar dados do servidor.</td></tr>';
+    }
 }
 
-// 🔥 Filtro Inteligente (Busca de Texto + Dropdown do Condomínio)
-function filtrarUsuariosGeral() {
-    const termo = document.getElementById('pesquisaUserGeral').value.toLowerCase();
-    const filtroCond = document.getElementById('filtroCondominioGeral').value;
-    const linhas = document.querySelectorAll('.linha-usuario-geral');
+// ==========================================
+// 🏢 ABRIR A FICHA COMPLETA DO CLIENTE
+// ==========================================
+async function abrirFichaCliente(idCondominio) {
+    // 3. 🚀 O SEGREDO AQUI: Grava o ID na memória blindada quando abre a ficha!
+    memoriaClienteSaaSAtual = idCondominio;
+
+    document.getElementById('modalFichaCliente').style.display = 'flex';
+    document.getElementById('ficha-nome-condominio').innerHTML = `<i class="fa-solid fa-spinner fa-spin" style="color: #8b5cf6;"></i> Puxando contrato...`;
+    
+    const listaParcelas = document.getElementById('lista-parcelas-contrato');
+    listaParcelas.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">Calculando parcelas...</div>';
+
+    try {
+        const doc = await db.collection('condominios').doc(idCondominio).get();
+        if (!doc.exists) {
+            alert("Cliente não encontrado no banco!");
+            return;
+        }
+
+        const dados = doc.data();
+        
+        // ---- MATEMÁTICA E VALORES ----
+        const mesesContrato = parseInt(dados.periodo || 12); 
+        const mesesPagos = parseInt(dados.mesesPagos || 0);
+        const diaVenc = parseInt(dados.vencimento || 10);
+
+        let valorBruto = dados.valor || 0;
+        if (typeof valorBruto === 'string') valorBruto = valorBruto.replace(',', '.');
+        const valorNum = Number(valorBruto);
+        const valorFormatado = `R$ ${valorNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        
+        const valorTotalContrato = valorNum * mesesContrato;
+        const valorTotalFormatado = `R$ ${valorTotalContrato.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+        // ---- PREENCHENDO O CABEÇALHO ----
+        document.getElementById('ficha-nome-condominio').innerText = dados.nome || "Cliente sem nome";
+        document.getElementById('ficha-plano').innerText = `${dados.aptos || 0} Aptos`;
+        document.getElementById('ficha-sindico').innerText = dados.email || "Não cadastrado";
+        document.getElementById('ficha-email').innerText = dados.email || "Não cadastrado";
+        
+        // 🚀 O SEGUNDO SEGREDO: Foto inteligente com as iniciais do nome!
+        const imgFoto = document.getElementById('ficha-foto-condominio');
+        if (dados.logoSistema && dados.logoSistema !== "") {
+            imgFoto.src = dados.logoSistema;
+        } else {
+            const nomeFormatado = encodeURIComponent(dados.nome || "Cliente");
+            imgFoto.src = `https://ui-avatars.com/api/?name=${nomeFormatado}&background=8b5cf6&color=fff&size=150`;
+        }
+
+       // ---- DATAS DO CONTRATO E GERADOR DE NÚMERO OFICIAL (SÓ NÚMEROS) ----
+        let dataInicio = dados.criadoEm ? new Date(dados.criadoEm) : new Date();
+        let dataFim = new Date(dataInicio);
+        dataFim.setMonth(dataFim.getMonth() + mesesContrato);
+        
+        document.getElementById('ficha-inicio-contrato').innerText = dataInicio.toLocaleDateString('pt-BR');
+        document.getElementById('ficha-fim-contrato').innerText = dataFim.toLocaleDateString('pt-BR');
+        
+        // Mágica do Número do Contrato (100% Numérico e Fixo)
+        const ano = dataInicio.getFullYear();
+        const mes = String(dataInicio.getMonth() + 1).padStart(2, '0');
+        const dia = String(dataInicio.getDate()).padStart(2, '0');
+        
+        // Cria um código numérico de 4 dígitos baseado no ID do cliente para nunca mudar
+        let codigoCliente = 0;
+        for(let i = 0; i < idCondominio.length; i++) {
+            codigoCliente += idCondominio.charCodeAt(i);
+        }
+        const sufixoNumerico = String(codigoCliente).padStart(4, '0');
+        
+        document.getElementById('ficha-num-contrato').innerText = `${ano}${mes}${dia}${sufixoNumerico}`;
+
+        // ---- PREENCHENDO OS CARDS INTELIGENTES ----
+        document.getElementById('card-mensalidade-valor').innerText = valorFormatado;
+        document.getElementById('card-total-valor').innerText = valorTotalFormatado;
+        document.getElementById('card-total-desc').innerText = `${mesesContrato} parcelas de ${valorFormatado}`;
+        document.getElementById('card-total-parcelas').innerText = `${mesesContrato} parcelas`;
+        document.getElementById('card-parcelas-pagas').innerText = `${mesesPagos} de ${mesesContrato} pagas`;
+
+        // Inteligência do Próximo Vencimento
+        const hoje = new Date();
+        let proxVenc = new Date(hoje.getFullYear(), hoje.getMonth(), diaVenc);
+        if (hoje.getDate() > diaVenc) {
+            proxVenc.setMonth(proxVenc.getMonth() + 1);
+        }
+        document.getElementById('card-prox-vencimento').innerText = proxVenc.toLocaleDateString('pt-BR');
+        
+        // Alerta de Dias Restantes
+        const diffTempo = proxVenc.getTime() - hoje.getTime();
+        const diffDias = Math.ceil(diffTempo / (1000 * 3600 * 24));
+        const alertaVenc = document.getElementById('card-alerta-vencimento');
+        
+        if (diffDias === 0) {
+            alertaVenc.innerText = "Vence HOJE!";
+            alertaVenc.style.color = "#dc2626"; 
+        } else if (diffDias < 0) {
+            alertaVenc.innerText = `Atrasado há ${Math.abs(diffDias)} dias`;
+            alertaVenc.style.color = "#dc2626"; 
+        } else if (diffDias <= 5) {
+            alertaVenc.innerText = `Faltam ${diffDias} dias`;
+            alertaVenc.style.color = "#ea580c"; 
+        } else {
+            alertaVenc.innerText = `Faltam ${diffDias} dias`;
+            alertaVenc.style.color = "#16a34a"; 
+        }
+
+        // ---- BARRA DE PROGRESSO E STATUS ----
+        const porcentagem = Math.round((mesesPagos / mesesContrato) * 100) || 0;
+        document.getElementById('ficha-progresso-texto').innerText = `${mesesPagos} de ${mesesContrato} parcelas pagas (${porcentagem}%)`;
+        document.getElementById('ficha-progresso-barra').style.width = `${porcentagem}%`;
+
+        const badgeStatus = document.getElementById('ficha-status-badge');
+        if (dados.status !== false && dados.status !== "false") {
+            badgeStatus.innerText = "🟢 CONTRATO ATIVO";
+            badgeStatus.className = "badge-ativo";
+            badgeStatus.style.background = "#dcfce7";
+            badgeStatus.style.color = "#166534";
+        } else {
+            badgeStatus.innerText = "🔴 SUSPENSO";
+            badgeStatus.className = "badge-ativo";
+            badgeStatus.style.background = "#fee2e2";
+            badgeStatus.style.color = "#991b1b";
+        }
+
+        // ---- GERANDO O CARNÊ DIGITAL ----
+        listaParcelas.innerHTML = ''; 
+        for (let i = 1; i <= mesesContrato; i++) {
+            let statusHTML = "";
+            if (i <= mesesPagos) {
+                statusHTML = `<span style="background: #dcfce7; color: #166534; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">🟢 PAGO</span>`;
+            } else if (i === mesesPagos + 1) {
+                statusHTML = `<span style="background: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">🟡 EM ABERTO</span>`;
+            } else {
+                statusHTML = `<span style="background: #f1f5f9; color: #64748b; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">⚪ AGUARDANDO</span>`;
+            }
+
+            let mesParcela = new Date(dataInicio.getFullYear(), dataInicio.getMonth() + i, diaVenc);
+            
+            const linha = `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #e2e8f0; background: white;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #f1f5f9; color: #475569; font-weight: bold; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-size: 12px;">
+                            ${i}/${mesesContrato}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; color: #1e293b; font-size: 14px;">Vencimento: ${mesParcela.toLocaleDateString('pt-BR')}</div>
+                            <div style="color: #64748b; font-size: 12px;">Valor: ${valorFormatado}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${statusHTML}
+                        <button class="btn" title="Imprimir Vias do Boleto" onclick="imprimirCarnePDF('${dados.linkBoleto}')" style="margin: 0; background: transparent; border: 1px solid #cbd5e1; color: #64748b; padding: 5px 10px; font-size: 12px; border-radius: 6px; cursor: pointer;" onmouseover="this.style.color='#3b82f6'; this.style.borderColor='#3b82f6';" onmouseout="this.style.color='#64748b'; this.style.borderColor='#cbd5e1';">
+                            <i class="fa-solid fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            listaParcelas.innerHTML += linha;
+        }
+
+    } catch (erro) {
+        console.error("Erro ao gerar carnê ou buscar cliente:", erro);
+        alert("Falha ao abrir ficha do cliente. Verifique a conexão.");
+    }
+}
+
+// 3. Função de Filtragem Visual (Botões Coloridos do CRM)
+function filtrarContratosSaaS(statusEscolhido) {
+    const linhas = document.querySelectorAll('#lista-contratos-crm tr');
     
     linhas.forEach(linha => {
-        const texto = linha.innerText.toLowerCase();
-        const condLinha = linha.getAttribute('data-condominio');
-        
-        const bateuTexto = texto.includes(termo);
-        const bateuCond = (filtroCond === "") || (condLinha === filtroCond);
+        // Se a linha for a de "Carregando" ou "Nenhum contrato", ignora
+        if(linha.innerText.includes('Buscando') || linha.innerText.includes('Nenhum')) return;
 
-        if (bateuTexto && bateuCond) {
+        const textoLinha = linha.innerText.toLowerCase();
+        
+        if (statusEscolhido === 'todos') {
+            linha.style.display = '';
+        } else if (statusEscolhido === 'ativos' && textoLinha.includes('ativo')) {
+            linha.style.display = '';
+        } else if (statusEscolhido === 'suspensos' && textoLinha.includes('suspenso')) {
             linha.style.display = '';
         } else {
-            linha.style.display = 'none';
+            linha.style.display = 'none'; // Esconde quem não bate com o filtro
         }
     });
 }
 
-async function excluirUsuarioMestre(uid, nome) {
-    if(!confirm(`🚨 ALERTA 🚨\n\nTem certeza que deseja EXCLUIR DEFINITIVAMENTE o acesso de ${nome}?`)) return;
-    try {
-        await db.collection("usuarios").doc(uid).delete();
-        alert("✅ Usuário removido com sucesso!");
-    } catch(e) { alert("❌ Erro: " + e); }
-}
+// ==========================================
+// 🖨️ MOTOR INTELIGENTE DE IMPRESSÃO (VIAS)
+// ==========================================
 
-// ==========================================
-// ✏️ FUNÇÕES DO MODAL DE EDIÇÃO
-// ==========================================
-function abrirModalEditarUsuarioGeral(uid, nome, email, cargo, condId) {
-    document.getElementById('editUserId').value = uid;
-    document.getElementById('editUserNome').value = nome;
-    document.getElementById('editUserEmail').value = email;
-    
-    const selectCargo = document.getElementById('editUserCargo');
-    if(Array.from(selectCargo.options).some(opt => opt.value === cargo)) {
-        selectCargo.value = cargo;
+function imprimirCarnePDF(urlFatura) {
+    // Se o robô ainda não teve tempo de salvar o link no banco de dados
+    if (!urlFatura || urlFatura === 'null' || urlFatura === 'undefined') {
+        alert("⚠️ O carnê ainda está sendo gerado pelo Asaas ou o link não chegou.\n\nFeche a ficha do cliente, aguarde alguns segundos e abra novamente!");
+        return;
     }
+
+    // Abre o boleto do Asaas direto na tela, sem fazer perguntas!
+    window.open(urlFatura, '_blank');
+}
+
+// ==========================================
+// 🔗 CONEXÃO DIRETA COM O ASAAS (NOVAS FUNÇÕES)
+// ==========================================
+
+// Função para o botão de link original (caso você use em outro lugar)
+function abrirLinkBoleto(urlFatura) {
+    if (!urlFatura || urlFatura === 'null' || urlFatura === 'undefined') {
+        alert("⚠️ O link deste boleto ainda não foi gerado pelo Asaas ou não está disponível.");
+        return;
+    }
+    // Abre o boleto do Asaas em uma nova aba
+    window.open(urlFatura, '_blank');
+}
+// ==========================================
+// 🔗 CONEXÃO DIRETA COM O ASAAS (NOVAS FUNÇÕES)
+// ==========================================
+
+// 1. Função para o botão de link (ao lado da etiqueta PAGO / EM ABERTO)
+function abrirLinkBoleto(urlFatura) {
+    if (!urlFatura || urlFatura === 'null' || urlFatura === 'undefined') {
+        alert("⚠️ O link deste boleto ainda não foi gerado pelo Asaas ou não está disponível.");
+        return;
+    }
+    // Abre o boleto do Asaas em uma nova aba
+    window.open(urlFatura, '_blank');
+}
+
+// 2. O "Truque" para clonar a tela do Asaas na mesma folha A4
+function gerarImpressaoDuplaAsaas(urlFatura) {
+    let janelaImpressao = window.open('', '_blank');
     
-    document.getElementById('editUserCondominio').value = condId || "";
-
-    document.getElementById('modalEditarUsuarioGeral').style.display = 'flex';
+    janelaImpressao.document.write(`
+        <html>
+        <head>
+            <title>Impressão Dupla - Carnê Asaas</title>
+            <style>
+                body { margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: white;}
+                iframe { width: 100%; height: 49vh; border: none; border-bottom: 2px dashed #94a3b8; }
+                @media print { @page { margin: 0; } body { -webkit-print-color-adjust: exact; } }
+            </style>
+        </head>
+        <body>
+            <iframe src="${urlFatura}"></iframe>
+            <iframe src="${urlFatura}"></iframe>
+            <script>
+                setTimeout(() => { window.print(); }, 1500);
+            <\/script>
+        </body>
+        </html>
+    `);
+    
+    janelaImpressao.document.close();
 }
+// ==========================================
+// 📸 UPLOAD DE FOTO DO CLIENTE (SAAS)
+// ==========================================
+// 1. Criamos uma memória blindada para o robô nunca esquecer o cliente
+let memoriaClienteSaaSAtual = ""; 
 
-function fecharModalEditarUsuarioGeral() {
-    document.getElementById('modalEditarUsuarioGeral').style.display = 'none';
-}
+async function fazerUploadFotoCliente(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-async function salvarEdicaoUsuarioGeral() {
-    const uid = document.getElementById('editUserId').value;
-    const nome = document.getElementById('editUserNome').value.trim();
-    const cargo = document.getElementById('editUserCargo').value;
-    const condId = document.getElementById('editUserCondominio').value;
+    // 2. O robô puxa o ID direto da memória blindada
+    const idCondominio = memoriaClienteSaaSAtual; 
 
-    if (!nome) { alert("O nome não pode ficar vazio!"); return; }
+    if (!idCondominio || idCondominio === "") {
+        alert("Erro: Não foi possível identificar o cliente.");
+        return;
+    }
+
+    const imgElement = document.getElementById('ficha-foto-condominio');
+    const srcOriginal = imgElement.src;
+    
+    // Efeito visual de carregamento (deixa a foto meio transparente)
+    imgElement.style.opacity = '0.5';
 
     try {
-        await db.collection("usuarios").doc(uid).update({
-            nome: nome,
-            cargo: cargo,
-            condominioId: condId
-        });
-        alert("✅ Perfil atualizado com sucesso!");
-        fecharModalEditarUsuarioGeral();
-    } catch(e) { alert("Erro ao atualizar: " + e); }
-}
+        // Usa a sua função compressora nativa
+        const base64Img = await comprimirLogo(file);
 
-// 📧 Envio automático do Firebase para Recuperação de Senha
-function enviarRedefinicaoSenhaGeral() {
-    const email = document.getElementById('editUserEmail').value;
-    if(!email) return;
-    
-    if(confirm(`Deseja enviar um e-mail de redefinição de senha para ${email}?`)) {
-        firebase.auth().sendPasswordResetEmail(email)
-            .then(() => {
-                alert(`✅ Sucesso! O link de redefinição foi enviado direto para a caixa de entrada de ${email}.`);
-            })
-            .catch((error) => {
-                alert(`❌ Falha ao enviar o e-mail: ${error.message}`);
-            });
+        // Salva a foto leve lá no banco de dados do Firebase
+        await db.collection('condominios').doc(idCondominio).update({
+            logoSistema: base64Img
+        });
+
+        // Atualiza a imagem na tela imediatamente
+        imgElement.src = base64Img;
+        imgElement.style.opacity = '1';
+        
+        // Atualiza a tabela de trás para refletir a mudança (se ela existir)
+        if(typeof carregarContratosCRM === 'function') carregarContratosCRM();
+
+    } catch (erro) {
+        console.error("Erro ao salvar a foto:", erro);
+        imgElement.src = srcOriginal; // Volta pro que tava se der erro
+        imgElement.style.opacity = '1';
+        alert("Erro ao salvar a foto. Tente novamente.");
     }
 }
