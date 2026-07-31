@@ -692,7 +692,7 @@
                                     const dadosCondo = docCondo.data();
 
                                     // VERIFICA SE O CONDOMÍNIO ESTÁ COM A MENSALIDADE EM DIA
-                                    if (dadosCondo.ativo === true) {
+                                    if (dadosCondo.ativo === true || dadosCondo.status === true) {
                                         
                                         // 🟢 TUDO CERTO! Salva os dados na memória e libera a catraca
                                         localStorage.setItem("condoup_logado", "true");
