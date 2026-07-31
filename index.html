@@ -16,7 +16,7 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="css/style.css?v=2">
+    <link rel="stylesheet" href="css/style.css?v=4">
     <link rel="stylesheet" href="css/transportadoras.css">
     
     <link rel="icon" href="/img/icon-192.png.png" type="image/png">
@@ -1552,6 +1552,11 @@
                     <label style="color: #475569; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;">E-mail do Síndico / Financeiro</label>
                     <input type="email" id="novo-cond-email" placeholder="sindico@email.com" style="width: 100%; margin-top: 0;">
                 </div>
+                
+                <div>
+                    <label style="color: #10b981; font-size: 12px; font-weight: bold; margin-bottom: 5px; display: block;"><i class="fa-brands fa-whatsapp"></i> WhatsApp (Cobrança Asaas)</label>
+                    <input type="text" id="novo-cond-telefone" placeholder="(00) 00000-0000" oninput="let v=this.value.replace(/\D/g,'');v=v.replace(/^(\d{2})(\d)/g,'($1) $2');v=v.replace(/(\d)(\d{4})$/,'$1-$2');this.value=v.substring(0,15);" style="width: 100%; margin-top: 0; border: 1px solid #10b981; background: #ecfdf5;">
+                </div>
 
                 <!-- Dados do Plano / Assinatura -->
                 <div>
@@ -1885,67 +1890,157 @@
 <!-- 📝 MODAL: FICHA COMPLETA DO CLIENTE (SaaS) -->
 <!-- ========================================== -->
 <div id="modalFichaCliente" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
-    <div class="modal-content" style="max-width: 800px; width: 95%; background: #fff; border-top: 5px solid #8b5cf6; border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);">
+    <!-- Aumentei a largura do modal para caber o novo layout (max-width: 1000px) -->
+    <div class="modal-content" style="max-width: 1000px; width: 95%; background: #fff; border-top: 5px solid #8b5cf6; border-radius: 12px; padding: 0; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2); position: relative;">
         
-        <!-- Cabeçalho da Ficha -->
-        <div style="background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <h3 id="ficha-nome-condominio" style="margin: 0; color: #0f172a; font-size: 22px; display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-building" style="color: #8b5cf6;"></i> Carregando...
-                </h3>
-                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">
-                    CNPJ: <span id="ficha-cnpj">00.000.000/0001-00</span> | Síndico: <span id="ficha-sindico">João Silva</span>
-                </p>
-            </div>
+        <!-- Botão de Fechar no topo direito -->
+        <div style="position: absolute; right: 15px; top: 15px; z-index: 10;">
             <button onclick="document.getElementById('modalFichaCliente').style.display='none'" style="background: rgba(15, 23, 42, 0.05); border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='rgba(15, 23, 42, 0.1)'" onmouseout="this.style.background='rgba(15, 23, 42, 0.05)'">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
 
         <!-- Corpo da Ficha -->
-        <div style="padding: 25px; max-height: 70vh; overflow-y: auto;">
+        <div style="padding: 25px; max-height: 85vh; overflow-y: auto; background: #f1f5f9;">
             
-            <!-- Linha de Resumo do Contrato -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold;">Mensalidade</span>
-                    <div id="ficha-valor" style="font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px;">R$ 0,00</div>
+            <!-- ========================================== -->
+            <!-- NOVO CABEÇALHO PADRÃO SAAS - CONNECTA PRO  -->
+            <!-- ========================================== -->
+            <div class="ficha-saas-header">
+                <!-- 1. Foto e Dados Principais -->
+                <div class="ficha-top-row">
+                    <div class="ficha-foto-container">
+                        <img id="ficha-foto-condominio" src="https://via.placeholder.com/150?text=Sem+Foto" alt="Foto do Cliente">
+                        <!-- Botão invisível que aparece ao passar o mouse -->
+                        <label for="upload-foto-condominio" class="btn-upload-foto">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" id="upload-foto-condominio" accept="image/*" style="display: none;" onchange="fazerUploadFotoCliente(event)">
+                    </div>
+
+                    <div class="ficha-dados-condominio">
+                        <div class="ficha-titulo-badge">
+                            <div>
+                                <span class="ficha-label">CONDOMÍNIO / CLIENTE</span>
+                                <h2 id="ficha-nome-condominio">Carregando...</h2>
+                            </div>
+                            <span id="ficha-status-badge" class="badge-ativo">🟢 CONTRATO ATIVO</span>
+                        </div>
+                        <div class="ficha-infos-lista">
+                            <p><i class="fa-solid fa-location-dot"></i> <span id="ficha-endereco">Endereço não cadastrado</span></p>
+                            <p><i class="fa-solid fa-building"></i> <span id="ficha-plano">0 Aptos</span></p>
+                            <p><i class="fa-solid fa-user-tie"></i> Síndico: <span id="ficha-sindico">Nome do Síndico</span></p>
+                            <p><i class="fa-solid fa-envelope"></i> <span id="ficha-email">email@cliente.com</span></p>
+                        </div>
+                    </div>
+
+                    <div class="ficha-dados-contrato">
+                        <h3>Contrato</h3>
+                        <div class="linha-contrato">
+                            <span>Nº do Contrato</span>
+                            <strong id="ficha-num-contrato">#00000</strong>
+                        </div>
+                        <div class="linha-contrato">
+                            <span>Início</span>
+                            <strong id="ficha-inicio-contrato">--/--/----</strong>
+                        </div>
+                        <div class="linha-contrato">
+                            <span>Término</span>
+                            <strong id="ficha-fim-contrato">--/--/----</strong>
+                        </div>
+                    </div>
                 </div>
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold;">Plano</span>
-                    <div id="ficha-plano" style="font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px;">0 Aptos</div>
+
+                <!-- 2. Os 4 Cards de Inteligência -->
+                <div class="ficha-cards-row">
+                    <div class="card-inteligente">
+                        <div class="card-icone" style="background: #ede9fe; color: #8b5cf6;"><i class="fa-solid fa-dollar-sign"></i></div>
+                        <div class="card-textos">
+                            <span>MENSALIDADE</span>
+                            <h3 id="card-mensalidade-valor">R$ 0,00</h3>
+                            <p>Valor fixo mensal</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card-inteligente">
+                        <div class="card-icone" style="background: #e0f2fe; color: #0ea5e9;"><i class="fa-solid fa-file-contract"></i></div>
+                        <div class="card-textos">
+                            <span>TOTAL DO CONTRATO</span>
+                            <h3 id="card-total-valor">R$ 0,00</h3>
+                            <p id="card-total-desc">0 parcelas</p>
+                        </div>
+                    </div>
+
+                    <div class="card-inteligente">
+                        <div class="card-icone" style="background: #dcfce7; color: #22c55e;"><i class="fa-regular fa-calendar"></i></div>
+                        <div class="card-textos">
+                            <span>PRÓXIMO VENCIMENTO</span>
+                            <h3 id="card-prox-vencimento">--/--/----</h3>
+                            <p id="card-alerta-vencimento" style="color: #f97316; font-weight: 600;">Calculando...</p>
+                        </div>
+                    </div>
+
+                    <div class="card-inteligente">
+                        <div class="card-icone" style="background: #fef3c7; color: #eab308;"><i class="fa-solid fa-file-invoice"></i></div>
+                        <div class="card-textos">
+                            <span>TOTAL DE PARCELAS</span>
+                            <h3 id="card-total-parcelas">0 parcelas</h3>
+                            <p id="card-parcelas-pagas">0 de 0 pagas</p>
+                        </div>
+                    </div>
                 </div>
-                <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                    <span style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: bold;">Vencimento</span>
-                    <div id="ficha-dia-vencimento" style="font-size: 20px; font-weight: bold; color: #0f172a; margin-top: 5px;">Dia 00</div>
+
+                <!-- 3. Barra de Progresso do Contrato -->
+                <div class="ficha-progresso-container">
+                    <div class="progresso-header">
+                        <span>Progresso do Contrato</span>
+                        <span id="ficha-progresso-texto">0 de 0 parcelas pagas (0%)</span>
+                    </div>
+                    <div class="progresso-track">
+                        <div id="ficha-progresso-barra" class="progresso-fill"></div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Termômetro do Contrato -->
-            <div style="margin-bottom: 30px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <span style="font-size: 13px; font-weight: bold; color: #475569;"><i class="fa-solid fa-file-contract"></i> Progresso do Contrato (<span id="ficha-meses-contrato">24</span> meses)</span>
-                    <span id="ficha-progresso-texto" style="font-size: 12px; font-weight: bold; color: #8b5cf6;">10 de 24 meses (41%)</span>
+            <!-- EXTRATO INTELIGENTE E RESUMO LATERAL -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+                
+                <!-- Coluna do Carnê -->
+                <div style="background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4 style="margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px; font-size: 18px;">
+                            <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Carnê Digital de Pagamentos
+                        </h4>
+                    </div>
+                    
+                    <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+                        <div id="lista-parcelas-contrato" style="max-height: 250px; overflow-y: auto; background: #f8fafc;">
+                            <!-- O JS vai cuspir as linhas aqui dentro -->
+                        </div>
+                    </div>
                 </div>
-                <div style="width: 100%; height: 10px; background: #e2e8f0; border-radius: 10px; overflow: hidden;">
-                    <div id="ficha-progresso-barra" style="height: 100%; background: linear-gradient(90deg, #8b5cf6, #c084fc); width: 41%; border-radius: 10px;"></div>
-                </div>
-            </div>
 
-            <!-- EXTRATO INTELIGENTE (Lista de Parcelas Geradas Automáticas) -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h4 style="margin: 0; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-file-invoice-dollar" style="color: #10b981;"></i> Carnê Digital de Pagamentos
-                </h4>
-                <button class="btn" style="background: #0ea5e9; margin: 0; padding: 8px 15px; font-size: 12px;" onclick="imprimirCarnePDF()">
-                    <i class="fa-solid fa-print"></i> Imprimir Vias
-                </button>
-            </div>
-            
-            <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
-                <div id="lista-parcelas-contrato" style="max-height: 250px; overflow-y: auto; background: #f8fafc;">
-                    <!-- O JS vai cuspir as linhas aqui dentro -->
+                <!-- Coluna do Resumo (Lateral Azulzinha) -->
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; align-self: start;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <i class="fa-solid fa-circle-info" style="color: #3b82f6; font-size: 18px; margin-top: 2px;"></i>
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; color: #0f172a;">Resumo do Contrato</h4>
+                            <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.4;">Acompanhe aqui o status do seu contrato, pagamentos e informações importantes.</p>
+                        </div>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+                    
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;">
+                        <span style="color: #64748b;"><i class="fa-regular fa-file"></i> Forma de Pag.</span>
+                        <strong style="color: #1e293b;">Boleto / Pix</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 10px;">
+                        <span style="color: #64748b;"><i class="fa-solid fa-building-columns"></i> Banco Emissor</span>
+                        <strong style="color: #1e293b;">Asaas</strong>
+                    </div>
                 </div>
+
             </div>
 
         </div>
@@ -2001,7 +2096,7 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=140"></script>
+<script src="js/app.js?v=144"></script>
 <script src="js/equipe.js?v=14"></script>
 <script src="js/plantao.js?v=13"></script>
 <script src="js/ponto.js?v=15"></script>
@@ -2026,7 +2121,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=140')
+     navigator.serviceWorker.register('sw.js?v=144')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
@@ -2063,6 +2158,34 @@
         }
     });
 </script>
+<!-- 🖨️ MODAL DE OPÇÕES DE IMPRESSÃO -->
+<div id="modalOpcoesImpressao" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15, 23, 42, 0.7); z-index:99999; justify-content:center; align-items:center; backdrop-filter: blur(4px);">
+    <div style="background:white; padding:30px; border-radius:16px; width:380px; box-shadow:0 20px 25px -5px rgba(0,0,0,0.1);">
+        <h3 style="margin-top:0; color:#1e293b; font-size:18px; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
+            <i class="fa-solid fa-print" style="color:#3b82f6;"></i> Opções de Impressão
+        </h3>
+        
+        <div style="display:flex; flex-direction:column; gap:15px; margin-bottom:25px;">
+            <label style="cursor:pointer; display:flex; align-items:center; gap:10px; color:#475569; font-weight:500; font-size:15px; padding:10px; border:1px solid #e2e8f0; border-radius:8px; transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <input type="radio" name="tipoImpressao" value="1" checked style="width:18px; height:18px;"> 
+                🖨️ Imprimir 1 via
+            </label>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:10px; color:#475569; font-weight:500; font-size:15px; padding:10px; border:1px solid #e2e8f0; border-radius:8px; transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <input type="radio" name="tipoImpressao" value="2_mesma" style="width:18px; height:18px;"> 
+                📄 2 vias na mesma folha A4
+            </label>
+            <label style="cursor:pointer; display:flex; align-items:center; gap:10px; color:#475569; font-weight:500; font-size:15px; padding:10px; border:1px solid #e2e8f0; border-radius:8px; transition:0.2s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                <input type="radio" name="tipoImpressao" value="2_separadas" style="width:18px; height:18px;"> 
+                📑 2 vias em folhas separadas
+            </label>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; gap:12px;">
+            <button onclick="fecharOpcoesImpressao()" style="padding:10px 18px; background:#f1f5f9; border:none; border-radius:8px; cursor:pointer; font-weight:600; color:#475569; transition:0.2s;" onmouseover="this.style.background='#e2e8f0'">Cancelar</button>
+            <button onclick="executarImpressaoPersonalizada()" style="padding:10px 18px; background:#3b82f6; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600; transition:0.2s;" onmouseover="this.style.background='#2563eb'">Confirmar</button>
+        </div>
+    </div>
+</div>
 
 </body>
 </html>
