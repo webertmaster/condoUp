@@ -1,11 +1,11 @@
 // ==========================================
-// CONDO UP - O SEGURANÇA DA PORTA E ROTEADOR
+// CONRUJA - O SEGURANÇA DA PORTA E ROTEADOR
 // auth.js - Controle de Acesso e Hierarquia
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. VERIFICA O CRACHÁ DE ACESSO
-    const isLogado = localStorage.getItem("condoup_logado");
+    const isLogado = localStorage.getItem("CONRUJA_logado");
     const paginaAtual = window.location.pathname.toLowerCase();
 
     // Se NÃO tem crachá e NÃO está na tela de login, chuta para fora!
