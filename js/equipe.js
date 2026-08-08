@@ -222,8 +222,9 @@ function atualizarListaEquipe() {
 
     ordemExibicao.forEach(nomeGrupo => {
         if (grupos[nomeGrupo] && grupos[nomeGrupo].length > 0) {
+            // Título do Grupo
             const tituloSessao = document.createElement('h2');
-            tituloSessao.style.cssText = "grid-column: 1 / -1; margin-top: 25px; margin-bottom: 10px; font-size: 18px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;";
+            tituloSessao.style.cssText = "grid-column: 1 / -1; margin-top: 25px; margin-bottom: 15px; font-size: 18px; color: #475569; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; display: flex; align-items: center; gap: 8px;";
             
             let iconTitulo = 'fa-users';
             if(nomeGrupo === "Administração") iconTitulo = 'fa-building-user';
@@ -233,59 +234,76 @@ function atualizarListaEquipe() {
             tituloSessao.innerHTML = `<i class="fa-solid ${iconTitulo}" style="color: #94a3b8;"></i> ${nomeGrupo}`;
             lista.appendChild(tituloSessao);
 
+            // Container Grid Inteligente (Lado a Lado)
             const gridSessao = document.createElement('div');
-            gridSessao.style.cssText = "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; grid-column: 1 / -1;";
+            gridSessao.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; grid-column: 1 / -1; margin-bottom: 30px;";
 
             grupos[nomeGrupo].forEach(item => {
                 const func = item.func;
                 const index = item.index;
 
+                // Cores baseadas no grupo
                 let corBadge = '#3b82f6', icone = 'fa-user';
                 if (nomeGrupo === "Portaria e Segurança") { corBadge = '#10b981'; icone = 'fa-user-shield'; }
                 else if (nomeGrupo === "Manutenção e Limpeza") { corBadge = '#f59e0b'; icone = 'fa-broom'; }
                 else if (nomeGrupo === "Administração") { corBadge = '#8b5cf6'; icone = 'fa-user-tie'; }
 
+                // Foto do Firebase (ou iniciais)
+                let primeiroNome = func.nome ? func.nome.split(" ")[0] : "Funcionario";
+                let fotoAvatar = func.fotoPerfil ? func.fotoPerfil : `https://ui-avatars.com/api/?name=${primeiroNome}&background=f1f5f9&color=475569&size=150`;
+
+                // Badges de Status (Assinatura e Ponto)
                 let assinaturaBadge = func.assinatura 
-                    ? `<span style="background: #ecfdf5; color: #059669; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #34d399;"><i class="fa-solid fa-check"></i> Assinatura Salva</span>` 
-                    : `<span style="background: #fef2f2; color: #dc2626; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #f87171;"><i class="fa-solid fa-xmark"></i> Sem Assinatura</span>`;
+                    ? `<span style="color: #10b981; font-weight: bold;" title="Assinatura Salva"><i class="fa-solid fa-file-signature"></i></span>` 
+                    : `<span style="color: #ef4444; font-weight: bold;" title="Sem Assinatura"><i class="fa-solid fa-file-signature"></i></span>`;
 
                 let pontoBadge = func.exigePonto !== false 
-                    ? `<span style="background: #eff6ff; color: #3b82f6; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;"><i class="fa-solid fa-clock"></i> Bate Ponto</span>`
-                    : `<span style="background: #f8fafc; color: #94a3b8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; border: 1px solid #e2e8f0;"><i class="fa-solid fa-eye-slash"></i> Isento de Ponto</span>`;
+                    ? `<span style="color: #3b82f6; font-weight: bold;" title="Bate Ponto"><i class="fa-solid fa-clock"></i></span>`
+                    : `<span style="color: #94a3b8; font-weight: bold;" title="Isento"><i class="fa-solid fa-eye-slash"></i></span>`;
 
+                // Botões de Gestão
                 let botoesGestaoHtml = '';
                 if (cargoUsuario === 'operacional') {
-                    botoesGestaoHtml = `<div style="display: grid; grid-template-columns: 1fr; gap: 8px;"><button onclick="carregarFuncionarioParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;"><i class="fa-solid fa-pen"></i> Editar</button></div>`;
+                    botoesGestaoHtml = `<button onclick="carregarFuncionarioParaEdicao(${index})" style="width: 100%; background: #eff6ff; color: #3b82f6; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-pen"></i> Editar</button>`;
                 } else {
-                    botoesGestaoHtml = `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                            <button onclick="carregarFuncionarioParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;"><i class="fa-solid fa-pen"></i> Editar</button>
-                            <button onclick="excluirFuncionario('${func.id}', '${func.nome}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; gap: 5px;"><i class="fa-solid fa-trash-can"></i> Remover</button>
-                        </div>`;
+                    botoesGestaoHtml = `
+                        <button onclick="carregarFuncionarioParaEdicao(${index})" style="flex: 1; background: #eff6ff; color: #3b82f6; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-pen"></i> Editar</button>
+                        <button onclick="excluirFuncionario('${func.id}', '${func.nome}')" style="flex: 1; background: #fef2f2; color: #ef4444; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;"><i class="fa-solid fa-trash-can"></i> Remover</button>
+                    `;
                 }
 
-                const card = document.createElement('div'); card.className = 'card'; card.style.borderLeft = `5px solid ${corBadge}`;
-                card.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 10px;">
-                        <h3 style="margin: 0; color: #1e293b; font-size: 18px; display: flex; align-items: center; gap: 8px;"><i class="fa-solid ${icone}" style="color: ${corBadge};"></i>${func.nome}</h3>
+                // Criação do CRACHÁ
+                const cracha = document.createElement('div');
+                cracha.style.cssText = `background: white; border-radius: 16px; padding: 25px 20px; border: 1px solid #e2e8f0; border-top: 5px solid ${corBadge}; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; flex-direction: column; align-items: center; text-align: center; transition: 0.2s;`;
+                cracha.onmouseover = function() { this.style.transform = 'translateY(-5px)'; };
+                cracha.onmouseout = function() { this.style.transform = 'translateY(0)'; };
+
+                cracha.innerHTML = `
+                    <div style="position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; font-size: 14px;">
+                        ${assinaturaBadge}
+                        ${pontoBadge}
                     </div>
-                    <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #f1f5f9;">
-                        <p style="font-size: 15px; color: #0f172a; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-id-card-clip" style="color: #64748b; width: 15px;"></i> <strong>Cargo:</strong> <span style="background: ${corBadge}20; color: ${corBadge}; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 13px;">${func.cargo}</span></span>
-                        </p>
-                        <p style="font-size: 14px; color: #475569; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-envelope" style="color: #64748b; width: 15px;"></i>${func.email || 'Não informado'}</span>
-                        </p>
-                        <p style="font-size: 14px; color: #475569; display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <span style="display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-address-card" style="color: #64748b; width: 15px;"></i><strong>CPF:</strong> ${func.cpf || 'Não informado'}</span>
-                        </p>
-                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-                            ${assinaturaBadge}
-                            ${pontoBadge}
+
+                    <img src="${fotoAvatar}" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid #f8fafc; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 12px; margin-top: 10px;">
+                    
+                    <h4 style="margin: 0 0 6px 0; font-size: 17px; color: #0f172a; font-weight: 800; text-transform: capitalize;">${func.nome}</h4>
+                    <span style="background: ${corBadge}15; color: ${corBadge}; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; margin-bottom: 18px; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid ${icone}"></i> ${func.cargo}</span>
+                    
+                    <div style="width: 100%; text-align: left; font-size: 12px; color: #475569; background: #f8fafc; padding: 12px 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #f1f5f9;">
+                        <div style="margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${func.email || 'Não informado'}">
+                            <i class="fa-regular fa-envelope" style="color: #94a3b8; width: 16px;"></i> ${func.email || 'N/A'}
+                        </div>
+                        <div>
+                            <i class="fa-regular fa-address-card" style="color: #94a3b8; width: 16px;"></i> CPF: ${func.cpf || 'N/A'}
                         </div>
                     </div>
-                    ${botoesGestaoHtml}
+                    
+                    <div style="display: flex; gap: 8px; width: 100%; margin-top: auto;">
+                        ${botoesGestaoHtml}
+                    </div>
                 `;
-                gridSessao.appendChild(card);
+                
+                gridSessao.appendChild(cracha);
             });
             lista.appendChild(gridSessao);
         }
