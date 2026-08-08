@@ -282,7 +282,7 @@ async function ativarNotificacoesPush() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.register('./sw.js?v=154');
+        const registration = await navigator.serviceWorker.register('./sw.js?v=155');
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
         }
