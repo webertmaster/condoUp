@@ -131,6 +131,7 @@
         <button onclick="trocarTela('autorizacoes')" id="menu-autorizacoes"><i class="fa-solid fa-qrcode"></i> Autorizações App</button>
         
         <button onclick="trocarTela('ocorrencias')" id="menu-ocorrencias"><i class="fa-solid fa-triangle-exclamation"></i> Ocorrências</button>
+        <button onclick="trocarTela('prestadores')" id="menu-prestadores"><i class="fa-solid fa-tools"></i> Prestadores de Serviço</button>
 
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Cadastros</div>
         <button onclick="trocarTela('moradores')" id="menu-moradores"><i class="fa-solid fa-users"></i> Moradores</button>
@@ -272,6 +273,11 @@
                 <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i>
                 <span id="dash-ocorrencias">0</span>
                 <p>Ocorrências em Aberto</p>
+            </div>
+            <div class="stat-card" style="border-bottom: 4px solid #6366f1;">
+                <i class="fa-solid fa-tools" style="color: #6366f1;"></i>
+                <span id="dash-prestadores">0</span>
+                <p>Prestadores no Prédio</p>
             </div>
             <div class="stat-card" style="border-bottom: 4px solid #10b981;">
                 <i class="fa-solid fa-calendar-check" style="color: #10b981;"></i>
@@ -983,6 +989,120 @@
             </div>
         </div> 
         <div id="listaOcorrencias"></div>
+    </div>
+        <!-- ========================================== -->
+    <!-- TELA PRESTADORES DE SERVIÇO                -->
+    <!-- ========================================== -->
+    <div id="prestadores" class="tela">
+        <div class="dash-header" style="margin-bottom: 20px;">
+            <div>
+                <h2><i class="fa-solid fa-tools" style="color: #6366f1; margin-right: 10px;"></i>Controle de Prestadores</h2>
+                <p style="color: #64748b; font-weight: 600; margin-top: 5px;">Gerencie a entrada e saída de técnicos e prestadores no condomínio.</p>
+            </div>
+            <button class="btn" style="background: #6366f1; height: 45px; margin: 0;" onclick="abrirModalNovoPrestador()">
+                <i class="fa-solid fa-plus"></i> Novo Acesso
+            </button>
+        </div>
+
+        <!-- Abas de Navegação -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+            <button id="btn-aba-ativos" class="btn" style="background: #6366f1; color: white; border: none; margin: 0;" onclick="alternarAbaPrestadores('ativos')">No Prédio Agora</button>
+            <button id="btn-aba-historico" class="btn" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; margin: 0;" onclick="alternarAbaPrestadores('historico')">Histórico</button>
+        </div>
+
+        <!-- Conteúdo: No Prédio Agora (Limpa todo dia) -->
+        <div id="conteudo-ativos" class="box" style="padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 15px 20px;">Nome</th>
+                            <th style="padding: 15px 20px;">Documento</th>
+                            <th style="padding: 15px 20px;">Destino (Apto)</th>
+                            <th style="padding: 15px 20px;">Entrada</th>
+                            <th style="padding: 15px 20px;">Empresa</th>
+                            <th style="padding: 15px 20px; text-align: right;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-prestadores-ativos" style="font-size: 14px;">
+                        <tr><td colspan="6" style="text-align: center; padding: 30px; color: #94a3b8;">Nenhum prestador no prédio no momento.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Conteúdo: Histórico (Com filtro de data) -->
+        <div id="conteudo-historico" class="box" style="display: none; padding: 0; overflow: hidden; border: 1px solid #e2e8f0;">
+            <div style="padding: 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center;">
+                <label style="font-size: 13px; font-weight: bold; color: #475569;">Filtrar por data:</label>
+                <div style="display: flex; flex: 1; max-width: 200px; align-items: center; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; height: 42px;">
+                    <i class="fa-regular fa-calendar-days" style="color: #94a3b8; font-size: 16px;"></i>
+                    <input type="date" id="filtro-data-historico" style="width: 100%; height: 100%; border: none; outline: none; background: transparent; color: #0f172a; font-size: 14px; padding-left: 10px; cursor: pointer;">
+                </div>
+                <button class="btn" style="background: #64748b; margin: 0; height: 42px;" onclick="buscarHistoricoPrestadores()">Buscar</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="background: #f1f5f9; color: #475569; font-size: 12px; text-transform: uppercase;">
+                            <th style="padding: 15px 20px;">Data</th>
+                            <th style="padding: 15px 20px;">Nome</th>
+                            <th style="padding: 15px 20px;">Empresa</th>
+                            <th style="padding: 15px 20px;">Apto</th>
+                            <th style="padding: 15px 20px;">Entrada</th>
+                            <th style="padding: 15px 20px;">Saída</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lista-prestadores-historico" style="font-size: 14px;">
+                        <!-- O JavaScript vai preencher o histórico aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL: NOVO PRESTADOR DE SERVIÇO           -->
+        <!-- ========================================== -->
+        <div id="modalNovoPrestador" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px); position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;">
+            <div class="modal-content" style="max-width: 500px; width: 90%; background: #fff; border-top: 5px solid #6366f1; border-radius: 12px; padding: 25px; position: relative;">
+                <button onclick="fecharModalNovoPrestador()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+                
+                <h3 style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-hard-hat" style="color: #6366f1; margin-right: 8px;"></i> Registrar Entrada</h3>
+                
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Documento (RG ou CPF)</label>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <input type="text" id="prestadorDoc" placeholder="Digite e busque..." style="flex: 1; width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; margin: 0;" onblur="buscarPrestadorPorDoc()">
+                        <button class="btn" style="flex: none; margin: 0; background: #64748b; height: 44px; width: 44px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px;" onclick="buscarPrestadorPorDoc()">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </button>
+                    </div>
+                    <small style="color: #94a3b8; font-size: 11px;">O sistema puxará os dados se ele já tiver cadastro.</small>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Nome do Prestador</label>
+                    <input type="text" id="prestadorNome" placeholder="Nome completo" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; margin: 0;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Empresa (Opcional)</label>
+                        <input type="text" id="prestadorEmpresa" placeholder="Ex: Claro, Vivo..." style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: #f8fafc; margin: 0;">
+                    </div>
+                    <div>
+                        <label style="font-size: 12px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Apto de Destino</label>
+                        <select id="prestadorApto" style="width: 100%; border: 1px solid #cbd5e1; padding: 12px; border-radius: 8px; outline: none; background: white; margin: 0;">
+                            <option value="">Selecione...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="salvarEntradaPrestador()" class="btn" style="background: #6366f1; color: white; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; margin: 0;">
+                    <i class="fa-solid fa-check"></i> Liberar Entrada
+                </button>
+            </div>
+        </div>
     </div>
 
     <div id="encomendas" class="tela">
@@ -2399,7 +2519,7 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=154"></script>
+<script src="js/app.js?v=155"></script>
 <script src="js/equipe.js?v=14"></script>
 <script src="js/plantao.js?v=13"></script>
 <script src="js/ponto.js?v=15"></script>
@@ -2419,12 +2539,13 @@
 <script src="js/adm.js?v=17"></script>
 <script src="js/financeiro.js?v=1"></script>
 <script src="js/notificacoes.js?v=2"></script>
+<script src="js/prestadores.js?v=2"></script>
 
 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=154')
+     navigator.serviceWorker.register('sw.js?v=155')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
