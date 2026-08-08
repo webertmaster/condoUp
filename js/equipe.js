@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP
+// EVO UPI - CONRUJA
 // equipe.js - Gestão de Equipe na Nuvem Automatizada
 // ==========================================
 
@@ -112,7 +112,7 @@ async function addFuncionario() {
                 return;
             }
 
-            const senhaGerada = "CondoUp@" + Math.floor(1000 + Math.random() * 9000);
+            const senhaGerada = "CONRUJA@" + Math.floor(1000 + Math.random() * 9000);
             const secondaryApp = firebase.initializeApp(firebaseConfig, "AppEquipe_" + Date.now());
             const userCredential = await secondaryApp.auth().createUserWithEmailAndPassword(email, senhaGerada);
             const novoUid = userCredential.user.uid;
@@ -134,7 +134,7 @@ async function addFuncionario() {
             const htmlDoEmail = `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
                     <div style="background-color: #0F172A; padding: 25px; text-align: center;">
-                        <h2 style="color: #38bdf8; margin: 0; font-size: 24px; letter-spacing: 1px;">CONDO UP</h2>
+                        <h2 style="color: #38bdf8; margin: 0; font-size: 24px; letter-spacing: 1px;">CONRUJA</h2>
                     </div>
                     <div style="padding: 30px; background-color: #ffffff; color: #334155;">
                         <h3 style="color: #1e293b; font-size: 20px; margin-top: 0;">Bem-vindo(a) à equipe, ${nome}!</h3>
@@ -144,12 +144,12 @@ async function addFuncionario() {
                             <p style="margin: 0; font-size: 15px;"><b>Senha provisória:</b> <span style="background: #e2e8f0; padding: 3px 8px; border-radius: 4px; font-family: monospace;">${senhaGerada}</span></p>
                         </div>
                         <div style="text-align: center; margin-top: 25px;">
-                            <a href="https://condoup.evoupi.com.br" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
+                            <a href="https://app.conruja.com.br" style="display: inline-block; background-color: #3b82f6; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 16px;">Acessar o Sistema</a>
                         </div>
                     </div>
                 </div>`;
 
-            if(typeof dispararEmail === 'function') { await dispararEmail(email, nome, "Seus dados de acesso - CondoUp", htmlDoEmail); }
+            if(typeof dispararEmail === 'function') { await dispararEmail(email, nome, "Seus dados de acesso - CONRUJA", htmlDoEmail); }
 
             resetarFormulario();
             alert('🚀 Funcionário cadastrado na base, login ativado e E-mail enviado com sucesso!');
