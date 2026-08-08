@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP (NUVEM FIREBASE)
+// EVO UPI - CONRUJA (NUVEM FIREBASE)
 // encomendas.js - Gestão Premium (MULTI-TENANT ATIVO)
 // ==========================================
 
