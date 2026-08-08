@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP
+// EVO UPI - CONRUJA
 // financeiro.js - Motor Financeiro e Receita MRR (SaaS)
 // ==========================================
 
