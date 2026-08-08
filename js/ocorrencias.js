@@ -309,7 +309,7 @@ function mostrarOcorrencias(filtro="") {
         let moradorExibido = o.morador || 'N/A';
 
         // Mensagem do WhatsApp codificada para não quebrar o link
-        let txtWhatsRaw = `Olá ${moradorExibido}, sou da Administração do CondoUp. Entro em contato referente à sua ocorrência: "${o.tipo}".`;
+        let txtWhatsRaw = `Olá ${moradorExibido}, sou da Administração do CONRUJA. Entro em contato referente à sua ocorrência: "${o.tipo}".`;
         let txtWhats = encodeURIComponent(txtWhatsRaw);
         
         // ==========================================
