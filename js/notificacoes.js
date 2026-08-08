@@ -6,7 +6,7 @@ let notificacoesGlobais = [];
 
 document.addEventListener('DOMContentLoaded', () => {
     // Só liga o radar do sino se o usuário estiver logado
-    const isLogado = localStorage.getItem("condoup_logado");
+    const isLogado = localStorage.getItem("CONRUJA_logado");
     if (isLogado && !window.location.pathname.includes('login.html')) {
         setTimeout(iniciarRadarNotificacoes, 1500); // Dá um fôlego pro sistema carregar primeiro
     }
