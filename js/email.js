@@ -5,7 +5,7 @@ async function dispararEmail(destinatarioEmail, destinatarioNome, assunto, conte
     // Aqui estou colocando direto para você testar agora mesmo.
     const CHAVE_API_BREVO = "COLE_SUA_CHAVE_GIGANTE_AQUI"; 
     const REMETENTE_EMAIL = "nao-responda@evoupi.com.br"; // Seu domínio verificado
-    const REMETENTE_NOME = "CondoUp - Portaria Inteligente";
+    const REMETENTE_NOME = "CONRUJA - Portaria Inteligente";
 
     const url = "https://api.brevo.com/v3/smtp/email";
 
