@@ -470,7 +470,7 @@ async function gerarFolhaPontoIndividual(param1 = null, param2 = null) {
         const { jsPDF } = window.jspdf; const doc = new jsPDF();
 
         doc.setTextColor(15, 23, 42); doc.setFontSize(16); doc.setFont("helvetica", "bold");
-        doc.text("CONDO UP - REGISTRO DE PONTO", 105, 15, null, null, "center");
+        doc.text("CONRUJA - REGISTRO DE PONTO", 105, 15, null, null, "center");
         doc.setLineWidth(0.5); doc.line(14, 18, 196, 18);
 
         doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text(`Mês/Ano:`, 14, 25); doc.setFont("helvetica", "normal"); doc.text(`${mes}/${ano}`, 33, 25);
