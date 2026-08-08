@@ -331,7 +331,7 @@ function carregarCondominiosSaaS() {
                         <i class="fa-solid ${isAtivo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
                     </button>
                     
-                    <button onclick="excluirCondominioMestre('${id}', '${nomeCond}')" style="background: #ef4444; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Excluir Definitivamente">
+                    <button onclick="excluirCondominioSaaS('${id}', '${nomeCond}')" style="background: #ef4444; color: white; border: none; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 13px;" title="Excluir Definitivamente">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                     
@@ -1064,5 +1064,19 @@ function enviarRedefinicaoSenhaGeral() {
             .catch((error) => {
                 alert(`❌ Falha ao enviar o e-mail: ${error.message}`);
             });
+    }
+}// ==========================================
+// EXCLUIR CONDOMÍNIO (SAAS)
+// ==========================================
+function excluirCondominioSaaS(id, nomeCondominio) {
+    if (confirm(`🚨 ATENÇÃO EXTREMA: Tem certeza que deseja excluir o condomínio "${nomeCondominio}"?\n\nIsso removerá o cliente definitivamente do banco de dados.`)) {
+        db.collection('condominios').doc(id).delete()
+        .then(() => {
+            alert("✅ Condomínio excluído com sucesso!");
+        })
+        .catch(error => {
+            console.error("Erro ao excluir condomínio:", error);
+            alert("❌ Erro ao excluir o condomínio. Verifique sua conexão e tente novamente.");
+        });
     }
 }
