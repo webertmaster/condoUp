@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP
+// EVO UPI - CONRUJA
 // app.js - Núcleo do Sistema (Menu, Relógio e Dashboard)
 // ==========================================
 
@@ -150,11 +150,10 @@ function atualizarDashboard() {
                 }
             }
 
-            // 🚀 3. A CHAVE NA IGNIÇÃO (BLINDADA CONTRA ERROS DE CARREGAMENTO):
+            // 🚀 3. A CHAVE NA IGNIÇÃO (ENVIANDO VENCIMENTO, STATUS E O LINK DO BOLETO):
             if (typeof carregarBannerDeVencimento === 'function' && dados.vencimento) {
-                // O setTimeout manda o robô esperar meio segundo para a tela existir
                 setTimeout(() => {
-                    carregarBannerDeVencimento(dados.vencimento);
+                    carregarBannerDeVencimento(dados.vencimento, dados.statusAsaas, dados.linkBoleto); // 👈 Olha o link adicionado aqui no final!
                 }, 500);
             }
         }
@@ -283,7 +282,7 @@ async function ativarNotificacoesPush() {
     }
 
     try {
-        const registration = await navigator.serviceWorker.register('./sw.js?v=144');
+        const registration = await navigator.serviceWorker.register('./sw.js?v=154');
         if (typeof firebase.messaging().useServiceWorker === 'function') {
             firebase.messaging().useServiceWorker(registration);
         }
@@ -407,20 +406,26 @@ async function comprimirLogo(file) {
 // ==========================================
 // ⏰ MOTOR DO BANNER PREMIUM DE VENCIMENTO
 // ==========================================
-async function carregarBannerDeVencimento(diaVencimentoDb) {
+async function carregarBannerDeVencimento(diaVencimentoDb, statusAsaas, linkBoleto) {
     try {
+        // 🛑 ESCUDO PROTETOR: Se a fatura estiver paga ou o sistema não tiver dívidas, não encha o saco do cliente!
+        if (statusAsaas === "pago" || statusAsaas === "ativo") {
+            const container = document.getElementById('container-banner-vencimento');
+            if (container) container.innerHTML = ""; // Limpa qualquer resquício
+            console.log("✅ Mensalidade em dia! Banner de vencimento desativado.");
+            return; // Interrompe a função aqui e o banner nunca aparece.
+        }
+
         console.log("🔥 Puxando o arquivo do Banner Premium...");
         
-        // 1. Puxa o visual do arquivo separado (COM TRATAMENTO DE ERRO)
         const resposta = await fetch('banner-vencimento.html');
         if (!resposta.ok) {
             console.error("🚨 O Live Server recusou a conexão com o banner:", resposta.status);
-            return; // Aborta se a conexão falhar
+            return; 
         }
         
         const htmlDoBanner = await resposta.text();
         
-        // 2. Injeta na tela
         const container = document.getElementById('container-banner-vencimento');
         if (!container) {
              console.error("🚨 ERRO: A div container-banner-vencimento sumiu do index.html!");
@@ -428,17 +433,126 @@ async function carregarBannerDeVencimento(diaVencimentoDb) {
         }
         container.innerHTML = htmlDoBanner;
 
-        // 3. Se não tiver dia, aborta
+        // 👇 A MÁGICA DO BOTÃO DE CHECKOUT INTERNO COM RADAR!
+        const btnPagar = document.querySelector('.btn-pagar-premium');
+        if (btnPagar) {
+            btnPagar.onclick = function() {
+                const telaBloqueio = document.getElementById("tela-bloqueio-inadimplente");
+                const spanValor = document.getElementById("checkout-valor");
+                const inputPixCopia = document.getElementById("checkout-pix-copia");
+                const imgQrcode = document.getElementById("checkout-qrcode");
+                const inputBarras = document.getElementById("checkout-codigo-barras");
+                
+                if (telaBloqueio) {
+                    telaBloqueio.style.display = "flex"; // Mostra o Checkout
+                    const condominioId = obterCondominioAtivo();
+
+                    // LIGA O RADAR: Puxa o Asaas ao vivo para dentro da tela de Checkout!
+                    if (condominioId && typeof db !== 'undefined') {
+                        db.collection("condominios").doc(condominioId).onSnapshot((docAtualizado) => {
+                            if (!docAtualizado.exists) return;
+                            const dadosAoVivo = docAtualizado.data();
+
+                            // 1. Preenche o Valor
+                            const valorParaCobrar = dadosAoVivo.valorFaturaAtual || dadosAoVivo.valor;
+                            if (valorParaCobrar && spanValor) {
+                                spanValor.innerText = Number(valorParaCobrar).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                            }
+
+                            // 2. Preenche o PIX
+                            if (dadosAoVivo.pixCopiaECola && inputPixCopia) inputPixCopia.value = dadosAoVivo.pixCopiaECola;
+                            if (dadosAoVivo.pixQrCodeUrl && imgQrcode) imgQrcode.src = dadosAoVivo.pixQrCodeUrl;
+
+                            // 3. Preenche o Boleto
+                            if (dadosAoVivo.linkBoleto) linkBoletoGlobalInterno = dadosAoVivo.linkBoleto;
+                            if (dadosAoVivo.codigoBarras && inputBarras) {
+                                inputBarras.value = dadosAoVivo.codigoBarras;
+                            }
+
+                            // 4. A MÁGICA DO PAGAMENTO AUTOMÁTICO!
+                            if (dadosAoVivo.statusAsaas === "pago" || dadosAoVivo.statusAsaas === "ativo") {
+                                // Transforma o botão "Pix" num botão verde gigante!
+                                const tabPix = document.getElementById("tab-pix");
+                                if(tabPix) {
+                                    tabPix.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Pagamento Aprovado! Voltando ao sistema...';
+                                    tabPix.style.background = "#10b981";
+                                    tabPix.style.color = "white";
+                                }
+                                
+                                // Dá 3 segundinhos de glória pra pessoa ver e fecha a tela!
+                                setTimeout(() => {
+                                    telaBloqueio.style.display = "none";
+                                    document.getElementById('container-banner-vencimento').innerHTML = ""; // Some com o banner de vez!
+                                }, 3000);
+                            }
+                        });
+                    }
+                } else {
+                    // Fallback caso a tela não carregue por algum motivo: manda pra aba do Asaas!
+                    if (linkBoleto) window.open(linkBoleto, '_blank'); 
+                }
+            };
+        }
+        // 👆 FIM DA MÁGICA DO BOTÃO
+
         if(!diaVencimentoDb) return;
         
-        // 🚀 MATEMÁTICA BLINDADA: Zeramos as horas para contar SÓ os dias exatos
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0); 
         
         let dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimentoDb);
         dataVencimento.setHours(0, 0, 0, 0);
-        
-        // Se o dia do vencimento deste mês já passou, joga pro mês que vem
+
+        // =======================================================
+        // 🔴 MODO INADIMPLENTE: O BOLETO VENCEU (CARÊNCIA DE 5 DIAS)
+        // =======================================================
+        if (statusAsaas === "atrasado") {
+            console.log("🛑 MODO INADIMPLENTE ATIVADO NO BANNER!");
+            
+            // Descobre de quando é essa dívida
+            if (dataVencimento.getTime() > hoje.getTime()) {
+                dataVencimento.setMonth(dataVencimento.getMonth() - 1);
+            }
+            
+            const diffMs = hoje.getTime() - dataVencimento.getTime();
+            const diasAtraso = Math.round(diffMs / (1000 * 60 * 60 * 24));
+            const diasParaBloqueio = 5 - diasAtraso; // Quantos dias de carência sobraram
+
+            const banner = document.getElementById('banner-premium-vencimento');
+            const elContador = document.getElementById('contadorDias');
+            const elProgress = document.getElementById('progressBarFill');
+            const titulo = document.querySelector('.banner-titulo');
+            const descricao = document.querySelector('.banner-descricao');
+            const btnFechar = document.querySelector('.btn-close-banner');
+
+            // Só exibe se ainda estiver dentro da carência (<= 5). 
+            // Se for > 5, o login.html já bloqueou a entrada de qualquer jeito.
+            if (banner && diasAtraso <= 5 && diasAtraso > 0) {
+                banner.style.display = 'flex';
+                banner.classList.add('urgente');
+                
+                titulo.textContent = "⚠️ Mensalidade em Atraso";
+                titulo.style.color = "#dc2626"; // Vermelho Alerta
+                
+                descricao.innerHTML = `Identificamos uma fatura pendente há ${diasAtraso} dias.<br>O sistema será <strong>suspenso automaticamente em ${diasParaBloqueio} dia(s)</strong>.`;
+                
+                elContador.textContent = "BLOQUEIO IMINENTE";
+                elContador.style.background = "#dc2626";
+                elContador.style.color = "#fff";
+                elContador.style.fontSize = "11px";
+                
+                elProgress.style.width = '100%';
+                elProgress.style.background = 'linear-gradient(90deg, #ef4444, #991b1b)';
+
+                // A crueldade do SaaS: Tira a opção de fechar o aviso 😂
+                if(btnFechar) btnFechar.style.display = 'none'; 
+            }
+            return; // Aborta aqui para não rodar a matemática normal de vencimento
+        }
+
+        // =======================================================
+        // 🟢 MODO AVISO NORMAL: O BOLETO ESTÁ PARA VENCER (Dias -5 a 0)
+        // =======================================================
         if (hoje.getTime() > dataVencimento.getTime()) {
             dataVencimento.setMonth(dataVencimento.getMonth() + 1);
         }
@@ -446,17 +560,15 @@ async function carregarBannerDeVencimento(diaVencimentoDb) {
         const diffMs = dataVencimento.getTime() - hoje.getTime();
         const diffDias = Math.round(diffMs / (1000 * 60 * 60 * 24));
         
-        console.log(`⏰ O robô calculou: Faltam exatos ${diffDias} dias para o vencimento.`);
+        console.log(`⏰ O robô calculou: Faltam exatos ${diffDias} dias para o próximo vencimento.`);
 
-        // 4. Aplica a inteligência visual
         const banner = document.getElementById('banner-premium-vencimento');
         const elContador = document.getElementById('contadorDias');
         const elProgress = document.getElementById('progressBarFill');
 
-        // Se faltar 5 dias ou menos (e não tiver passado), acende o banner!
         if (banner && diffDias <= 5 && diffDias >= 0) { 
-            console.log("🚨 Acendendo o Banner na tela do cliente!");
-            banner.style.display = 'flex'; // 👈 TEM QUE SER 'FLEX' PARA NÃO QUEBRAR O VISUAL!
+            console.log("🚨 Acendendo o Banner Preventivo na tela do cliente!");
+            banner.style.display = 'flex'; 
             
             if (diffDias === 0) {
                 elContador.textContent = 'HOJE';
@@ -520,12 +632,8 @@ async function carregarContratosCRM() {
             const nome = dados.nome || 'Sem Nome';
             const aptos = dados.aptos || 0;
             
-            // 🔥 CORREÇÃO DO VALOR 0,00 AQUI
-            let valorBruto = dados.valor || 0;
-            if (typeof valorBruto === 'string') {
-                valorBruto = valorBruto.replace(',', '.'); // Troca a virgula pra ponto antes de calcular
-            }
-            const valorFormatado = Number(valorBruto).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            // 🚀 AQUI A CENSURA ENTRA EM AÇÃO PARA A TABELA DE CONTRATOS
+            const valorFormatado = formatarMoedaCensurada(dados.valor);
             
             const diaVenc = parseInt(dados.vencimento || 10);
             
@@ -554,7 +662,7 @@ async function carregarContratosCRM() {
             tr.innerHTML = `
                 <td style="padding: 15px 20px; font-weight: bold; color: #1e293b;"><i class="fa-solid fa-building" style="color: #94a3b8; margin-right: 8px;"></i> ${nome}</td>
                 <td style="padding: 15px 20px; color: #64748b;">${aptos} aptos</td>
-                <td style="padding: 15px 20px; color: #0f172a; font-weight: 600;">R$ ${valorFormatado}</td>
+                <td style="padding: 15px 20px; color: ${ (localStorage.getItem('usuario_cargo') || '').toLowerCase().includes('gestor') ? '#94a3b8' : '#0f172a' }; font-weight: 600;">${valorFormatado}</td>
                 <td style="padding: 15px 20px; color: #64748b;">${proxVenc.toLocaleDateString('pt-BR')}</td>
                 <td style="padding: 15px 20px;">${badgeStatus}</td>
             `;
