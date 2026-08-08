@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONDO UP (NUVEM FIREBASE)
+// ZERO LABS - CONRUJA (NUVEM FIREBASE)
 // veiculos.js - Gestão Premium (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -397,7 +397,7 @@ function gerarRelatorioVeiculos() {
     doc.setFontSize(16);
     doc.text("Relatório de Veículos Cadastrados", 14, 20);
     doc.setFontSize(10);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | Condo Up`, 14, 26);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')} | CONRUJA`, 14, 26);
     
     const dados = ativos.map(v => {
         const marca = identificarMarca(v.modelo).nome;
