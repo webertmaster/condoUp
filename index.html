@@ -131,6 +131,7 @@
         <button onclick="trocarTela('autorizacoes')" id="menu-autorizacoes"><i class="fa-solid fa-qrcode"></i> Autorizações App</button>
         
         <button onclick="trocarTela('ocorrencias')" id="menu-ocorrencias"><i class="fa-solid fa-triangle-exclamation"></i> Ocorrências</button>
+        <button onclick="trocarTela('achados')" id="menu-achados"><i class="fa-solid fa-box-archive"></i> Achados e Perdidos</button>
         <button onclick="trocarTela('prestadores')" id="menu-prestadores"><i class="fa-solid fa-tools"></i> Prestadores de Serviço</button>
 
         <div style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px; padding: 18px 15px 6px 15px;">Cadastros</div>
@@ -1232,6 +1233,206 @@
             <div id="listaEncomendas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; align-items: start;"></div>
         </div> 
     </div> 
+    <!-- ========================================== -->
+        <!-- TELA: ACHADOS E PERDIDOS                   -->
+        <!-- ========================================== -->
+        <div id="achados" class="tela">
+            <div class="dash-header" style="margin-bottom: 20px;">
+                <div>
+                    <h2 style="color: #0f172a; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
+                        <div style="background: #eff6ff; color: #3b82f6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="fa-solid fa-box-archive"></i>
+                        </div>
+                        Achados e Perdidos
+                    </h2>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Gestão de objetos encontrados no condomínio.</p>
+                </div>
+                <button class="btn" style="width: auto; margin-top: 0; padding: 12px 24px; display: flex; align-items: center; gap: 8px;" onclick="abrirModalRegistrarAchado()">
+                    <i class="fa-solid fa-plus"></i> Registrar Achado
+                </button>
+            </div>
+
+            <!-- Filtros -->
+            <div class="box" style="margin-bottom: 20px; padding: 15px 25px;">
+                <div class="filtro-container">
+                    <div style="flex: 2; min-width: 200px;">
+                        <input type="text" id="filtroAchadoBusca" placeholder="Buscar objeto..." oninput="filtrarAchados()" style="margin-top: 0; height: 45px;">
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <select id="filtroAchadoStatus" onchange="filtrarAchados()" style="margin-top: 0; height: 45px;">
+                            <option value="Todos">Todos os Status</option>
+                            <option value="Disponível">🟢 Disponível</option>
+                            <option value="Entregue">✅ Entregue</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 150px;">
+                        <select id="filtroAchadoCat" onchange="filtrarAchados()" style="margin-top: 0; height: 45px;">
+                            <option value="Todas">Todas Categorias</option>
+                            <option value="Chaves">Chaves</option>
+                            <option value="Documentos">Documentos</option>
+                            <option value="Eletrônicos">Eletrônicos</option>
+                            <option value="Roupas">Roupas</option>
+                            <option value="Acessórios">Acessórios</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade de Objetos -->
+            <div id="lista-achados" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                <!-- Os cards vão nascer aqui -->
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL: REGISTRAR NOVO ACHADO               -->
+        <!-- ========================================== -->
+        <div id="modalRegistrarAchado" class="modal-overlay">
+            <div class="modal-content" style="max-width: 600px; padding: 0;">
+                
+                <div style="background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-box-open" style="color: #3b82f6; margin-right: 8px;"></i> Registrar Objeto</h3>
+                    <button class="fechar-modal" onclick="document.getElementById('modalRegistrarAchado').classList.remove('ativo')" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div style="padding: 25px; max-height: 70vh; overflow-y: auto;">
+                    <form id="formNovoAchado">
+                        <!-- Upload de Foto -->
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="width: 120px; height: 120px; border-radius: 12px; background: #f1f5f9; margin: 0 auto 10px auto; display: flex; align-items: center; justify-content: center; border: 2px dashed #cbd5e1; overflow: hidden; position: relative;">
+                                <img id="previewFotoAchado" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                                <i id="iconeFotoAchado" class="fa-solid fa-camera" style="font-size: 30px; color: #94a3b8;"></i>
+                            </div>
+                            <label for="uploadFotoAchado" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: inline-block; transition: 0.2s;">
+                                <i class="fa-solid fa-upload"></i> Escolher Foto
+                            </label>
+                            <input type="file" id="uploadFotoAchado" accept="image/*" style="display: none;" onchange="comprimirFotoAchado(event)">
+                        </div>
+
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;">Nome/Descrição do Objeto *</label>
+                        <input type="text" id="achadoNome" placeholder="Ex: Chave de carro com chaveiro preto" required style="margin-bottom: 15px;">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Categoria *</label>
+                                <select id="achadoCategoria" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Chaves">Chaves</option>
+                                    <option value="Documentos">Documentos</option>
+                                    <option value="Eletrônicos">Eletrônicos</option>
+                                    <option value="Roupas">Roupas</option>
+                                    <option value="Acessórios">Acessórios</option>
+                                    <option value="Objetos pessoais">Objetos pessoais</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Armazenado em *</label>
+                                <input type="text" id="achadoGaveta" placeholder="Ex: Gaveta 03" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Data do Encontro *</label>
+                                <input type="date" id="achadoData" required>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Hora *</label>
+                                <input type="time" id="achadoHora" required>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Local onde foi achado *</label>
+                                <select id="achadoLocal" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Hall de entrada">Hall de entrada</option>
+                                    <option value="Elevador">Elevador</option>
+                                    <option value="Garagem">Garagem</option>
+                                    <option value="Área de lazer">Área de lazer</option>
+                                    <option value="Salão de festas">Salão de festas</option>
+                                    <option value="Outros">Outros...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; font-weight: bold; color: #475569;">Quem encontrou? *</label>
+                                <select id="achadoQuemAchou" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Funcionário/Porteiro">Funcionário/Porteiro</option>
+                                    <option value="Morador">Morador</option>
+                                    <option value="Visitante">Visitante</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <label style="font-size: 12px; font-weight: bold; color: #475569;">Observações</label>
+                        <textarea id="achadoObs" rows="2" placeholder="Algum detalhe adicional?"></textarea>
+                    </form>
+                </div>
+
+                <div style="padding: 20px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;">
+                    <button type="button" class="btn" id="btnSalvarAchado" onclick="salvarNovoAchado()" style="margin: 0;"><i class="fa-solid fa-floppy-disk"></i> Registrar Objeto</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL: ENTREGAR OBJETO (ASSINATURA)        -->
+        <!-- ========================================== -->
+        <div id="modalEntregarAchado" class="modal-overlay">
+            <div class="modal-content" style="max-width: 500px; padding: 0;">
+                
+                <div style="background: #10b981; padding: 20px 25px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center; color: white;">
+                    <h3 style="margin: 0; font-size: 18px;"><i class="fa-solid fa-hand-holding-hand"></i> Confirmar Entrega</h3>
+                    <button class="fechar-modal" onclick="document.getElementById('modalEntregarAchado').classList.remove('ativo')" style="position: static; color: white;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <div style="padding: 25px; max-height: 75vh; overflow-y: auto;">
+                    
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                        <div style="font-size: 11px; color: #64748b; font-weight: bold; text-transform: uppercase;">Objeto:</div>
+                        <div id="entregaNomeObjeto" style="font-size: 16px; color: #0f172a; font-weight: 800; margin-bottom: 5px;">Carregando...</div>
+                        <div id="entregaStatusObjeto" style="font-size: 12px; color: #10b981;"><i class="fa-solid fa-check-circle"></i> Disponível na Gaveta X</div>
+                    </div>
+
+                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Nome do Solicitante *</label>
+                    <input type="text" id="entregaNomePessoa" placeholder="Nome de quem veio buscar..." required style="margin-bottom: 15px;">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #475569;">Apartamento / Bloco *</label>
+                            <input type="text" id="entregaApto" placeholder="Ex: 204 B" required>
+                        </div>
+                        <div>
+                            <label style="font-size: 12px; font-weight: bold; color: #475569;">Documento (RG/CPF) *</label>
+                            <input type="text" id="entregaDoc" placeholder="Ex: 000.000.000-00" required>
+                        </div>
+                    </div>
+
+                    <label style="font-size: 12px; font-weight: bold; color: #475569;">Assinatura Digital *</label>
+                    <div style="border: 2px dashed #cbd5e1; border-radius: 12px; background: #f8fafc; text-align: center; position: relative;">
+                        <canvas id="canvasAssinaturaAchado" width="400" height="150" style="background: transparent; cursor: crosshair; touch-action: none; width: 100%; border: none; margin: 0;"></canvas>
+                        <button type="button" onclick="limparAssinaturaAchado()" style="position: absolute; bottom: 10px; right: 10px; background: #e2e8f0; border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; color: #475569; cursor: pointer;">Limpar</button>
+                    </div>
+                    <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 5px; margin-bottom: 20px;">
+                        Solicite que o morador assine no quadro acima.
+                    </div>
+
+                    <label style="display: flex; align-items: center; gap: 10px; background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe; cursor: pointer;">
+                        <input type="checkbox" id="entregaCheckConfirma" style="width: 20px; height: 20px; margin: 0;">
+                        <span style="font-size: 12px; color: #1e3a8a; font-weight: 600; line-height: 1.4;">Confirmo que verifiquei a identidade do solicitante e entreguei o objeto corretamente.</span>
+                    </label>
+
+                </div>
+
+                <div style="padding: 20px 25px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-radius: 0 0 16px 16px;">
+                    <button type="button" class="btn" id="btnConfirmarEntrega" onclick="processarEntregaObjeto()" style="margin: 0; background: #10b981;"><i class="fa-solid fa-check"></i> Concluir Entrega</button>
+                </div>
+            </div>
+        </div>
 
     <div id="delivery" class="tela">
         <div class="header-tela">
@@ -1667,51 +1868,142 @@
     </div>
 
     <div id="perfil" class="tela">
-        <div class="box" style="max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #1e293b; margin-bottom: 20px;"><i class="fa-solid fa-user-gear" style="color: #3b82f6;"></i> Meu Perfil</h2>
-            <p style="color: #64748b; margin-bottom: 20px;">Gerencie as suas informações de acesso e dados de contato.</p>
-
-            <form id="formDadosPessoais">
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilEmail" style="display: block; font-weight: 600; margin-bottom: 5px;">E-mail de Acesso (Não alterável)</label>
-                    <input type="email" id="perfilEmail" disabled style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; background-color: #f1f5f9; cursor: not-allowed;">
+        <div class="box" style="max-width: 800px; margin: 0 auto; background: transparent; border: none; box-shadow: none; padding: 0;">
+            
+            <!-- Título Principal -->
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 5px;">
+                <div style="background: #eff6ff; color: #2563eb; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    <i class="fa-solid fa-user-gear"></i>
                 </div>
+                <h2 style="color: #0f172a; margin: 0; font-size: 24px;">Meu Perfil</h2>
+            </div>
+            <p style="color: #64748b; margin-bottom: 25px; margin-left: 52px; font-size: 14px;">Gerencie suas informações de acesso e dados de contato.</p>
+
+            <!-- CARD SUPERIOR: RESUMO DO PERFIL -->
+            <div style="background: white; border-radius: 16px; padding: 25px; border: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 30px; align-items: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
                 
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilNome" style="display: block; font-weight: 600; margin-bottom: 5px;">Nome Completo</label>
-                    <input type="text" id="perfilNome" required placeholder="Carregando..." style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <!-- Foto e Nome -->
+                <div style="display: flex; align-items: center; gap: 20px; flex: 1; min-width: 250px;">
+                    <div style="position: relative;">
+                        <img id="resumoFoto" src="https://ui-avatars.com/api/?name=User&background=eff6ff&color=2563eb&size=100" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #eff6ff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                        
+                        <!-- Botão Real de Upload -->
+                        <label for="uploadFotoPerfil" style="position: absolute; bottom: 0; right: 0; background: #2563eb; color: white; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid white; display: flex; align-items: center; justify-content: center; margin: 0; transition: 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" id="uploadFotoPerfil" accept="image/*" style="display: none;" onchange="atualizarFotoPerfil(event)">
+                    </div>
+                    <div>
+                        <h3 id="resumoNome" style="margin: 0 0 8px 0; color: #0f172a; font-size: 20px;">Carregando...</h3>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span id="resumoCargo" style="background: #2563eb; color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check"></i> Carregando...</span>
+                        </div>
+                        <div style="color: #64748b; font-size: 12px; margin-top: 8px; display: flex; align-items: center; gap: 5px;">
+                            <i class="fa-regular fa-calendar"></i> Membro desde <span id="resumoData">--/--/----</span>
+                        </div>
+                    </div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label for="perfilWhatsapp" style="display: block; font-weight: 600; margin-bottom: 5px;">WhatsApp / Telefone</label>
-                    <input type="text" id="perfilWhatsapp" required placeholder="(00) 00000-0000" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <div style="width: 1px; background: #e2e8f0; height: 80px; display: block;" class="divisor-linha"></div>
+
+                <!-- Contatos (Lado Direito) -->
+                <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #eff6ff; color: #2563eb; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;"><i class="fa-regular fa-envelope"></i></div>
+                        <div>
+                            <span style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">E-mail de acesso</span>
+                            <strong id="resumoEmail" style="color: #0f172a; font-size: 14px;">...</strong>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="background: #dcfce7; color: #16a34a; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px;"><i class="fa-brands fa-whatsapp"></i></div>
+                        <div>
+                            <span style="display: block; font-size: 11px; color: #64748b; margin-bottom: 2px;">WhatsApp / Telefone</span>
+                            <strong id="resumoZap" style="color: #0f172a; font-size: 14px;">...</strong>
+                        </div>
+                    </div>
                 </div>
-
-                <button type="submit" id="btnSalvarDados" style="background-color: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">
-                    <i class="fa-solid fa-floppy-disk"></i> Salvar Alterações
-                </button>
-            </form>
-
-            <div style="margin: 30px 0 20px 0; border-top: 2px dashed #e2e8f0; padding-top: 20px;">
-                <h3><i class="fa-solid fa-lock" style="color: #ef4444;"></i> Alterar Senha de Acesso</h3>
-                <p style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Por segurança, escolha uma senha forte com mais de 6 caracteres.</p>
             </div>
 
-            <form id="formAlterarSenha">
-                <div style="margin-bottom: 15px;">
-                    <label for="novaSenha" style="display: block; font-weight: 600; margin-bottom: 5px;">Nova Senha</label>
-                    <input type="password" id="novaSenha" required placeholder="Digite a nova senha" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+            <!-- CARD DO MEIO: EDIÇÃO DE DADOS -->
+            <div style="background: white; border-radius: 16px; padding: 25px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #eff6ff; color: #2563eb; width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;"><i class="fa-solid fa-user"></i></div>
+                    <div>
+                        <h3 style="margin: 0; color: #0f172a; font-size: 16px;">Informações Pessoais</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">Atualize seus dados de contato.</p>
+                    </div>
                 </div>
 
-                <div style="margin-bottom: 15px;">
-                    <label for="confirmarNovaSenha" style="display: block; font-weight: 600; margin-bottom: 5px;">Confirmar Nova Senha</label>
-                    <input type="password" id="confirmarNovaSenha" required placeholder="Repita a nova senha" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                <form id="formDadosPessoais">
+                    <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                        <div style="background: #f8fafc; color: #3b82f6; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #e2e8f0;"><i class="fa-regular fa-envelope"></i></div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px;">E-mail de Acesso (Não alterável)</label>
+                            <input type="email" id="perfilEmail" disabled style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #f8fafc; color: #64748b; margin: 0; outline: none; cursor: not-allowed;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                        <div style="background: #f8fafc; color: #3b82f6; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #e2e8f0;"><i class="fa-regular fa-user"></i></div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px;">Nome Completo</label>
+                            <input type="text" id="perfilNome" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; margin: 0; outline: none;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #f8fafc; color: #3b82f6; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #e2e8f0;"><i class="fa-brands fa-whatsapp"></i></div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px;">WhatsApp / Telefone</label>
+                            <input type="text" id="perfilWhatsapp" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; margin: 0; outline: none;">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnSalvarDados" style="background: #2563eb; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; transition: 0.2s;"><i class="fa-solid fa-floppy-disk" style="margin-right: 5px;"></i> Salvar Alterações</button>
+                </form>
+            </div>
+
+            <!-- CARD INFERIOR: SEGURANÇA -->
+            <div style="background: #fffafa; border-radius: 16px; padding: 25px; border: 1px solid #fee2e2; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <div style="background: #fef2f2; color: #ef4444; width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;"><i class="fa-solid fa-lock"></i></div>
+                    <div>
+                        <h3 style="margin: 0; color: #0f172a; font-size: 16px;">Alterar Senha de Acesso</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 12px; color: #64748b;">Por segurança, escolha uma senha forte com mais de 6 caracteres.</p>
+                    </div>
                 </div>
 
-                <button type="submit" id="btnSalvarSenha" style="background-color: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%;">
-                    <i class="fa-solid fa-key"></i> Atualizar Senha
-                </button>
-            </form>
+                <form id="formAlterarSenha">
+                    <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 15px;">
+                        <div style="background: #fef2f2; color: #ef4444; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #fee2e2;"><i class="fa-solid fa-lock-open"></i></div>
+                        <div style="flex: 1; position: relative;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px;">Nova Senha</label>
+                            <input type="password" id="novaSenha" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; margin: 0; outline: none;">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: flex-start; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: #fef2f2; color: #ef4444; width: 45px; height: 45px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; border: 1px solid #fee2e2;"><i class="fa-solid fa-lock"></i></div>
+                        <div style="flex: 1; position: relative;">
+                            <label style="display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 5px;">Confirmar Nova Senha</label>
+                            <input type="password" id="confirmarNovaSenha" required style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; margin: 0; outline: none;">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnSalvarSenha" style="background: #ef4444; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 15px; transition: 0.2s;"><i class="fa-solid fa-arrows-rotate" style="margin-right: 5px;"></i> Atualizar Senha</button>
+                </form>
+            </div>
+
+            <!-- CARD DICA -->
+            <div style="background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; display: flex; gap: 15px; align-items: center;">
+                <div style="background: #eff6ff; color: #2563eb; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;"><i class="fa-solid fa-circle-info"></i></div>
+                <div>
+                    <h4 style="margin: 0 0 4px 0; color: #2563eb; font-size: 14px;">Dica de Segurança</h4>
+                    <p style="margin: 0; color: #64748b; font-size: 12px;">Nunca compartilhe sua senha com outras pessoas. Mantenha seus dados sempre atualizados.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -2519,8 +2811,8 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=155"></script>
-<script src="js/equipe.js?v=14"></script>
+<script src="js/app.js?v=158"></script>
+<script src="js/equipe.js?v=16"></script>
 <script src="js/plantao.js?v=13"></script>
 <script src="js/ponto.js?v=15"></script>
 <script src="js/moradores.js?v=18"></script>
@@ -2533,19 +2825,20 @@
 <script src="js/limpeza.js?v=11"></script>
 <script src="js/delivery.js?v=13"></script>
 <script src="js/autorizacoes.js"></script>
-<script src="js/perfil.js?v=11"></script>
+<script src="js/perfil.js?v=13"></script>
 <script src="js/ajuda.js?v=11"></script> 
 <script src="js/transportadoras.js?v=1"></script>
 <script src="js/adm.js?v=17"></script>
 <script src="js/financeiro.js?v=1"></script>
 <script src="js/notificacoes.js?v=2"></script>
 <script src="js/prestadores.js?v=2"></script>
+<script src="js/achados.js?v=1"></script>
 
 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=155')
+     navigator.serviceWorker.register('sw.js?v=158')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
