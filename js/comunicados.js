@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONDO UP (NUVEM FIREBASE)
+// ZERO LABS - CONRUJA (NUVEM FIREBASE)
 // comunicados.js - Mural de Avisos (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -283,7 +283,7 @@ if (!isOperacional) {
         // ==========================================
         // 🚀 PREPARA O TEXTO LIMPO PARA O WHATSAPP E PARA COPIAR
         // ==========================================
-        let textoLimpo = `*CONDO UP - AVISO OFICIAL*\n`;
+        let textoLimpo = `*CONRUJA - AVISO OFICIAL*\n`;
         textoLimpo += `----------------------------------------\n`;
         textoLimpo += `*Assunto:* ${tituloSeguro}\n`;
         textoLimpo += `*Categoria:* ${tipoSeguro}\n`;
