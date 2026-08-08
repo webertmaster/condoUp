@@ -1,5 +1,5 @@
 // ==========================================
-// EVO UPI - CONDO UP
+// EVO UPI - CONRUJA
 // delivery.js - Giro Rápido (MULTI-TENANT ATIVO)
 // ==========================================
 
