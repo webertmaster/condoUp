@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONDO UP
+// ZERO LABS - CONRUJA
 // autorizacoes.js - Controle de Acesso e Leitura de Códigos
 // ==========================================
 
