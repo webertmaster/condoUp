@@ -1,5 +1,5 @@
 // ==========================================
-// ZERO LABS - CONDO UP
+// ZERO LABS - CONRUJA
 // reservas.js - Agendamento, Convidados e Termos (MULTI-TENANT ATIVO)
 // ==========================================
 
@@ -26,7 +26,7 @@ function configurarCanvasReserva(canvasId){
         ctx.stroke(); 
     });
     
-    canvas.addEventListener("touchstart",(e)=>{ e.preventDefault(); desenhando = true; let rect = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); });
+    canvas.addEventListener("touchstart",(e)=>{ e.preventDefault(); desenhando = true; let rect = canvas.getBoundingClientRect(); ctx.beginPath(); ctx.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); }, {passive: false});
     canvas.addEventListener("touchmove",(e)=>{ 
         if(!desenhando) return; 
         e.preventDefault(); 
@@ -36,7 +36,7 @@ function configurarCanvasReserva(canvasId){
         ctx.strokeStyle = "#000000"; 
         ctx.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); 
         ctx.stroke(); 
-    });
+    }, {passive: false});
     canvas.addEventListener("touchend",()=>{ desenhando = false; });
     return { canvas, ctx };
 }
@@ -176,11 +176,12 @@ function salvarReserva() {
         });
 
     } else {
-        // MODO NOVA RESERVA
+        // MODO NOVA RESERVA (Feita pela Portaria já nasce aprovada)
         dadosReserva.convidados = [];
-        dadosReserva.excluido = false; // Define que nasce ativa
+        dadosReserva.excluido = false; 
+        dadosReserva.status = "aprovada"; 
 
-        const conflito = reservasGlobais.find(r => r.data === data && r.tipo === tipo && !r.excluido);
+        const conflito = reservasGlobais.find(r => r.data === data && r.tipo === tipo && !r.excluido && r.status === "aprovada");
         if (conflito) {
             const confirmar = confirm(`🚨 ALERTA DE CONFLITO: Já existe uma reserva ativa para a(o) ${tipo} nesta mesma data. Deseja forçar o registro mesmo assim?`);
             if (!confirmar) return;
@@ -241,34 +242,33 @@ function atualizarListaReservas() {
     // 🚀 GATILHO DA DASHBOARD: MODO CAÇADOR (BLINDADO)
     // ===============================================
     setTimeout(() => {
-        // 1. Crava a data no fuso do Brasil (evita virar o dia depois das 21h)
+        // 1. Crava a data no fuso do Brasil
         const agora = new Date();
         const ano = agora.getFullYear();
         const mes = String(agora.getMonth() + 1).padStart(2, '0');
         const dia = String(agora.getDate()).padStart(2, '0');
         const hojeBr = `${ano}-${mes}-${dia}`;
         
-        let qtdHoje = ativas.filter(r => r.data === hojeBr).length;
+        let qtdHoje = ativas.filter(r => r.data === hojeBr && r.status !== "pendente").length;
         
         // 2. Tenta os IDs padrões
         let dashReservas = document.getElementById("dash-reservas") || document.getElementById("count-reservas");
         
-        // 3. Modo Caçador: Busca a caixinha pelo texto da tela!
+        // 3. Modo Caçador
         if (!dashReservas) {
             let textos = Array.from(document.querySelectorAll('*')).filter(el => el.textContent.trim() === 'Reservas Hoje');
             if (textos.length > 0) {
                 let pai = textos[0].parentElement;
-                // Acha o <h2> ou <h3> que está guardando o número "0" lá em cima
                 dashReservas = pai.querySelector('h2, h3, h1'); 
             }
         }
 
-        // 4. Injeta o número na veia!
+        // 4. Injeta o número
         if (dashReservas) {
             dashReservas.innerText = qtdHoje;
             dashReservas.style.color = qtdHoje > 0 ? "#10b981" : ""; // Fica verde se tiver reserva!
         }
-    }, 800); // 800ms garante que ele reescreve o painel DEPOIS que tudo já carregou
+    }, 800);
 
     // Se a aba de reservas da portaria não estiver aberta, para por aqui
     if (!lista || (telaReservas && telaReservas.style.display === 'none')) return;
@@ -280,7 +280,6 @@ function atualizarListaReservas() {
         return;
     }
 
-    // Calcula as datas corrigidas para o painel do porteiro também
     const agoraLocal = new Date();
     const hojeStrLocal = `${agoraLocal.getFullYear()}-${String(agoraLocal.getMonth() + 1).padStart(2, '0')}-${String(agoraLocal.getDate()).padStart(2, '0')}`;
     const hojeLocalTimestamp = new Date(hojeStrLocal + "T00:00:00").getTime();
@@ -295,7 +294,6 @@ function atualizarListaReservas() {
     reservasGlobais.forEach((res, index) => {
         if (res.excluido === true) return; 
 
-        // Tira a prova real da data local
         const dataReservaTimestamp = new Date(res.data + "T00:00:00").getTime();
         const isPassado = dataReservaTimestamp < hojeLocalTimestamp;
         const isHoje = res.data === hojeStrLocal;
@@ -313,44 +311,73 @@ function atualizarListaReservas() {
         
         if (isPassado) corBorda = '#cbd5e1';
 
-        const badgeInfo = isPassado 
-            ? `<span style="background: #e2e8f0; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">FINALIZADA</span>`
-            : (isHoje ? `<span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; animation: pulse 2s infinite;">HOJE!</span>` 
-                      : `<span style="background: ${corBorda}20; color: ${corBorda}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">AGENDADA</span>`);
+        // Lógica visual do status (Pendente vs Agendada)
+        const isPendente = res.status === "pendente";
+        if (isPendente) corBorda = '#eab308'; // Amarelo para pendente
+
+        let badgeInfo = '';
+        if (isPendente) {
+            badgeInfo = `<span style="background: #fef08a; color: #a16207; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;"><i class="fa-regular fa-clock"></i> PENDENTE</span>`;
+        } else if (isPassado) {
+            badgeInfo = `<span style="background: #e2e8f0; color: #64748b; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">FINALIZADA</span>`;
+        } else if (isHoje) {
+            badgeInfo = `<span style="background: #10b981; color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; animation: pulse 2s infinite;">HOJE!</span>`;
+        } else {
+            badgeInfo = `<span style="background: ${corBorda}20; color: ${corBorda}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;">APROVADA</span>`;
+        }
 
         const qtdConvidados = res.convidados ? res.convidados.length : 0;
         let infoApto = res.apto ? `<span style="background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 12px; margin-left: 8px;">Apto: ${res.apto}</span>` : '';
 
         // 🔒 BLINDAGEM DOS BOTÕES DE GESTÃO (EDITAR/ARQUIVAR)
         let botoesGestaoHtml = '';
-        if (window.isPorteiroLogado === true) {
+
+        if (isPendente) {
+            // Layout de Aprovação para reservas Pendentes
             botoesGestaoHtml = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
-                    <button onclick="avisarReserva(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                        <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Avisar
-                    </button>
-                    <button onclick="carregarReservaParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Agendamento">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                    <button onclick="excluirReserva('${res.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Reserva">
-                        <i class="fa-solid fa-trash-can"></i> Arquivar
-                    </button>
+                <div style="background: #fefce8; border: 1px dashed #fde047; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                    <p style="font-size: 12px; color: #a16207; font-weight: bold; margin-bottom: 10px; text-align: center;">Solicitação do Morador</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <button onclick="aprovarReservaSistema('${res.idFirebase}')" style="background: #10b981; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);">
+                            <i class="fa-solid fa-check"></i> Aprovar
+                        </button>
+                        <button onclick="rejeitarReservaSistema('${res.idFirebase}')" style="background: #ef4444; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);">
+                            <i class="fa-solid fa-xmark"></i> Rejeitar
+                        </button>
+                    </div>
                 </div>
             `;
         } else {
-            botoesGestaoHtml = `
-                <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px;">
-                    <button onclick="avisarReserva(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
-                        <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Avisar
-                    </button>
-                    <button onclick="carregarReservaParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Agendamento">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button onclick="excluirReserva('${res.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Reserva">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `;
+            // Layout Normal (Já aprovada ou antiga)
+            if (window.isPorteiroLogado === true) {
+                botoesGestaoHtml = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                        <button onclick="avisarReserva(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Avisar
+                        </button>
+                        <button onclick="carregarReservaParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Agendamento">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                        <button onclick="excluirReserva('${res.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Reserva">
+                            <i class="fa-solid fa-trash-can"></i> Arquivar
+                        </button>
+                    </div>
+                `;
+            } else {
+                botoesGestaoHtml = `
+                    <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 8px;">
+                        <button onclick="avisarReserva(${index})" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
+                            <i class="fa-brands fa-whatsapp" style="color: #25D366;"></i> Avisar
+                        </button>
+                        <button onclick="carregarReservaParaEdicao(${index})" style="background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#dbeafe'" onmouseout="this.style.background='#eff6ff'" title="Editar Agendamento">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button onclick="excluirReserva('${res.idFirebase}')" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='#fef2f2'" title="Arquivar Reserva">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `;
+            }
         }
 
         const card = document.createElement('div');
@@ -380,6 +407,7 @@ function atualizarListaReservas() {
             
             ${res.assinatura ? `<p style="font-size: 12px; color: #10b981; margin-bottom: 10px;"><i class="fa-solid fa-pen-nib"></i> Assinatura Digital Salva</p>` : ''}
             
+            ${!isPendente ? `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
                 <button onclick="abrirListaConvidados(${index})" style="background: #fef9c3; color: #ca8a04; border: 1px solid #fde047; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.2s;" onmouseover="this.style.background='#fef08a'" onmouseout="this.style.background='#fef9c3'">
                     <i class="fa-solid fa-clipboard-list"></i> Convidados (${qtdConvidados})
@@ -388,6 +416,7 @@ function atualizarListaReservas() {
                     <i class="fa-solid fa-file-contract"></i> Emitir Termo
                 </button>
             </div>
+            ` : ''}
             
             ${botoesGestaoHtml}
         `;
@@ -495,6 +524,7 @@ function addConvidado() {
     let r = reservasGlobais[reservaIndexAtual];
     if (!r.convidados) r.convidados = [];
     
+    // Agora a portaria SEMPRE salva como objeto {nome, chegou}
     r.convidados.push({ nome: nome, chegou: false });
     
     db.collection("reservas").doc(r.idFirebase).update({
@@ -514,19 +544,33 @@ function renderizarConvidados() {
         return;
     }
     
-    r.convidados.sort((a, b) => a.chegou === b.chegou ? 0 : a.chegou ? 1 : -1);
-    
     div.innerHTML = '';
     r.convidados.forEach((c, i) => {
-        let corFundo = c.chegou ? '#f0fdf4' : '#fff';
-        let txtDecor = c.chegou ? 'line-through' : 'none';
-        let colTxt = c.chegou ? '#94a3b8' : '#0f172a';
-        let btnIcon = c.chegou ? '<i class="fa-solid fa-rotate-left"></i>' : '<i class="fa-solid fa-check"></i>';
-        let btnCor = c.chegou ? '#cbd5e1' : '#10b981';
+        // --- PROTEÇÃO DO "UNDEFINED" ---
+        let nomeSeguro = "Nome Inválido";
+        let chegou = false;
+
+        // Se o morador enviou pelo App, 'c' é uma String direta ("João da Silva")
+        if (typeof c === 'string') {
+            nomeSeguro = c;
+            chegou = false; // Por padrão, não chegou
+        } 
+        // Se a portaria enviou pelo PC, 'c' é um Objeto ({nome: "João", chegou: true})
+        else if (typeof c === 'object' && c !== null) {
+            nomeSeguro = c.nome || "Convidado sem Nome";
+            chegou = c.chegou || false;
+        }
+        // -------------------------------
+
+        let corFundo = chegou ? '#f0fdf4' : '#fff';
+        let txtDecor = chegou ? 'line-through' : 'none';
+        let colTxt = chegou ? '#94a3b8' : '#0f172a';
+        let btnIcon = chegou ? '<i class="fa-solid fa-rotate-left"></i>' : '<i class="fa-solid fa-check"></i>';
+        let btnCor = chegou ? '#cbd5e1' : '#10b981';
         
         div.innerHTML += `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid #f1f5f9; background: ${corFundo}; transition: 0.2s;">
-                <span style="font-size: 15px; color: ${colTxt}; text-decoration: ${txtDecor}; font-weight: 500;">${c.nome}</span>
+                <span style="font-size: 15px; color: ${colTxt}; text-decoration: ${txtDecor}; font-weight: 500;">${nomeSeguro}</span>
                 <div style="display: flex; gap: 8px;">
                     <button onclick="toggleChegadaConvidado(${i})" style="background: ${btnCor}; color: white; border: none; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;" title="Marcar Chegada">${btnIcon}</button>
                     <button onclick="removerConvidado(${i})" style="background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; width: 32px; height: 32px; border-radius: 6px; cursor: pointer;" title="Remover da Lista"><i class="fa-solid fa-trash-can"></i></button>
@@ -538,7 +582,17 @@ function renderizarConvidados() {
 
 function toggleChegadaConvidado(indexConvidado) {
     let r = reservasGlobais[reservaIndexAtual];
-    r.convidados[indexConvidado].chegou = !r.convidados[indexConvidado].chegou;
+    
+    // Precisamos converter para objeto caso tenha vindo como string do app do morador
+    if (typeof r.convidados[indexConvidado] === 'string') {
+        r.convidados[indexConvidado] = {
+            nome: r.convidados[indexConvidado],
+            chegou: true // como era falso, agora virou verdadeiro
+        };
+    } else {
+        // Se já for objeto, apenas inverte
+        r.convidados[indexConvidado].chegou = !r.convidados[indexConvidado].chegou;
+    }
     
     db.collection("reservas").doc(r.idFirebase).update({
         convidados: r.convidados
@@ -579,7 +633,7 @@ function gerarPDFTermo(local, data, hora, responsavel, apto, assinaturaImg) {
     
     doc.setFontSize(22);
     doc.setFont("helvetica", "bold");
-    doc.text("CONDO UP - PORTARIA", 105, 20, null, null, "center");
+    doc.text("CONRUJA - PORTARIA", 105, 20, null, null, "center");
     
     doc.setFontSize(14);
     doc.setFont("helvetica", "normal");
@@ -655,9 +709,89 @@ function gerarPDFTermo(local, data, hora, responsavel, apto, assinaturaImg) {
     doc.setFont("helvetica", "italic");
     doc.setTextColor(150, 150, 150);
     let dataEmissao = new Date().toLocaleString('pt-BR');
-    doc.text(`Documento gerado oficialmente pelo sistema Condo Up em ${dataEmissao}`, 105, 285, null, null, "center");
+    doc.text(`Documento gerado oficialmente pelo sistema CONRUJA em ${dataEmissao}`, 105, 285, null, null, "center");
 
     let nomeArquivo = responsavel === "___________________________________" ? "Termo_Reserva_Branco.pdf" : `Termo_${local.replace(/\s+/g, '_')}_${data.replace(/\//g, '-')}.pdf`;
     
     doc.save(nomeArquivo);
+}
+
+// ==========================================
+// 🚀 GESTÃO DO FLUXO DE APROVAÇÃO (PENDENTE ➔ APROVADO)
+// ==========================================
+async function aprovarReservaSistema(idFirebase) {
+    const r = reservasGlobais.find(res => res.idFirebase === idFirebase);
+    if (!r) return;
+
+    if (!confirm(`✅ Aprovar Agendamento: Deseja confirmar a reserva de ${r.tipo} para o Apto ${r.apto} no dia ${r.data.split('-').reverse().join('/')}?`)) {
+        return;
+    }
+
+    const meuCondominio = localStorage.getItem("condominioId");
+    
+    try {
+        // Trava final para evitar duplicidade aprovada
+        const snapshotConflito = await db.collection("reservas")
+            .where("condominioId", "==", meuCondominio)
+            .where("tipo", "==", r.tipo)
+            .where("data", "==", r.data)
+            .where("status", "==", "aprovada") 
+            .where("excluido", "==", false)
+            .get();
+
+        if (!snapshotConflito.empty) {
+            const reservaOcupante = snapshotConflito.docs[0].data();
+            alert(`🚨 CONFLITO DETECTADO: Poxa! A área "${r.tipo}" já foi aprovada para o Apto ${reservaOcupante.apto} nesta mesma data (${r.data.split('-').reverse().join('/')}).\n\nNão é possível aprovar esta solicitação. Você deve rejeitá-la informando o conflito.`);
+            return; 
+        }
+        
+        await db.collection("reservas").doc(idFirebase).update({
+            status: 'aprovada',
+            dataAprovacao: Date.now(),
+            aprovadoPor: localStorage.getItem("usuario_nome") || "Portaria"
+        });
+
+        db.collection("notificacoes").add({
+            titulo: "✅ Reserva Aprovada pela Portaria",
+            mensagem: `A solicitação de ${r.tipo} do Apto ${r.apto} para ${r.data.split('-').reverse().join('/')} foi confirmada.`,
+            tipo: "reserva", lida: false, condominioId: meuCondominio, timestamp: new Date().getTime()
+        }).catch(e => console.error(e));
+
+        alert("✅ Reserva aprovada com sucesso! O calendário foi atualizado.");
+
+    } catch (error) {
+        alert("Erro ao aprovar reserva: " + error.message);
+    }
+}
+
+function rejeitarReservaSistema(idFirebase) {
+    const r = reservasGlobais.find(res => res.idFirebase === idFirebase);
+    if (!r) return;
+
+    const motivo = prompt(`❌ Rejeitar Agendamento: Por favor, digite o motivo da rejeição para a reserva de ${r.tipo} (Apto ${r.apto} - ${r.data.split('-').reverse().join('/')}):`);
+
+    if (motivo !== null) { 
+        if (motivo.trim() === "") {
+            alert("⚠️ Você deve fornecer um motivo para a rejeição.");
+            return;
+        }
+
+        db.collection("reservas").doc(idFirebase).update({
+            status: 'rejeitada',
+            excluido: true, 
+            dataRejeicao: Date.now(),
+            rejeitadoPor: localStorage.getItem("usuario_nome") || "Portaria",
+            motivoRejeicao: motivo.trim()
+        }).then(() => {
+            db.collection("notificacoes").add({
+                titulo: "❌ Reserva Rejeitada pela Portaria",
+                mensagem: `A solicitação de ${r.tipo} do Apto ${r.apto} para ${r.data.split('-').reverse().join('/')} foi rejeitada. Motivo: ${motivo.trim()}`,
+                tipo: "reserva", lida: false, condominioId: localStorage.getItem("condominioId"), timestamp: new Date().getTime()
+            }).catch(e => console.error(e));
+
+            alert("❌ Solicitação rejeitada e arquivada.");
+        }).catch((err) => {
+            alert("Erro ao rejeitar solicitação: " + err.message);
+        });
+    }
 }
