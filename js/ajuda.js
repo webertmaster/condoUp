@@ -22,7 +22,7 @@ document.getElementById("formSuporte").addEventListener("submit", function(e) {
 
     const btn = document.getElementById("btnEnviarSuporte");
     const textoOriginal = btn.innerHTML;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando para Condo Up...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enviando para CONRUJA...';
     btn.style.pointerEvents = "none";
 
     // Grava no banco de dados
@@ -41,7 +41,7 @@ document.getElementById("formSuporte").addEventListener("submit", function(e) {
         btn.style.pointerEvents = "auto";
         document.getElementById("formSuporte").reset();
         
-        alert("✅ Chamado aberto com sucesso! A equipe de tecnologia (Condo Up) foi notificada.");
+        alert("✅ Chamado aberto com sucesso! A equipe de tecnologia (CONRUJA) foi notificada.");
     }).catch((erro) => {
         btn.innerHTML = textoOriginal;
         btn.style.pointerEvents = "auto";
