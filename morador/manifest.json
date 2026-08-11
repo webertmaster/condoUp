@@ -1,8 +1,8 @@
 {
-  "name": "Condo Up - App do Morador",
-  "short_name": "Condo Up",
+  "name": "Conruja Morador",
+  "short_name": "Conruja Morador", 
   "description": "Aplicativo do morador para gestão de encomendas, reservas e acessos.",
-  "start_url": "/morador/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#fafbfc",
   "theme_color": "#3b82f6",
