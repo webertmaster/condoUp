@@ -217,6 +217,16 @@
                 <i class="fa-solid fa-chevron-right" style="font-size: 14px;"></i>
             </div>
 
+            <!-- ALERTA DE PRESTADOR DE SERVIÇO (Inicia oculto) -->
+            <div class="card-alerta" id="alerta-prestador" style="display: none; background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); box-shadow: 0 10px 20px rgba(2, 132, 199, 0.25);" onclick="mudarAba('tela-autorizacoes', document.getElementById('menu-inicio'))">
+                <i class="fa-solid fa-hard-hat"></i>
+                <div>
+                    <h3 id="alerta-prestador-titulo">Acesso Liberado!</h3>
+                    <p id="alerta-prestador-desc">Um técnico está a caminho.</p>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="font-size: 14px;"></i>
+            </div>
+
             <div class="section-header"><h3>Acesso rápido</h3></div>
             <div class="grid-atalhos">
                 <a href="#" class="atalho-card">
@@ -730,6 +740,23 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         const db = firebase.firestore();
 
+        // ========================================================
+        // 🚀 PASSO 3: O LEÃO DE CHÁCARA DO PAINEL DO MORADOR
+        // ========================================================
+        const isLogado = localStorage.getItem("CONRUJA_logado");
+        const cargoAtual = (localStorage.getItem("usuario_cargo") || "").toLowerCase();
+
+        // 1. Se NÃO tem crachá, joga para o login do morador
+        if (!isLogado) {
+            window.location.href = 'login.html'; 
+        }
+
+        // 2. Se for Porteiro ou ADM tentando espiar a tela do morador, chuta de volta pra matriz
+        if (isLogado && cargoAtual !== 'morador') {
+            alert("⚠️ Acesso Negado! Esta área é exclusiva para moradores. Redirecionando para a Portaria...");
+            window.location.href = "https://app.conruja.com.br"; 
+        }
+
         // Variáveis Globais de Memória do App
         let moradorNomeGlobal = "";
         let moradorAptoGlobal = ""; 
@@ -768,6 +795,16 @@
                     db.collection("usuarios").doc(user.uid).get().then((doc) => {
                         if (doc.exists) {
                             const dados = doc.data();
+                            // 🛑 ÚLTIMA BARREIRA: Se o Firebase tentar injetar um ADM aqui, ele expulsa!
+                        const cargoAuth = (dados.cargo || "").toLowerCase();
+                        if (cargoAuth !== "morador") {
+                            alert("⚠️ Acesso Negado! O seu perfil é da gestão. Voltando para a Portaria...");
+                            firebase.auth().signOut().then(() => {
+                                localStorage.clear();
+                                window.location.replace("https://app.conruja.com.br");
+                            });
+                            return; // Corta o carregamento da tela (evita aparecer o "Apto N/A")
+                        }
                             moradorNomeGlobal = dados.nome || "Usuário";
                             const apto = dados.apartamento || "N/A";
                             moradorAptoGlobal = apto;
@@ -818,7 +855,8 @@
                                     escutarDeliveries(dados.condominioId, apto);
                                     escutarComunicadosGlobais(dados.condominioId);
                                     escutarMinhasReservas(dados.condominioId, apto);
-                                    escutarMinhasAutorizacoes(dados.condominioId, apto); 
+                                    escutarMinhasAutorizacoes(dados.condominioId, apto);
+                                    escutarPrestadoresNoPredio(dados.condominioId, apto); 
                                     
                                     if (typeof escutarMinhasOcorrencias === "function") {
                                         escutarMinhasOcorrencias(dados.condominioId, apto);
@@ -837,6 +875,36 @@
                 }
             });
         });
+
+        // ==========================================
+        // MÓDULO 0.5: RADAR DE PRESTADORES DE SERVIÇO
+        // ==========================================
+        function escutarPrestadoresNoPredio(condominioId, apartamento) {
+            db.collection("acessos_servico")
+              .where("condominioId", "==", condominioId)
+              .where("apto", "==", apartamento)
+              .where("status", "==", "ativo")
+              .onSnapshot((snapshot) => {
+                  const alertaPrestador = document.getElementById('alerta-prestador');
+                  
+                  if (!alertaPrestador) return; // Evita erro se o HTML não tiver carregado
+
+                  if (snapshot.empty) {
+                      alertaPrestador.style.display = 'none';
+                  } else {
+                      let prestadorAtivo = null;
+                      snapshot.forEach(doc => { prestadorAtivo = doc.data(); });
+                      
+                      if (prestadorAtivo) {
+                          const nome = prestadorAtivo.nome;
+                          const empresa = prestadorAtivo.empresa ? ` da ${prestadorAtivo.empresa}` : '';
+                          
+                          document.getElementById('alerta-prestador-desc').innerHTML = `<strong>${nome}</strong>${empresa} já entrou.`;
+                          alertaPrestador.style.display = 'flex';
+                      }
+                  }
+              });
+        }
 
         // ==========================================
         // MÓDULO 1: RADAR DE ENCOMENDAS (CAIXAS)
@@ -1049,6 +1117,24 @@
                   containerHome.innerHTML = htmlHome;
                   if(containerTodos) containerTodos.innerHTML = htmlTodos;
               });
+        }
+        // ==========================================
+        // MÓDULO 4.1: ABRIR MODAL DO COMUNICADO
+        // ==========================================
+        function abrirLeitorComunicado(titulo, mensagem, data, tipo, icone, corBgr, corIcon) {
+            document.getElementById('modalComTitulo').innerText = titulo;
+            
+            // Corrige quebras de linha para o texto não ficar num bloco só
+            document.getElementById('modalComMensagem').innerHTML = mensagem.replace(/\\n/g, '<br>');
+            
+            document.getElementById('modalComData').innerHTML = `<i class="fa-regular fa-calendar"></i> ${data}`;
+            document.getElementById('modalComTipo').innerText = tipo;
+            document.getElementById('modalComTipo').style.color = corIcon;
+            
+            document.getElementById('modalComHeader').style.background = corIcon;
+            document.getElementById('modalComIcone').className = `fa-solid ${icone}`;
+
+            document.getElementById('modalLerComunicado').style.display = 'flex';
         }
         
         // ==========================================
@@ -2057,6 +2143,40 @@
 
     <!-- NOSSO NOVO ARQUIVO DE OCORRÊNCIAS -->
     <script src="js/ocorrenciamorador.js"></script>
+    
+    <!-- ========================================== -->
+    <!-- MODAL DE LEITURA DE COMUNICADOS            -->
+    <!-- ========================================== -->
+    <div id="modalLerComunicado" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); z-index: 99999; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
+        <div style="background: #fff; width: 90%; max-width: 450px; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            
+            <div style="background: #3b82f6; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; color: white;" id="modalComHeader">
+                <h3 style="margin: 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-bullhorn" id="modalComIcone"></i> Comunicado Oficial
+                </h3>
+                <button onclick="document.getElementById('modalLerComunicado').style.display='none'" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; transition: 0.2s;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div style="padding: 20px;">
+                <h2 id="modalComTitulo" style="margin: 0 0 15px 0; color: #0f172a; font-size: 18px; line-height: 1.3;">Título do Comunicado</h2>
+                
+                <div style="font-size: 12px; color: #64748b; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px; border-radius: 8px;">
+                    <span id="modalComData" style="display: flex; align-items: center; gap: 5px;"><i class="fa-regular fa-calendar"></i> 00/00/0000</span>
+                    <span id="modalComTipo" style="display: flex; align-items: center; gap: 5px; font-weight: bold; color: #3b82f6;">Geral</span>
+                </div>
+                
+                <div id="modalComMensagem" style="color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">
+                    O texto completo do comunicado aparecerá aqui...
+                </div>
+            </div>
+            
+            <div style="padding: 15px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: right;">
+                <button onclick="document.getElementById('modalLerComunicado').style.display='none'" style="background: #e2e8f0; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer;">Fechar</button>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>
