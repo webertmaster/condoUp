@@ -190,9 +190,8 @@
                 <span><i class="fa-solid fa-headset" style="width: 20px;"></i> Suporte</span>
             </button>
             <div id="gaveta-suporte" class="gaveta-conteudo">
-                <button onclick="alert('Central de Tickets em breve')"><i class="fa-solid fa-ticket" style="width: 15px;"></i> Chamados Abertos</button>
+                <button onclick="trocarTela('adm-chamados')"><i class="fa-solid fa-ticket" style="width: 15px;"></i> Chamados Abertos</button>
             </div>
-
             <button class="gaveta-btn" onclick="trocarTela('configuracoes')" id="menu-configuracoes">
                 <span><i class="fa-solid fa-gears" style="width: 20px;"></i> Configurações</span>
             </button>
@@ -1293,7 +1292,7 @@
                 
                 <div style="background: #f8fafc; padding: 20px 25px; border-bottom: 1px solid #e2e8f0; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center;">
                     <h3 style="margin: 0; color: #0f172a; font-size: 18px;"><i class="fa-solid fa-box-open" style="color: #3b82f6; margin-right: 8px;"></i> Registrar Objeto</h3>
-                    <button class="fechar-modal" onclick="document.getElementById('modalRegistrarAchado').classList.remove('ativo')" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="fechar-modal" onclick="document.getElementById('modalRegistrarAchado').style.display='none'" style="position: static;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div style="padding: 25px; max-height: 70vh; overflow-y: auto;">
@@ -1387,7 +1386,7 @@
                 
                 <div style="background: #10b981; padding: 20px 25px; border-radius: 16px 16px 0 0; display: flex; justify-content: space-between; align-items: center; color: white;">
                     <h3 style="margin: 0; font-size: 18px;"><i class="fa-solid fa-hand-holding-hand"></i> Confirmar Entrega</h3>
-                    <button class="fechar-modal" onclick="document.getElementById('modalEntregarAchado').classList.remove('ativo')" style="position: static; color: white;"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="fechar-modal" onclick="document.getElementById('modalEntregarAchado').style.display='none'" style="position: static; color: white;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
 
                 <div style="padding: 25px; max-height: 75vh; overflow-y: auto;">
@@ -2212,6 +2211,167 @@
             </div>
         </div>
     </div>
+    <!-- ========================================== -->
+        <!-- TELA MASTER: CENTRAL DE SUPORTE (HELPDESK) -->
+        <!-- ========================================== -->
+        <div id="adm-chamados" class="tela">
+            <div class="dash-header" style="margin-bottom: 20px;">
+                <div>
+                    <h2 style="color: #0f172a; margin-bottom: 5px; display: flex; align-items: center; gap: 10px;">
+                        <div style="background: #eff6ff; color: #3b82f6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        Central de Chamados
+                    </h2>
+                    <p style="color: #64748b; font-size: 14px; margin: 0;">Atendimento, dúvidas e problemas técnicos dos clientes.</p>
+                </div>
+            </div>
+
+            <!-- 📊 RESUMO (Os 4 Cards) -->
+            <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="stat-card" style="border-bottom: 4px solid #ef4444; background: white; padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Abertos</h3>
+                        <span id="sup-card-abertos" style="font-size: 28px; font-weight: bold; color: #0f172a;">0</span>
+                    </div>
+                    <div style="background: #fef2f2; color: #ef4444; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
+
+                <div class="stat-card" style="border-bottom: 4px solid #f59e0b; background: white; padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Em Análise</h3>
+                        <span id="sup-card-analise" style="font-size: 28px; font-weight: bold; color: #0f172a;">0</span>
+                    </div>
+                    <div style="background: #fffbeb; color: #f59e0b; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-magnifying-glass"></i></div>
+                </div>
+
+                <div class="stat-card" style="border-bottom: 4px solid #10b981; background: white; padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Resolvidos</h3>
+                        <span id="sup-card-resolvidos" style="font-size: 28px; font-weight: bold; color: #0f172a;">0</span>
+                    </div>
+                    <div style="background: #ecfdf5; color: #10b981; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-check-double"></i></div>
+                </div>
+
+                <div class="stat-card" style="border-bottom: 4px solid #3b82f6; background: white; padding: 20px; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin: 0; font-size: 13px; color: #64748b; text-transform: uppercase;">Total</h3>
+                        <span id="sup-card-total" style="font-size: 28px; font-weight: bold; color: #0f172a;">0</span>
+                    </div>
+                    <div style="background: #eff6ff; color: #3b82f6; width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;"><i class="fa-solid fa-layer-group"></i></div>
+                </div>
+            </div>
+
+            <!-- 🔎 FILTROS INTELIGENTES -->
+            <div class="box" style="padding: 15px; margin-bottom: 20px;">
+                <div class="filtro-container" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 2; min-width: 250px; position: relative;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 15px; top: 15px; color: #94a3b8;"></i>
+                        <input type="text" id="filtroSupBusca" placeholder="Buscar por assunto, nome ou condomínio..." style="width: 100%; padding: 12px 12px 12px 40px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; margin: 0; background: #f8fafc;" onkeyup="filtrarChamados()">
+                    </div>
+                    
+                    <select id="filtroSupStatus" style="flex: 1; min-width: 150px; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;" onchange="filtrarChamados()">
+                        <option value="Todos">Todos os Status</option>
+                        <option value="Aberto">🔴 Aberto</option>
+                        <option value="Em Análise">🟡 Em Análise</option>
+                        <option value="Resolvido">🟢 Resolvido</option>
+                    </select>
+
+                    <select id="filtroSupPrioridade" style="flex: 1; min-width: 150px; margin: 0; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none;" onchange="filtrarChamados()">
+                        <option value="Todas">Qualquer Prioridade</option>
+                        <option value="Alta">🔴 Alta Prioridade</option>
+                        <option value="Média">🟡 Média</option>
+                        <option value="Baixa">🟢 Baixa</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 📋 LISTA DE CHAMADOS -->
+            <div id="lista-chamados-adm" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- O JS preenche aqui -->
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL DE ATENDIMENTO (O CHAT DO SUPORTE)   -->
+        <!-- ========================================== -->
+        <div id="modalAtendimentoSuporte" class="modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(4px);">
+            <div class="modal-content" style="max-width: 800px; width: 95%; background: #f8fafc; border-radius: 16px; padding: 0; display: flex; flex-direction: column; height: 90vh; overflow: hidden; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                
+                <!-- Header do Modal -->
+                <div style="background: white; border-bottom: 1px solid #e2e8f0; padding: 20px 25px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 id="modalSupTitulo" style="margin: 0; color: #0f172a; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-ticket" style="color: #3b82f6;"></i> Chamado #000
+                        </h3>
+                        <div style="margin-top: 5px; display: flex; gap: 10px; align-items: center; font-size: 12px;">
+                            <span id="modalSupBadgeStatus">Status</span>
+                            <span id="modalSupBadgePrioridade">Prioridade</span>
+                        </div>
+                    </div>
+                    <button onclick="document.getElementById('modalAtendimentoSuporte').style.display='none'" style="background: #f1f5f9; border: none; font-size: 16px; cursor: pointer; color: #64748b; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+
+                <!-- Corpo Dividido (Infos Esquerda / Chat Direita) -->
+                <div style="display: flex; flex: 1; overflow: hidden;">
+                    
+                    <!-- LADO ESQUERDO: INFOS DO CLIENTE -->
+                    <div style="width: 35%; background: white; border-right: 1px solid #e2e8f0; padding: 20px; overflow-y: auto;">
+                        <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 14px; text-transform: uppercase;">Detalhes da Solicitação</h4>
+                        
+                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px;">
+                            <strong style="display: block; color: #0f172a; font-size: 14px; margin-bottom: 5px;" id="modalSupAssunto">Assunto da Dúvida</strong>
+                            <p id="modalSupMensagem" style="margin: 0; color: #475569; font-size: 13px; line-height: 1.5;"></p>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Solicitante</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                <div style="background: #e0f2fe; color: #0ea5e9; width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-user"></i></div>
+                                <div>
+                                    <strong id="modalSupNome" style="color: #1e293b; font-size: 14px; display: block;">Nome do Usuário</strong>
+                                    <span id="modalSupCargo" style="color: #64748b; font-size: 12px;">Cargo</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom: 25px;">
+                            <label style="font-size: 11px; font-weight: bold; color: #94a3b8; text-transform: uppercase;">Condomínio / Cliente</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                                <div style="background: #f3e8ff; color: #8b5cf6; width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-building"></i></div>
+                                <strong id="modalSupCondominio" style="color: #1e293b; font-size: 14px;">Nome do Condomínio</strong>
+                            </div>
+                        </div>
+
+                        <!-- Ações do ADM -->
+                        <h4 style="margin: 0 0 10px 0; color: #1e293b; font-size: 14px; text-transform: uppercase;">Ações Rápidas</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <button class="btn" style="margin: 0; background: #f59e0b; font-size: 13px; padding: 10px;" onclick="alterarStatusChamado('Em Análise')"><i class="fa-solid fa-pause"></i> Marcar "Em Análise"</button>
+                            <button class="btn" style="margin: 0; background: #10b981; font-size: 13px; padding: 10px;" onclick="alterarStatusChamado('Resolvido')"><i class="fa-solid fa-check"></i> Finalizar/Resolver</button>
+                        </div>
+                    </div>
+
+                    <!-- LADO DIREITO: CHAT -->
+                    <div style="width: 65%; display: flex; flex-direction: column; background: #f1f5f9;">
+                        <!-- Área das mensagens -->
+                        <div id="modalSupChatArea" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;">
+                            <!-- Balões de chat vão aqui (Carregados via JS) -->
+                            <div style="text-align: center; color: #94a3b8; margin-top: 50px;">Carregando histórico...</div>
+                        </div>
+
+                        <!-- Área de Digitação -->
+                        <div style="background: white; padding: 15px 20px; border-top: 1px solid #e2e8f0; display: flex; gap: 10px; align-items: center;">
+                            <input type="hidden" id="modalSupChamadoId">
+                            <input type="text" id="modalSupInputResposta" placeholder="Escreva sua resposta para o cliente..." style="flex: 1; padding: 15px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; font-size: 14px;">
+                            <button class="btn" style="background: #3b82f6; margin: 0; height: 48px; width: 48px; padding: 0; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex: none;" onclick="enviarRespostaSuporte()">
+                                <i class="fa-solid fa-paper-plane" style="font-size: 18px;"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
     
     <!-- ========================================== -->
     <!-- TELA DE CONTRATOS E ASSINATURAS (MINI-CRM) -->
@@ -2256,8 +2416,8 @@
             </div>
         </div>
     </div>
-</div> 
 <!-- 🚨 IMPORTANTE: Essa DIV fecha o CONTENT e tudo volta ao normal! -->
+</div>
  <!-- ========================================== -->
 <!-- 🛑 TELA DE CHECKOUT INTERNO / INADIMPLÊNCIA -->
 <!-- ========================================== -->
@@ -2811,7 +2971,7 @@
   function fecharModalEditarSaaS() { document.getElementById('modalEditarCondominio').style.display = 'none'; }
 </script>
 
-<script src="js/app.js?v=158"></script>
+<script src="js/app.js?v=159"></script>
 <script src="js/equipe.js?v=16"></script>
 <script src="js/plantao.js?v=13"></script>
 <script src="js/ponto.js?v=15"></script>
@@ -2833,12 +2993,13 @@
 <script src="js/notificacoes.js?v=2"></script>
 <script src="js/prestadores.js?v=2"></script>
 <script src="js/achados.js?v=1"></script>
+<script src="js/suporte.js"></script>
 
 
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-     navigator.serviceWorker.register('sw.js?v=158')
+     navigator.serviceWorker.register('sw.js?v=159')
         .then(registration => {
           console.log('ServiceWorker registrado com sucesso!', registration.scope);
         })
@@ -2847,7 +3008,7 @@
         });
     });
   }
-</script>s
+</script>
 
 <script>
     document.getElementById('form-smtp').addEventListener('submit', async function(event) {
