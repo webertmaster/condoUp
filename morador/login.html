@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - CONRUJA</title>
+    
+    <!-- Ícones e Fonte -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap');
+
+        /* ========================================= */
+        /* VARIÁVEIS DE TEMA (CLARO / ESCURO)        */
+        /* ========================================= */
+        :root {
+            /* Tema Escuro (Padrão) */
+            --bg-color-1: #091020;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(15, 23, 42, 0.6); /* Transparente para o Efeito Vidro */
+            --card-border: rgba(255, 255, 255, 0.05);
+            --input-bg: rgba(2, 6, 23, 0.5);
+            --input-border: #1e293b;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.03);
+            --btn-secondary-hover: rgba(255, 255, 255, 0.08);
+            --owl-invert: 0; 
+        }
+
+        .light-theme {
+            /* Tema Claro */
+            --bg-color-1: #f1f5f9;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --card-bg: rgba(255, 255, 255, 0.7); /* Vidro claro */
+            --card-border: rgba(0, 0, 0, 0.1);
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --input-border: #cbd5e1;
+            --btn-secondary-bg: rgba(255, 255, 255, 0.5);
+            --btn-secondary-hover: rgba(255, 255, 255, 0.8);
+            --owl-invert: 1; /* Deixa a coruja escura no tema claro */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            /* Fundo com cores reais */
+            background-color: var(--bg-color-1);
+            
+            /* COLOQUE AQUI A FOTO DO SEU CONDOMÍNIO DE FUNDO SE TIVER */
+            background-image: url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        /* ========================================================= */
+        /* 🦉 CORUJA VOANDO AO FUNDO                               */
+        /* ========================================================= */
+        .bg-owl {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; /* Para não atrapalhar os cliques do mouse */
+            z-index: 0;
+
+            /* ATENÇÃO: COLOQUE O NOME DO SEU ARQUIVO PNG DA CORUJA AQUI 👇 */
+            background: url('img/icon-512.png.png') repeat-x center 30%;
+            
+            background-size: 2048px; /* Mantém a resolução alta */
+            opacity: 0.10; /* Opacidade em 10% */
+            filter: invert(var(--owl-invert));
+            animation: flyOwl 150s linear infinite; /* Tempo longo para voar devagar */
+        }
+        @keyframes flyOwl {
+            0% { background-position: 0 30%; }
+            100% { background-position: -2048px 30%; }
+        }
+
+        /* Botão de Tema (Sol / Lua) */
+        .theme-toggle-btn {
+            position: absolute;
+            top: 25px; right: 25px;
+            z-index: 10;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-muted);
+            width: 45px; height: 45px;
+            border-radius: 50%;
+            font-size: 18px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .theme-toggle-btn:hover {
+            color: #38bdf8;
+            transform: scale(1.05);
+        }
+
+        /* ========================================= */
+        /* CARTÃO PRINCIPAL (COM EFEITO VIDRO)       */
+        /* ========================================= */
+        .login-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(16px); /* Esse é o desfoque do vidro */
+            -webkit-backdrop-filter: blur(16px);
+            width: 100%;
+            max-width: 420px;
+            border-radius: 24px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--card-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        /* 🟢 TAMANHO DO ÍCONE E EFEITO DE BRILHO (NOVO) */
+        .logo-area img {
+            width: 120px;       /* Aumentado de 80px para 120px */
+            height: 120px;      /* Aumentado */
+            border-radius: 16px;
+            margin-bottom: 10px;
+            object-fit: contain;
+            transition: all 0.4s ease; /* Animação suave para o hover */
+            filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4)); /* Brilho sutil contínuo (sem mouse) */
+            cursor: pointer;
+        }
+
+        /* Efeito de brilho neon contornando a imagem ao passar o mouse */
+        .logo-area img:hover {
+            transform: scale(1.06); /* Aumenta um pouquinho quando o mouse passa */
+            filter: drop-shadow(0 0 15px rgba(59, 130, 246, 0.9)) drop-shadow(0 0 30px rgba(16, 185, 129, 0.6));
+        }
+
+        /* 🟢 TEXTOS DIMINUÍDOS (NOVO) */
+        .logo-area h1 {
+            font-size: 20px;    /* Diminuído de 26px para 20px */
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+        .logo-area h1 span { color: #3b82f6; }
+
+        .logo-area p {
+            font-size: 11px;    /* Diminuído de 14px para 11px */
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Campos de texto estilizados */
+        .form-group {
+            width: 100%;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .form-group i.icon-left {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        .form-group i.icon-right {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        
+        .form-group i.icon-right:hover {
+            color: var(--text-main);
+        }
+
+        .form-group input {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 16px 15px 16px 45px;
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .form-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Checkbox e LGPD */
+        .checkbox-container-master {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .checkbox-group input {
+            margin-top: 3px;
+            width: 16px;
+            height: 16px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .checkbox-group a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        /* Simulação Visual do Verificador Cloudflare */
+        .cloudflare-box {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
+            padding: 12px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        
+        .cloudflare-box:hover {
+            border-color: #334155;
+        }
+
+        .cloudflare-box .check-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .cloudflare-box .check-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+
+        .cloudflare-box .logo-area-cf {
+            text-align: right;
+        }
+        
+        .cloudflare-box .cf-brand {
+            color: #f59e0b; 
+            font-weight: 900; 
+            font-size: 12px; 
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+
+        .cloudflare-box .cf-links {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Botões do Sistema */
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(90deg, #2563eb 0%, #0d9488 100%);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2);
+            margin-bottom: 15px;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            width: 100%;
+            background: var(--btn-secondary-bg);
+            color: var(--text-main);
+            border: 1px solid var(--card-border);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--btn-secondary-hover);
+        }
+
+        .btn-tertiary {
+            background: transparent;
+            color: #a855f7;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        
+        .btn-tertiary:hover {
+            color: #d8b4fe;
+        }
+
+        /* RODAPÉ E ESCUDO VERDE */
+        .footer-seguranca {
+            width: 100%;
+            border-top: 1px solid var(--card-border);
+            padding-top: 20px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .footer-seguranca p.title {
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-seguranca p.desc {
+            color: var(--text-muted);
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        /* ========================================= */
+        /* MODAL DE INSTALAÇÃO DO APP (TUTORIAL)     */
+        /* ========================================= */
+        .modal-install {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-color-1);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            animation: slideUp 0.4s ease forwards;
+            overflow-y: auto;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .install-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--card-border);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .install-header button {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+        
+        .install-header h2 {
+            flex: 2;
+            font-size: 20px;
+            color: #38bdf8;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .install-body {
+            padding: 25px 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .badge-otimizado {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .install-desc {
+            color: var(--text-muted);
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .install-card {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            padding: 25px 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: var(--text-main);
+        }
+
+        .card-title i { font-size: 26px; }
+        .card-title span { display: block; font-size: 13px; color: var(--text-muted); font-weight: 400; margin-top: 2px;}
+
+        .step-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .step-row:last-child { margin-bottom: 0; }
+
+        .step-number {
+            background: #3b82f6;
+            color: white;
+            min-width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 2px;
+        }
+
+        .step-text {
+            color: var(--text-main);
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .highlight { color: #38bdf8; font-weight: 600; }
+        
+        .icon-box {
+            background: rgba(150, 150, 150, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0 4px;
+        }
+
+        .install-card.why {
+            text-align: center;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .bolt-icon {
+            background: #f59e0b;
+            color: #ffffff;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        /* ========================================= */
+        /* 📱 RESPONSIVIDADE PARA CELULARES (MOBILE) */
+        /* ========================================= */
+        @media (max-width: 768px) {
+            /* Libera o fundo para não cortar a caixa e permitir rolagem */
+            body {
+                height: auto !important;
+                min-height: 100vh !important;
+                overflow-y: auto !important;
+                align-items: flex-start !important; /* Evita cortar a logo no topo */
+                padding: 60px 20px 40px 20px !important;
+            }
+
+            /* 1. Ajusta o Formulário de Login para desgrudar das bordas */
+            .login-container {
+                width: 100% !important;
+                max-width: 360px !important; /* Garante margem nas laterais */
+                margin: 0 auto !important; /* Centraliza a caixa */
+                padding: 35px 20px !important;
+                border-radius: 28px !important; /* Força as bordas bem redondinhas */
+            }
+
+            /* Botão de Tema (Sol/Lua) */
+            .theme-toggle-btn {
+                top: 15px !important;
+                right: 15px !important;
+            }
+
+            .logo-area img {
+                width: 90px !important;
+                height: 90px !important;
+            }
+
+            .logo-area h1 {
+                font-size: 18px !important;
+            }
+
+            /* 2. Ajusta a Tela de Bloqueio (Inadimplentes) para empilhar */
+            #tela-bloqueio-inadimplente {
+                padding: 15px !important;
+            }
+
+            #tela-bloqueio-inadimplente > div { 
+                flex-direction: column !important; 
+                max-width: 100% !important;
+                border-radius: 20px !important;
+                height: auto !important;
+                max-height: 95vh !important;
+                overflow-y: auto !important;
+            }
+
+            #tela-bloqueio-inadimplente > div > div:nth-child(1),
+            #tela-bloqueio-inadimplente > div > div:nth-child(2) {
+                width: 100% !important;
+                min-width: auto !important;
+                padding: 25px 20px !important;
+                text-align: center !important;
+            }
+
+            #checkout-valor {
+                font-size: 24px !important;
+            }
+
+            /* 3. Ajusta o Modal de Instalação do App */
+            .install-body { padding: 15px !important; }
+            .install-card { padding: 15px !important; }
+            .card-title { font-size: 18px !important; margin-bottom: 15px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- A CORUJA VOANDO (Não esqueça de colocar a sua imagem) -->
+    <div class="bg-owl"></div>
+
+    <!-- BOTÃO TEMA CLARO/ESCURO -->
+    <button class="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Tema">
+        <i class="fa-solid fa-moon" id="theme-icon"></i>
+    </button>
+
+    <div class="login-container">
+        <!-- LOGO E TEXTOS -->
+        <div class="logo-area">
+            <img src="img/icon-512.png.png" alt="CONRUJA Logo">
+            <h1 class="brand-title">CON<span class="blue-text">RUJA</span></h1>
+            <p>Acesse sua conta para gerenciar seu<br>condomínio com segurança e praticidade.</p>
+        </div>
+
+        <!-- FORMULÁRIO -->
+        <div class="form-group">
+            <i class="fa-solid fa-envelope icon-left"></i>
+            <input type="email" id="email" placeholder="Seu e-mail">
+        </div>
+
+        <div class="form-group">
+            <i class="fa-solid fa-lock icon-left"></i>
+            <input type="password" id="senha" placeholder="Sua senha">
+            <i class="fa-solid fa-eye icon-right" onclick="toggleSenha()" id="eye-icon"></i>
+        </div>
+
+        <div class="checkbox-container-master">
+            <div class="checkbox-group">
+                <input type="checkbox" id="lembrar-me">
+                <label for="lembrar-me">Lembrar meu e-mail</label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="termos">
+                <label for="termos">
+                    Li e aceito os <a href="#">Termos de Uso e Privacidade</a> (LGPD).
+                </label>
+            </div>
+        </div>
+
+        <!-- VERIFICAÇÃO CLOUDFLARE (Visual) -->
+        <div class="cloudflare-box" id="box-cf" onclick="verificarSeguranca()">
+            <div class="check-area">
+                <div id="check-cf-container">
+                    <i class="fa-regular fa-square-check check-icon" id="check-cf" style="color: #64748b;"></i>
+                </div>
+                <span id="txt-cf">Clique para verificar</span>
+            </div>
+            <div class="logo-area-cf">
+                <div class="cf-brand"><i class="fa-solid fa-cloud"></i> CLOUDFLARE</div>
+                <div class="cf-links">Privacidade • Ajuda</div>
+            </div>
+        </div>
+
+        <!-- BOTÕES DE AÇÃO -->
+        <button class="btn-primary" onclick="fazerLogin()">
+            <i class="fa-solid fa-shield-halved"></i> Entrar na Plataforma
+        </button>
+        
+        <button class="btn-secondary" onclick="abrirModalInstall()">
+            <i class="fa-solid fa-download"></i> Como instalar o App
+        </button>
+
+        <button class="btn-tertiary" onclick="recuperarSenha()">
+            <i class="fa-solid fa-lock" style="font-size: 11px; margin-right: 5px;"></i> Esqueceu sua senha? <i class="fa-solid fa-chevron-right" style="font-size: 10px; margin-left: 5px;"></i>
+        </button>
+
+        <!-- RODAPÉ DE SEGURANÇA (E O ESCUDO VERDE) -->
+        <div class="footer-seguranca">
+            <p class="title">
+                <i class="fa-solid fa-shield-halved" style="color: #10b981; font-size: 16px; margin-right: 6px;"></i> Seus dados estão protegidos.
+            </p>
+            <p class="desc">A Conruja utiliza tecnologia e boas práticas para proteger você e seu condomínio.</p>
+        </div>
+    </div>
+
+    <!-- ================================================= -->
+    <!-- TELA DE TUTORIAL DE INSTALAÇÃO (DESLIZA POR CIMA) -->
+    <!-- ================================================= -->
+    <div id="telaInstall" class="modal-install">
+        <div class="install-header">
+            <button onclick="fecharModalInstall()"><i class="fa-solid fa-arrow-left"></i> Voltar</button>
+            <h2><i class="fa-solid fa-mobile-screen"></i> Instalar App</h2>
+            <div style="flex: 1;"></div> <!-- Espaçador para alinhar ao centro -->
+        </div>
+
+        <div class="install-body">
+            <div style="text-align: center;">
+                <div class="badge-otimizado">
+                    <i class="fa-solid fa-circle-check"></i> WEB APP OTIMIZADO
+                </div>
+                <p class="install-desc">Transforme o sistema em um aplicativo no seu celular para acessar mais rápido e receber avisos importantes.</p>
+            </div>
+
+            <!-- CARD ANDROID -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-android" style="color: #22c55e;"></i>
+                    <div>
+                        Android
+                        <span>Via Google Chrome</span>
+                    </div>
+                </div>
+
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra este site no <span class="highlight">Chrome</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque nos <span class="highlight">três pontos</span> <span class="icon-box"><i class="fa-solid fa-ellipsis-vertical"></i></span> no topo.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Selecione <span class="highlight">"Instalar aplicativo"</span> ou "Adicionar à tela inicial".</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Aguarde a conclusão e o ícone aparecerá no seu menu.</div>
+                </div>
+            </div>
+
+            <!-- CARD iOS -->
+            <div class="install-card">
+                <div class="card-title">
+                    <i class="fa-brands fa-apple" style="color: var(--text-main);"></i>
+                    <div>
+                        iPhone / iOS
+                        <span>Via Safari</span>
+                    </div>
+                </div>
+
+                <div class="step-row">
+                    <div class="step-number">1</div>
+                    <div class="step-text">Abra o site pelo navegador <span class="highlight">Safari</span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">2</div>
+                    <div class="step-text">Toque no botão <span class="highlight">Compartilhar</span> <span class="icon-box"><i class="fa-solid fa-arrow-up-from-bracket"></i></span> (barra inferior).</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">3</div>
+                    <div class="step-text">Procure e toque em <span class="highlight">"Adicionar à Tela de Início"</span> <span class="icon-box"><i class="fa-solid fa-square-plus"></i></span>.</div>
+                </div>
+                <div class="step-row">
+                    <div class="step-number">4</div>
+                    <div class="step-text">Toque em <span class="highlight">Adicionar</span> no canto superior.</div>
+                </div>
+            </div>
+
+            <!-- CARD POR QUE INSTALAR -->
+            <div class="install-card why">
+                <div class="bolt-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3 style="margin-bottom: 10px; color: var(--text-main); font-size: 18px;">Por que instalar?</h3>
+                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.6;">
+                    Instalando o Web App, você terá acesso instantâneo sem precisar digitar a URL. O sistema funcionará como um aplicativo comum, ocupando quase nada de memória no seu aparelho.
+                </p>
+            </div>
+            
+            <div style="height: 40px;"></div> <!-- Margem extra no final -->
+        </div>
+    </div>
+
+    <!-- SCRIPTS DO FIREBASE E SUA LÓGICA COMPLETA -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // CONFIGURAÇÃO DO SEU FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyCY6Jq9GVYJEQrH0JZ9TAWcQVm-cImiwoc",
+            authDomain: "portaria-pro-ebc5c.firebaseapp.com",
+            projectId: "portaria-pro-ebc5c",
+            storageBucket: "portaria-pro-ebc5c.firebasestorage.app",
+            messagingSenderId: "948781126590",
+            appId: "1:948781126590:web:5e8888eb6e8124f7df5fef"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // LÓGICA INICIAL: Lembrar-me e Tema Salvo
+        window.onload = () => {
+            // 👇 ADICIONADO: Força o navegador a esquecer quem estava logado antes (Mata o "Bug do Ímã")
+            localStorage.removeItem("CONRUJA_logado");
+            localStorage.removeItem("usuario_cargo");
+            // 👆 FIM DA ADIÇÃO
+
+            const emailSalvo = localStorage.getItem("conruja_email_salvo");
+            if (emailSalvo) {
+                document.getElementById('email').value = emailSalvo;
+                document.getElementById('lembrar-me').checked = true;
+            }
+            
+            if(localStorage.getItem('conruja_theme') === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('theme-icon').classList.replace('fa-moon', 'fa-sun');
+            }
+        };
+
+        // ALTERNAR TEMA CLARO/ESCURO
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            
+            body.classList.toggle('light-theme');
+            
+            if (body.classList.contains('light-theme')) {
+                icon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('conruja_theme', 'light');
+            } else {
+                icon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('conruja_theme', 'dark');
+            }
+        }
+
+        // CONTROLE DO TUTORIAL DE INSTALAÇÃO
+        function abrirModalInstall() {
+            document.getElementById('telaInstall').style.display = 'flex';
+        }
+
+        function fecharModalInstall() {
+            document.getElementById('telaInstall').style.display = 'none';
+        }
+
+        // MOSTRAR/ESCONDER SENHA
+        function toggleSenha() {
+            const input = document.getElementById('senha');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash icon-right';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye icon-right';
+            }
+        }
+
+        // SIMULAÇÃO DO CHECK CLOUDFLARE
+        let segurancaOk = false;
+        function verificarSeguranca() {
+            const containerBox = document.getElementById('check-cf-container');
+            const texto = document.getElementById('txt-cf');
+            const caixa = document.getElementById('box-cf');
+            
+            containerBox.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #64748b; font-size: 20px;"></i>';
+            texto.innerText = 'Verificando segurança...';
+            
+            setTimeout(() => {
+                containerBox.innerHTML = '<i class="fa-solid fa-square-check check-icon" style="color: #10b981; font-size: 22px;"></i>';
+                texto.innerText = 'Sucesso!';
+                caixa.style.borderColor = '#10b981';
+                caixa.style.cursor = 'default';
+                segurancaOk = true;
+            }, 1000);
+        }
+
+        // 🚀 MOTOR DE LOGIN PRINCIPAL COM A TRAVA SAAS E PASSE LIVRE DO ADM
+        function fazerLogin() {
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value.trim();
+            const termos = document.getElementById('termos').checked;
+            const lembrarMe = document.getElementById('lembrar-me').checked;
+
+            if (!termos) {
+                alert("⚠️ Você precisa aceitar os Termos de Uso e LGPD para entrar.");
+                return;
+            }
+
+            if (!segurancaOk) {
+                alert("⚠️ Por favor, clique na caixa da Cloudflare para confirmar que você não é um robô.");
+                return;
+            }
+
+            if (!email || !senha) {
+                alert("⚠️ Preencha e-mail e senha.");
+                return;
+            }
+
+            // Ação do Checkbox Lembrar-me
+            if (lembrarMe) {
+                localStorage.setItem("conruja_email_salvo", email);
+            } else {
+                localStorage.removeItem("conruja_email_salvo");
+            }
+
+            const btn = document.querySelector('.btn-primary');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Autenticando...';
+            btn.style.opacity = '0.8';
+            btn.style.pointerEvents = 'none';
+
+            auth.signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    const uid = userCredential.user.uid;
+                    
+                    db.collection("usuarios").doc(uid).get().then((doc) => {
+                        if (doc.exists) {
+                            const dados = doc.data();
+                            const cargoLogado = (dados.cargo || "").toLowerCase();
+                            
+                            // 🚀 TRAVA DO MESTRE/ADM NO APP DO MORADOR!
+                            const isMaster = cargoLogado.includes('master') || cargoLogado.includes('adm') || cargoLogado.includes('admin') || cargoLogado.includes('gestor') || cargoLogado.includes('porteiro');
+
+                            if (isMaster) {
+                                alert("⚠️ Você é da equipe/gestão! Seu painel é o da Portaria. Redirecionando...");
+                                auth.signOut(); // Desloga o ADM do ambiente do morador
+                                localStorage.clear(); // Limpa o cache
+                                window.location.replace("https://app.conruja.com.br"); 
+                                return; // Para a execução do código aqui!
+                            }
+
+                            const condominioId = dados.condominioId;
+
+                            if(!condominioId) {
+                                alert("❌ Erro: Usuário sem condomínio vinculado.");
+                                auth.signOut();
+                                restaurarBotaoDeLogin(btn);
+                                return;
+                            }
+
+                            // 🚀 AQUI ACONTECE A MÁGICA: CHECAGEM DO STATUS DO CONDOMÍNIO (SAAS)
+                            db.collection("condominios").doc(condominioId).get().then((docCondo) => {
+                                if (docCondo.exists) {
+                                    const dadosCondo = docCondo.data();
+                                    
+                                    let acessoLiberado = false;
+                                    let motivoBloqueio = "O sistema deste condomínio encontra-se inativo no momento. Por favor, entre em contato com a administração.";
+
+                                    // 1. VERIFICA SE O PAINEL ZERO LABS AUTORIZOU (ATIVO MANUAL)
+                                    if (dadosCondo.ativo === true || dadosCondo.status === true) {
+                                        acessoLiberado = true; // A princípio, a porta está aberta.
+
+                                        // 2. O SEGURANÇA OLHA PRO ASAAS (VERIFICA CALOTES)
+                                        if (dadosCondo.statusAsaas === "atrasado" && dadosCondo.vencimento) {
+                                            const hoje = new Date();
+                                            hoje.setHours(0, 0, 0, 0);
+
+                                            let dataVenc = new Date(hoje.getFullYear(), hoje.getMonth(), dadosCondo.vencimento);
+                                            dataVenc.setHours(0, 0, 0, 0);
+
+                                            // Se o vencimento desse mês ainda vai chegar, significa que o calote é do mês passado
+                                            if (dataVenc.getTime() > hoje.getTime()) {
+                                                dataVenc.setMonth(dataVenc.getMonth() - 1);
+                                            }
+
+                                            const diffMs = hoje.getTime() - dataVenc.getTime();
+                                            const diasAtraso = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
+                                            // SE PASSOU DO 5º DIA, A PORTA FECHA!
+                                            if (diasAtraso > 5) {
+                                                acessoLiberado = false;
+                                                motivoBloqueio = `Fatura atrasada há ${diasAtraso} dias.\nO período de carência de 5 dias expirou. Efetue o pagamento para liberar o sistema.`;
+                                            }
+                                        }
+                                    }
+
+                                    // ==========================================
+                                    // RESULTADO DA CATRACA
+                                    // ==========================================
+                                    if (acessoLiberado) {
+                                        // 🟢 TUDO CERTO! Salva os dados na memória e libera o fluxo
+                                        localStorage.setItem("CONRUJA_logado", "true");
+                                        localStorage.setItem("usuario_uid", uid);
+                                        localStorage.setItem("usuario_nome", dados.nome || "Usuário");
+                                        localStorage.setItem("usuario_cargo", dados.cargo || "");
+                                        localStorage.setItem("condominioId", condominioId);
+                                        localStorage.setItem("usuario_apto", dados.apto || "");
+                                        localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
+                                        
+                                        // 🚀 DESVIO INTELIGENTE DE ROTAS
+                                        const cargoMorador = (dados.cargo || "").toLowerCase();
+if (cargoMorador === "morador") {
+    console.log("Logado como Morador. Bem-vindo à sua casa!");
+    window.location.href = "index.html"; // Entra no painel do morador
+} else {
+    console.log("Logado como Gestão/Equipe. Redirecionando para a Portaria.");
+    window.location.href = "https://app.conruja.com.br"; // Chuta o porteiro pra rua!
+}
+                                    } else {
+                                        // 🚫 BLOQUEADO POR CARÊNCIA (Usuário mantido logado apenas para o Radar funcionar)
+                                        const telaBloqueio = document.getElementById("tela-bloqueio-inadimplente");
+                                        const textoMotivo = document.getElementById("texto-motivo-bloqueio");
+                                        const spanValor = document.getElementById("checkout-valor");
+                                        const inputPixCopia = document.getElementById("checkout-pix-copia");
+                                        const imgQrcode = document.getElementById("checkout-qrcode");
+                                        const inputBarras = document.getElementById("checkout-codigo-barras");
+
+                                        if (telaBloqueio) {
+                                            telaBloqueio.style.display = "flex"; 
+                                            textoMotivo.innerText = motivoBloqueio; 
+
+                                            /// 💰 Atualiza o valor da fatura (prioriza a fatura nova, senão usa o plano)
+                                            const valorParaCobrar = dadosCondo.valorFaturaAtual || dadosCondo.valor;
+                                            if (valorParaCobrar) {
+                                                spanValor.innerText = Number(valorParaCobrar).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                                            }
+
+                                            // 🔗 Guarda o link do PDF do boleto para o botão de Download
+                                            if (dadosCondo.linkBoleto) {
+                                                linkBoletoGlobal = dadosCondo.linkBoleto;
+                                            }
+
+                                            // 📄 Preenche a Linha Digitável na tela
+                                            if (dadosCondo.codigoBarras) {
+                                                inputBarras.value = dadosCondo.codigoBarras;
+                                            } else {
+                                                inputBarras.value = "Código de barras indisponível no Sandbox Asaas.";
+                                            }
+
+                                            // 🧩 SE O ASAAS JÁ TIVER GERADO OS DADOS DO PIX NATIVO:
+                                            if (dadosCondo.pixQrCodeUrl) {
+                                                imgQrcode.src = dadosCondo.pixQrCodeUrl; 
+                                            } else {
+                                                imgQrcode.src = "https://via.placeholder.com/200?text=Gerando+QR+Code...";
+                                            }
+
+                                            // ========================================================
+                                            // 📡 RADAR 3.0 (Vigia tudo e dedura no Console!)
+                                            // ========================================================
+                                            db.collection("condominios").doc(condominioId).onSnapshot((docAtualizado) => {
+                                                const dadosAoVivo = docAtualizado.data();
+                                                
+                                                // 1. Atualiza o PIX na tela
+                                                if (dadosAoVivo.pixCopiaECola) {
+                                                    inputPixCopia.value = dadosAoVivo.pixCopiaECola;
+                                                } else {
+                                                    inputPixCopia.value = "Gerando código Pix Copia e Cola...";
+                                                }
+
+                                                if (dadosAoVivo.pixQrCodeUrl) {
+                                                    imgQrcode.src = dadosAoVivo.pixQrCodeUrl;
+                                                }
+                                                
+                                                // 2. Atualiza o BOLETO na tela
+                                                if (dadosAoVivo.codigoBarras) {
+                                                    inputBarras.value = dadosAoVivo.codigoBarras;
+                                                } else {
+                                                    inputBarras.value = "Aguardando linha digitável do Boleto...";
+                                                }
+
+                                                // 3. SE PAGAR, DESTRANCA A CATRACA!
+                                                if (dadosAoVivo.statusAsaas === "pago" || dadosAoVivo.statusAsaas === "ativo") {
+                                                    const botoesTela = document.querySelectorAll("#tela-bloqueio-inadimplente button");
+                                                    botoesTela[0].innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Pagamento Confirmado! Liberando acesso...';
+                                                    botoesTela[0].style.background = "#10b981";
+                                                    botoesTela[0].style.color = "white";
+                                                    botoesTela[0].style.borderColor = "#10b981";
+                                                    
+                                                    setTimeout(() => {
+                                                        location.reload(); 
+                                                    }, 2000);
+                                                }
+                                            });
+                                        } else {
+                                            alert(`⚠️ ACESSO SUSPENSO\n${motivoBloqueio}`);
+                                        }
+                                        
+                                        restaurarBotaoDeLogin(btn);
+                                    }
+
+                                } else {
+                                    alert("❌ Erro: Ficha do condomínio não encontrada no sistema matriz.");
+                                    auth.signOut();
+                                    restaurarBotaoDeLogin(btn);
+                                }
+                            }).catch((err) => {
+                                console.error("Erro ao verificar status do condomínio:", err);
+                                auth.signOut();
+                                alert("❌ Erro de conexão com a Matriz. Tente novamente.");
+                                restaurarBotaoDeLogin(btn);
+                            });
+                            
+                        } else {
+                            alert("❌ Usuário não encontrado no banco de dados.");
+                            auth.signOut();
+                            restaurarBotaoDeLogin(btn);
+                        }
+                    }).catch((err) => {
+                        console.error("Erro ao buscar dados do usuário:", err);
+                        auth.signOut();
+                        restaurarBotaoDeLogin(btn);
+                    });
+                })
+                .catch((error) => {
+                    alert("❌ Erro ao entrar: Verifique seu e-mail ou senha.");
+                    console.error(error);
+                    restaurarBotaoDeLogin(btn);
+                });
+        }
+        
+        // Função auxiliar para voltar o botão ao normal em caso de erro
+        function restaurarBotaoDeLogin(btn) {
+            btn.innerHTML = '<i class="fa-solid fa-shield-halved"></i> Entrar na Plataforma';
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+
+        // Função para o botão "Esqueci minha senha"
+        function recuperarSenha() {
+            const email = prompt("🔒 Digite o seu e-mail de acesso para receber o link de redefinição:");
+            
+            if (!email) return;
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    alert("✅ Link de redefinição enviado! Verifique a sua caixa de entrada (e o Spam).");
+                })
+                .catch((error) => {
+                    console.error("Erro ao resetar senha:", error);
+                    if (error.code === 'auth/user-not-found') {
+                        alert("❌ Este e-mail não está cadastrado no sistema.");
+                    } else {
+                        alert("❌ Erro ao enviar e-mail: " + error.message);
+                    }
+                });
+        }
+    </script>
+
+    <!-- ========================================== -->
+    <!-- 🛑 TELA DE BLOQUEIO / CHECKOUT TRANSPARENTE -->
+    <!-- ========================================== -->
+    <div id="tela-bloqueio-inadimplente" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color-1); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; padding: 20px;">
+        
+        <div style="background: #fff; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); width: 100%; max-width: 850px; display: flex; overflow: hidden; border: 1px solid #334155; flex-wrap: wrap;">
+            
+            <!-- Lado Esquerdo: Aviso de Bloqueio e Resumo -->
+            <div style="background: #1e293b; color: white; padding: 40px; width: 40%; display: flex; flex-direction: column; justify-content: center; min-width: 300px;">
+                <div style="font-size: 50px; margin-bottom: 20px;">🔒</div>
+                <h2 style="font-size: 24px; margin-bottom: 10px; color: #f8fafc;">Acesso Suspenso</h2>
+                <p id="texto-motivo-bloqueio" style="color: #94a3b8; font-size: 14px; line-height: 1.6; margin-bottom: 30px;">
+                    O sistema do seu condomínio está temporariamente inativo devido a faturas pendentes.
+                </p>
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                    <p style="color: #94a3b8; font-size: 12px; text-transform: uppercase; margin-bottom: 5px;">Total a pagar</p>
+                    <h3 id="checkout-valor" style="font-size: 28px; color: #10b981; margin-bottom: 15px;">R$ --,--</h3>
+                    <button onclick="location.reload()" style="background: transparent; color: #38bdf8; border: 1px solid #38bdf8; padding: 12px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s;">
+                        🔄 Já paguei (Atualizar Tela)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lado Direito: Opções de Pagamento (Asaas White Label) -->
+            <div style="padding: 40px; width: 60%; background: #ffffff; min-width: 350px;">
+                <h3 style="color: #0f172a; margin-bottom: 20px; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-wallet" style="color: #3b82f6;"></i> Escolha como pagar:
+                </h3>
+
+                <!-- Abas -->
+                <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                    <button id="tab-pix" onclick="mudarAbaPagamento('pix')" style="flex: 1; padding: 12px; background: #ecfdf5; color: #10b981; border: 2px solid #10b981; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s;">
+                        <i class="fa-brands fa-pix"></i> Pix (Na hora)
+                    </button>
+                    <button id="tab-boleto" onclick="mudarAbaPagamento('boleto')" style="flex: 1; padding: 12px; background: #f8fafc; color: #64748b; border: 2px solid #e2e8f0; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.2s;">
+                        <i class="fa-solid fa-barcode"></i> Boleto
+                    </button>
+                </div>
+
+                <!-- Conteúdo PIX -->
+                <div id="conteudo-pix" style="display: block; text-align: center;">
+                    <div style="background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1; display: inline-block; margin-bottom: 20px;">
+                        <img id="checkout-qrcode" src="https://via.placeholder.com/200?text=Gerando+QR+Code..." alt="QR Code Pix" style="width: 200px; height: 200px; border-radius: 8px;">
+                    </div>
+                    <div style="text-align: left;">
+                        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Pix Copia e Cola</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="checkout-pix-copia" readonly value="Aguardando conexão com Asaas..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; font-size: 12px; outline: none;">
+                            <button onclick="copiarTextoCheckout('checkout-pix-copia')" style="background: #10b981; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Copiar código">
+                                <i class="fa-solid fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conteúdo BOLETO -->
+                <div id="conteudo-boleto" style="display: none;">
+                    <div style="background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; text-align: center;">
+                        <i class="fa-solid fa-file-pdf" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
+                        <h4 style="color: #1e293b; margin-bottom: 5px;">Boleto Bancário</h4>
+                        <p style="color: #64748b; font-size: 13px; margin-bottom: 20px;">O pagamento via boleto pode levar até 2 dias úteis para compensar e liberar o sistema.</p>
+                        <button id="btn-baixar-boleto" onclick="abrirLinkPDF()" style="background: #3b82f6; color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s;">
+                            <i class="fa-solid fa-download"></i> Baixar PDF do Boleto
+                        </button>
+                    </div>
+                    
+                    <div style="text-align: left;">
+                        <label style="font-size: 12px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Código de Barras</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="checkout-codigo-barras" readonly value="Aguardando código..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f1f5f9; color: #475569; font-size: 12px; outline: none;">
+                            <button onclick="copiarTextoCheckout('checkout-codigo-barras')" style="background: #3b82f6; color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;" title="Copiar código">
+                                <i class="fa-solid fa-copy"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; display: flex; align-items: center; justify-content: center; gap: 8px; color: #94a3b8; font-size: 12px;">
+                    <i class="fa-solid fa-shield-halved"></i> Pagamento seguro processado pela Asaas
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Função para alternar entre as abas Pix e Boleto
+        function mudarAbaPagamento(aba) {
+            const btnPix = document.getElementById('tab-pix');
+            const btnBoleto = document.getElementById('tab-boleto');
+            const contPix = document.getElementById('conteudo-pix');
+            const contBoleto = document.getElementById('conteudo-boleto');
+
+            if (aba === 'pix') {
+                btnPix.style.background = '#ecfdf5'; btnPix.style.color = '#10b981'; btnPix.style.borderColor = '#10b981';
+                btnBoleto.style.background = '#f8fafc'; btnBoleto.style.color = '#64748b'; btnBoleto.style.borderColor = '#e2e8f0';
+                contPix.style.display = 'block'; contBoleto.style.display = 'none';
+            } else {
+                btnBoleto.style.background = '#eff6ff'; btnBoleto.style.color = '#3b82f6'; btnBoleto.style.borderColor = '#3b82f6';
+                btnPix.style.background = '#f8fafc'; btnPix.style.color = '#64748b'; btnPix.style.borderColor = '#e2e8f0';
+                contPix.style.display = 'none'; contBoleto.style.display = 'block';
+            }
+        }
+
+        // Função universal para copiar texto dos inputs
+        function copiarTextoCheckout(idElemento) {
+            const input = document.getElementById(idElemento);
+            input.select();
+            document.execCommand('copy');
+            alert('Copiado para a área de transferência!');
+        }
+
+        // Variável global para guardar o link do boleto PDF que virá do banco
+        let linkBoletoGlobal = ""; 
+        function abrirLinkPDF() {
+            if (linkBoletoGlobal) {
+                window.open(linkBoletoGlobal, '_blank');
+            } else {
+                alert('A fatura ainda está sendo gerada pelo banco. Tente em alguns segundos.');
+            }
+        }
+    </script>
+
+</body>
+</html>
