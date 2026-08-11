@@ -3,10 +3,22 @@
 // auth.js - Controle de Acesso e Hierarquia
 // ==========================================
 
+// 1. CORTINA DE CARREGAMENTO (Resolve o "piscar" da tela)
+document.write(`
+    <div id="cortina-seguranca" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #0f172a; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 40px; color: #3b82f6; margin-bottom: 20px;"></i>
+        <h3 style="font-family: 'Segoe UI', Roboto, sans-serif; font-weight: 500;">Autenticando Conruja...</h3>
+    </div>
+`);
+
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. VERIFICA O CRACHÁ DE ACESSO
+    // 2. VERIFICA O CRACHÁ DE ACESSO
     const isLogado = localStorage.getItem("CONRUJA_logado");
     const paginaAtual = window.location.pathname.toLowerCase();
+    const urlCompleta = window.location.href.toLowerCase();
+
+    // 🔗 DEFINA O LINK DO APP DO MORADOR AQUI 👇
+    const linkAppMorador = "https://morador.conruja.com.br";
 
     // Se NÃO tem crachá e NÃO está na tela de login, chuta para fora!
     if (!isLogado && !paginaAtual.includes('login.html')) {
@@ -18,10 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isLogado) {
         const cargoAtual = (localStorage.getItem("usuario_cargo") || "").toLowerCase();
         
-        // 🚀 O GUARDA DE TRÂNSITO PARA MORADORES:
-        // Se for morador e não estiver na pasta do morador, manda pra lá à força!
-        if (cargoAtual === 'morador' && !paginaAtual.includes('/morador')) {
-            window.location.href = 'morador/';
+        // 🚀 O GUARDA DE TRÂNSITO (A CATRACA ELETRÔNICA):
+        const isPortaria = urlCompleta.includes("app.conruja.com.br") || paginaAtual.includes("index.html");
+        const isMoradorApp = urlCompleta.includes("morador"); // Ou ajuste para parte da url do morador
+        
+        // REGRA 1: Morador tentando entrar no painel da portaria
+        if (cargoAtual === 'morador' && isPortaria) {
+            window.location.href = linkAppMorador;
+            return;
+        }
+
+        // REGRA 2: Funcionário/ADM tentando entrar no app do morador
+        if (cargoAtual !== 'morador' && isMoradorApp) {
+            window.location.href = "https://app.conruja.com.br";
             return;
         }
 
@@ -32,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 2. SE ESTIVER DENTRO DO SISTEMA, APLICA AS REGRAS DE HIERARQUIA
+    // 3. SE ESTIVER DENTRO DO SISTEMA, APLICA AS REGRAS DE HIERARQUIA
     if (isLogado && !paginaAtual.includes('login.html')) {
         sincronizarChavesPonto();
         aplicarRegrasDeCargo();
@@ -55,6 +76,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (elNomeFantasma) elNomeFantasma.innerText = localStorage.getItem("condominio_fantasma_nome");
             }
         }
+
+        // Levanta a cortina de segurança e mostra o sistema
+        const cortina = document.getElementById('cortina-seguranca');
+        if (cortina) cortina.style.display = 'none';
+    } else {
+        // Remove cortina se estiver na tela de login
+        const cortina = document.getElementById('cortina-seguranca');
+        if (cortina) cortina.style.display = 'none';
     }
 });
 
