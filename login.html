@@ -819,6 +819,8 @@
 
         // LÓGICA INICIAL: Lembrar-me e Tema Salvo
         window.onload = () => {
+            localStorage.removeItem("CONRUJA_logado");
+            localStorage.removeItem("usuario_cargo");
             const emailSalvo = localStorage.getItem("conruja_email_salvo");
             if (emailSalvo) {
                 document.getElementById('email').value = emailSalvo;
@@ -990,7 +992,7 @@
                                     }
 
                                     // ==========================================
-                                    // RESULTADO DA CATRACA
+                                    // RESULTADO DA CATRACA (RAIZ - PORTARIA)
                                     // ==========================================
                                     if (acessoLiberado) {
                                         // 🟢 TUDO CERTO! Salva os dados na memória e libera o fluxo
@@ -1002,13 +1004,14 @@
                                         localStorage.setItem("usuario_apto", dados.apto || "");
                                         localStorage.setItem("usuario_batePonto", dados.batePonto === true ? "true" : "false");
                                         
-                                        // 🚀 DESVIO INTELIGENTE DE ROTAS
-                                        const cargoMorador = (dados.cargo || "").toLowerCase();
-                                        if (cargoMorador === "morador") {
-                                            console.log("Logado como Morador. Redirecionando para a pasta morador/");
-                                            window.location.href = "morador/"; 
+                                        // 👇 AQUI ESTÁ O SEGREDO DO LOGIN DA RAIZ: ELE SÓ MANDA PRO INDEX DA RAIZ E ACABOU!
+                                        const cargoApp = (dados.cargo || "").toLowerCase();
+                                        if (cargoApp === "morador") {
+                                            alert("⚠️ Moradores devem acessar pelo link: morador.conruja.com.br");
+                                            auth.signOut(); // Chuta o morador pra fora da portaria
+                                            restaurarBotaoDeLogin(btn);
                                         } else {
-                                            console.log("Logado como Gestão/Equipe. Redirecionando para index.html");
+                                            console.log("Logado como Gestão/Equipe. Entrando na Portaria.");
                                             window.location.href = "index.html"; 
                                         }
                                     } else {
